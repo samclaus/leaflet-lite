@@ -340,8 +340,8 @@ export const GridLayer = Layer.extend({
 		if (willPrune && !this._noPrune) { this._pruneTiles(); }
 
 		if (nextFrame) {
-			Util.cancelAnimFrame(this._fadeFrame);
-			this._fadeFrame = Util.requestAnimFrame(this._updateOpacity, this);
+			cancelAnimationFrame(this._fadeFrame);
+			this._fadeFrame = requestAnimationFrame(() => this._updateOpacity());
 		}
 	},
 
@@ -817,7 +817,7 @@ export const GridLayer = Layer.extend({
 		// we know that tile is async and will be ready later; otherwise
 		if (this.createTile.length < 2) {
 			// mark tile as ready, but delay one frame for opacity animation to happen
-			Util.requestAnimFrame(this._tileReady.bind(this, coords, null, tile));
+			requestAnimationFrame(() => this._tileReady(coords, null, tile));
 		}
 
 		DomUtil.setPosition(tile, tilePos);
@@ -857,8 +857,8 @@ export const GridLayer = Layer.extend({
 		tile.loaded = +new Date();
 		if (this._map._fadeAnimated) {
 			tile.el.style.opacity = 0;
-			Util.cancelAnimFrame(this._fadeFrame);
-			this._fadeFrame = Util.requestAnimFrame(this._updateOpacity, this);
+			cancelAnimationFrame(this._fadeFrame);
+			this._fadeFrame = requestAnimationFrame(() => this._updateOpacity());
 		} else {
 			tile.active = true;
 			this._pruneTiles();
@@ -882,7 +882,7 @@ export const GridLayer = Layer.extend({
 			this.fire('load');
 
 			if (!this._map._fadeAnimated) {
-				Util.requestAnimFrame(this._pruneTiles, this);
+				requestAnimationFrame(() => this._pruneTiles());
 			} else {
 				// Wait a bit more than 0.2 secs (the duration of the tile fade-in)
 				// to trigger a pruning.
