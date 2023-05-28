@@ -12,8 +12,8 @@ export class Class {
 	// @function extend(props: Object): Function
 	// [Extends the current class](#class-inheritance) given the properties to be included.
 	// Returns a Javascript function that is a class constructor (to be called with `new`).
-	static extend({statics, includes, ...props}) {
-		const NewClass = class extends this {};
+	static extend({statics, ...props}) {
+		class NewClass extends this {};
 
 		// inherit parent's static properties
 		Object.setPrototypeOf(NewClass, this);
@@ -24,11 +24,6 @@ export class Class {
 		// mix static properties into the class
 		if (statics) {
 			Util.extend(NewClass, statics);
-		}
-
-		// mix includes into the prototype
-		if (includes) {
-			Util.extend.apply(null, [proto].concat(includes));
 		}
 
 		// mix given properties into the prototype
