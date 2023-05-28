@@ -8,14 +8,10 @@
 // Merges the properties (including properties inherited through the prototype chain)
 // of the `src` object (or multiple objects) into `dest` object and returns the latter.
 // Has an `L.extend` shortcut.
-export function extend(dest, ...args) {
-	let j, len, src;
-
-	for (j = 0, len = args.length; j < len; j++) {
-		src = args[j];
-		// eslint-disable-next-line guard-for-in
-		for (const i in src) {
-			dest[i] = src[i];
+export function extend(dest: any, ...args: any[]): any {
+	for (const src of args) {
+		for (const key in src) {
+			dest[key] = src[key];
 		}
 	}
 	return dest;
@@ -27,7 +23,7 @@ export let lastId = 0;
 
 // @function stamp(obj: Object): Number
 // Returns the unique ID of an object, assigning it one if it doesn't have it.
-export function stamp(obj) {
+export function stamp(obj: any): number {
 	if (!('_leaflet_id' in obj)) {
 		obj['_leaflet_id'] = ++lastId;
 	}
@@ -96,7 +92,7 @@ export function formatNum(num, precision?: number | false) {
 
 // @function splitWords(str: String): String[]
 // Trims and splits the string on whitespace and returns the array of parts.
-export function splitWords(str) {
+export function splitWords(str: string): string[] {
 	return str.trim().split(/\s+/);
 }
 

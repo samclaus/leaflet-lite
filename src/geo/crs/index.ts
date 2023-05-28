@@ -1,4 +1,4 @@
-import {CRS} from './CRS.js';
+export {CRS} from './CRS.js';
 import {Earth} from './CRS.Earth.js';
 import {EPSG3395} from './CRS.EPSG3395.js';
 import {EPSG3857, EPSG900913} from './CRS.EPSG3857.js';
@@ -11,5 +11,3 @@ CRS.EPSG3857 = EPSG3857;
 CRS.EPSG900913 = EPSG900913;
 CRS.EPSG4326 = EPSG4326;
 CRS.Simple = Simple;
-
-export {CRS};

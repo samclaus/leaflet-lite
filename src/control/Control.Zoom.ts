@@ -140,10 +140,3 @@ Map.addInitHook(function () {
 		this.addControl(this.zoomControl);
 	}
 });
-
-// @namespace Control.Zoom
-// @factory L.control.zoom(options: Control.Zoom options)
-// Creates a zoom control
-export const zoom = function (options) {
-	return new Zoom(options);
-};

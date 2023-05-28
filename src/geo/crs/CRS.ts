@@ -22,9 +22,10 @@ import * as Util from '../../core/Util.js';
  */
 
 export const CRS = {
+
 	// @method latLngToPoint(latlng: LatLng, zoom: Number): Point
 	// Projects geographical coordinates into pixel coordinates for a given zoom.
-	latLngToPoint(latlng, zoom) {
+	latLngToPoint(latlng: LatLng, zoom: number) {
 		const projectedPoint = this.projection.project(latlng),
 		    scale = this.scale(zoom);
 
@@ -59,14 +60,14 @@ export const CRS = {
 	// Returns the scale used when transforming projected coordinates into
 	// pixel coordinates for a particular zoom. For example, it returns
 	// `256 * 2^zoom` for Mercator-based CRS.
-	scale(zoom) {
+	scale(zoom: number): number {
 		return 256 * Math.pow(2, zoom);
 	},
 
 	// @method zoom(scale: Number): Number
 	// Inverse of `scale()`, returns the zoom level corresponding to a scale
 	// factor of `scale`.
-	zoom(scale) {
+	zoom(scale: number): number {
 		return Math.log(scale / 256) / Math.LN2;
 	},
 
