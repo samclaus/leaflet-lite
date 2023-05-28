@@ -12,7 +12,7 @@ export class Class {
 	// @function extend(props: Object): Function
 	// [Extends the current class](#class-inheritance) given the properties to be included.
 	// Returns a Javascript function that is a class constructor (to be called with `new`).
-	static extend({statics, ...props}) {
+	static extend({statics, ...props}: { statics?: any; [key: string]: any }) {
 		class NewClass extends this {};
 
 		// inherit parent's static properties
