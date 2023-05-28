@@ -83,12 +83,11 @@ export function off(obj, types, fn, context) {
 }
 
 function batchRemove(obj, filterFn) {
-	for (const id in obj[eventsKey]) {
-		if (Object.hasOwn(obj[eventsKey], id)) {
-			const type = id.split(/\d/)[0];
-			if (!filterFn || filterFn(type)) {
-				removeOne(obj, type, null, null, id);
-			}
+	for (const id of Object.keys(obj[eventsKey])) {
+		const type = id.split(/\d/)[0];
+		
+		if (!filterFn || filterFn(type)) {
+			removeOne(obj, type, null, null, id);
 		}
 	}
 }

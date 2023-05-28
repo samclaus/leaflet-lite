@@ -70,10 +70,8 @@ function _handlePointer(handler, e) {
 	if (e.pointerType === 'mouse') { return; }
 
 	e.touches = [];
-	for (const i in _pointers) {
-		if (Object.hasOwn(_pointers, i)) {
-			e.touches.push(_pointers[i]);
-		}
+	for (const value of Object.values(_pointers)) {
+		e.touches.push(value);
 	}
 	e.changedTouches = [e];
 

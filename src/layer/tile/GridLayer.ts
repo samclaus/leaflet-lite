@@ -316,10 +316,7 @@ export const GridLayer = Layer.extend({
 		let nextFrame = false,
 		    willPrune = false;
 
-		for (const key in this._tiles) {
-			if (!Object.hasOwn(this._tiles, key)) { continue; }
-
-			const tile = this._tiles[key];
+		for (const tile of Object.values(this._tiles)) {
 			if (!tile.current || !tile.loaded) { continue; }
 
 			const fade = Math.min(1, (now - tile.loaded) / 200);
@@ -367,15 +364,14 @@ export const GridLayer = Layer.extend({
 
 		if (zoom === undefined) { return undefined; }
 
-		for (let z in this._levels) {
-			if (!Object.hasOwn(this._levels, z)) { continue; }
-
+		for (let [z, level] of Object.entries(this._levels)) {
 			z = Number(z);
-			if (this._levels[z].el.children.length || z === zoom) {
-				this._levels[z].el.style.zIndex = maxZoom - Math.abs(zoom - z);
+	
+			if (level.el.children.length || z === zoom) {
+				level.el.style.zIndex = maxZoom - Math.abs(zoom - z);
 				this._onUpdateLevel(z);
 			} else {
-				this._levels[z].el.remove();
+				level.el.remove();
 				this._removeTilesAtZoom(z);
 				this._onRemoveLevel(z);
 				delete this._levels[z];
@@ -418,8 +414,6 @@ export const GridLayer = Layer.extend({
 			return;
 		}
 
-		let key, tile;
-
 		const zoom = this._map.getZoom();
 		if (zoom > this.options.maxZoom ||
 			zoom < this.options.minZoom) {
@@ -427,17 +421,11 @@ export const GridLayer = Layer.extend({
 			return;
 		}
 
-		for (key in this._tiles) {
-			if (Object.hasOwn(this._tiles, key)) {
-				tile = this._tiles[key];
-				tile.retain = tile.current;
-			}
+		for (const tile of Object.values(this._tiles)) {
+			tile.retain = tile.current;
 		}
 
-		for (key in this._tiles) {
-			if (!Object.hasOwn(this._tiles, key)) { continue; }
-
-			tile = this._tiles[key];
+		for (const tile of Object.values(this._tiles)) {
 			if (tile.current && !tile.active) {
 				const coords = tile.coords;
 				if (!this._retainParent(coords.x, coords.y, coords.z, coords.z - 5)) {
@@ -446,8 +434,8 @@ export const GridLayer = Layer.extend({
 			}
 		}
 
-		for (key in this._tiles) {
-			if (!this._tiles[key].retain) {
+		for (const [key, tile] of Object.entries(this._tiles)) {
+			if (!tile.retain) {
 				this._removeTile(key);
 			}
 		}
@@ -463,20 +451,16 @@ export const GridLayer = Layer.extend({
 	},
 
 	_removeAllTiles() {
-		for (const key in this._tiles) {
-			if (Object.hasOwn(this._tiles, key)) {
-				this._removeTile(key);
-			}
+		for (const key of Object.keys(this._tiles)) {
+			this._removeTile(key);
 		}
 	},
 
 	_invalidateAll() {
-		for (const z in this._levels) {
-			if (Object.hasOwn(this._levels, z)) {
-				this._levels[z].el.remove();
-				this._onRemoveLevel(Number(z));
-				delete this._levels[z];
-			}
+		for (const [z, level] of Object.entries(this._levels)) {
+			level.el.remove();
+			this._onRemoveLevel(Number(z));
+			delete this._levels[z];
 		}
 		this._removeAllTiles();
 
@@ -596,10 +580,8 @@ export const GridLayer = Layer.extend({
 	},
 
 	_setZoomTransforms(center, zoom) {
-		for (const i in this._levels) {
-			if (Object.hasOwn(this._levels, i)) {
-				this._setZoomTransform(this._levels[i], center, zoom);
-			}
+		for (const level of Object.values(this._levels)) {
+			this._setZoomTransform(level, center, zoom);
 		}
 	},
 
@@ -671,12 +653,11 @@ export const GridLayer = Layer.extend({
 		      isFinite(tileRange.max.x) &&
 		      isFinite(tileRange.max.y))) { throw new Error('Attempted to load an infinite number of tiles'); }
 
-		for (const key in this._tiles) {
-			if (Object.hasOwn(this._tiles, key)) {
-				const c = this._tiles[key].coords;
-				if (c.z !== this._tileZoom || !noPruneRange.contains(new Point(c.x, c.y))) {
-					this._tiles[key].current = false;
-				}
+		for (const tile of Object.values(this._tiles)) {
+			const c = tile.coords;
+			
+			if (c.z !== this._tileZoom || !noPruneRange.contains(new Point(c.x, c.y))) {
+				tile.current = false;
 			}
 		}
 

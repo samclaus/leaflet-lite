@@ -106,12 +106,7 @@ export function setOptions(obj, options?) {
 	if (!Object.hasOwn(obj, 'options')) {
 		obj.options = obj.options ? Object.create(obj.options) : {};
 	}
-	for (const i in options) {
-		if (Object.hasOwn(options, i)) {
-			obj.options[i] = options[i];
-		}
-	}
-	return obj.options;
+	return Object.assign(obj.options, options);
 }
 
 // @function getParamString(obj: Object, existingUrl?: String, uppercase?: Boolean): String
@@ -121,10 +116,8 @@ export function setOptions(obj, options?) {
 // be uppercased (e.g. `'?A=foo&B=bar'`)
 export function getParamString(obj, existingUrl, uppercase) {
 	const params = [];
-	for (const i in obj) {
-		if (Object.hasOwn(obj, i)) {
-			params.push(`${encodeURIComponent(uppercase ? i.toUpperCase() : i)}=${encodeURIComponent(obj[i])}`);
-		}
+	for (const [i, value] of Object.entries(obj)) {
+		params.push(`${encodeURIComponent(uppercase ? i.toUpperCase() : i)}=${encodeURIComponent(value)}`);
 	}
 	return ((!existingUrl || !existingUrl.includes('?')) ? '?' : '&') + params.join('&');
 }

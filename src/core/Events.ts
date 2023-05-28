@@ -38,14 +38,11 @@ export const Events = {
 
 		// types can be a map of types/handlers
 		if (typeof types === 'object') {
-			for (const type in types) {
-				if (Object.hasOwn(types, type)) {
-					// we don't process space-separated events here for performance;
-					// it's a hot path since Layer uses the on(obj) syntax
-					this._on(type, types[type], fn);
-				}
+			for (const [type, listener] of Object.entries(types)) {
+				// we don't process space-separated events here for performance;
+				// it's a hot path since Layer uses the on(obj) syntax
+				this._on(type, listener, fn);
 			}
-
 		} else {
 			// types can be a string of space-separated words
 			types = Util.splitWords(types);
@@ -76,12 +73,9 @@ export const Events = {
 			delete this._events;
 
 		} else if (typeof types === 'object') {
-			for (const type in types) {
-				if (Object.hasOwn(types, type)) {
-					this._off(type, types[type], fn);
-				}
+			for (const [type, listener] of Object.entries(types)) {
+				this._off(type, listener, fn);
 			}
-
 		} else {
 			types = Util.splitWords(types);
 
@@ -272,15 +266,12 @@ export const Events = {
 	// @method once(…): this
 	// Behaves as [`on(…)`](#evented-on), except the listener will only get fired once and then removed.
 	once(types, fn, context) {
-
 		// types can be a map of types/handlers
 		if (typeof types === 'object') {
-			for (const type in types) {
-				if (Object.hasOwn(types, type)) {
-					// we don't process space-separated events here for performance;
-					// it's a hot path since Layer uses the on(obj) syntax
-					this._on(type, types[type], fn, true);
-				}
+			for (const [type, listener] of Object.entries(types)) {
+				// we don't process space-separated events here for performance;
+				// it's a hot path since Layer uses the on(obj) syntax
+				this._on(type, listener, fn, true);
 			}
 
 		} else {
@@ -313,13 +304,11 @@ export const Events = {
 	},
 
 	_propagateEvent(e) {
-		for (const id in this._eventParents) {
-			if (Object.hasOwn(this._eventParents, id)) {
-				this._eventParents[id].fire(e.type, Util.extend({
-					layer: e.target,
-					propagatedFrom: e.target
-				}, e), true);
-			}
+		for (const parent of Object.values(this._eventParents)) {
+			parent.fire(e.type, Util.extend({
+				layer: e.target,
+				propagatedFrom: e.target
+			}, e), true);
 		}
 	}
 };

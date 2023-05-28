@@ -779,16 +779,12 @@ export const Map = Evented.extend({
 			this.fire('unload');
 		}
 
-		let i;
-		for (i in this._layers) {
-			if (Object.hasOwn(this._layers, i)) {
-				this._layers[i].remove();
-			}
+		for (const layer of Object.values(this._layers)) {
+			layer.remove();
 		}
-		for (i in this._panes) {
-			if (Object.hasOwn(this._panes, i)) {
-				this._panes[i].remove();
-			}
+
+		for (const pane of Object.values(this._panes)) {
+			pane.remove();
 		}
 
 		this._layers = [];
