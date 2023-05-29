@@ -29,6 +29,8 @@ export class Bounds {
 	min: Point;
 	max: Point;
 
+	// TODO: figure out where this is called and make sure Bounds is always constructed
+	// with at least a single Point (also make constructor monomorphic)
 	constructor(a, b) {
 		if (!a) { return; }
 	
@@ -45,18 +47,16 @@ export class Bounds {
 	// @alternative
 	// @method extend(otherBounds: Bounds): this
 	// Extend the bounds to contain the given bounds
-	extend(obj) {
-		let min2, max2;
-		if (!obj) { return this; }
+	// TODO: always take bounds and just construct bounds from point before passing
+	extend(obj: Point | Bounds): this {
+		let min2: Point;
+		let max2: Point;
 
-		if (obj instanceof Point || typeof obj[0] === 'number' || 'x' in obj) {
-			min2 = max2 = toPoint(obj);
+		if (obj instanceof Point) {
+			min2 = max2 = obj;
 		} else {
-			obj = toBounds(obj);
 			min2 = obj.min;
 			max2 = obj.max;
-
-			if (!min2 || !max2) { return this; }
 		}
 
 		// @property min: Point
@@ -72,6 +72,7 @@ export class Bounds {
 			this.min.y = Math.min(min2.y, this.min.y);
 			this.max.y = Math.max(max2.y, this.max.y);
 		}
+
 		return this;
 	}
 

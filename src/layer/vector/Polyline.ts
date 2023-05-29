@@ -120,7 +120,16 @@ export const Polyline = Path.extend({
 		if (!this._map) {
 			throw new Error('Must add layer to map before using getCenter()');
 		}
-		return LineUtil.polylineCenter(this._defaultShape(), this._map.options.crs);
+
+		// TODO: hopefully we can lift this decision up and simplify further
+		let latlngs = this._defaultShape();
+
+		if (!LineUtil.isFlat(latlngs)) {
+			console.warn('Polyline default shape latlngs are not flat! Only the first ring will be used');
+			latlngs = latlngs[0];
+		}
+
+		return LineUtil.polylineCenter(latlngs, this._map.options.crs);
 	},
 
 	// @method getBounds(): LatLngBounds
@@ -146,7 +155,7 @@ export const Polyline = Path.extend({
 		this._latlngs = this._convertLatLngs(latlngs);
 	},
 
-	_defaultShape() {
+	_defaultShape(): LatLng[] {
 		return LineUtil.isFlat(this._latlngs) ? this._latlngs : this._latlngs[0];
 	},
 

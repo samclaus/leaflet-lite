@@ -1,9 +1,9 @@
-import {Earth} from './CRS.Earth.js';
-import {LonLat} from '../projection/Projection.LonLat.js';
-import {toTransformation} from '../../geometry/Transformation.js';
 import * as Util from '../../core/Util.js';
+import { Transformation } from '../../geometry/Transformation.js';
+import { LonLat } from '../projection/Projection.LonLat.js';
+import { Earth } from './CRS.Earth.js';
 
-/*
+/**
  * @namespace CRS
  * @crs L.CRS.EPSG4326
  *
@@ -15,9 +15,8 @@ import * as Util from '../../core/Util.js';
  * whole earth at zoom level zero, and that the tile coordinate origin is (-180,+90),
  * or (-180,-90) for `TileLayer`s with [the `tms` option](#tilelayer-tms) set.
  */
-
 export const EPSG4326 = Util.extend({}, Earth, {
 	code: 'EPSG:4326',
 	projection: LonLat,
-	transformation: toTransformation(1 / 180, 1, -1 / 180, 0.5)
+	transformation: new Transformation(1 / 180, 1, -1 / 180, 0.5)
 });

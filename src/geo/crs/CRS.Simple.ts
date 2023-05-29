@@ -1,9 +1,10 @@
-import {CRS} from './CRS.js';
-import {LonLat} from '../projection/Projection.LonLat.js';
-import {toTransformation} from '../../geometry/Transformation.js';
 import * as Util from '../../core/Util.js';
+import { Transformation } from '../../geometry/Transformation.js';
+import type { LatLng } from '../LatLng.js';
+import { LonLat } from '../projection/Projection.LonLat.js';
+import { CRS } from './CRS.js';
 
-/*
+/**
  * @namespace CRS
  * @crs L.CRS.Simple
  *
@@ -12,25 +13,26 @@ import * as Util from '../../core/Util.js';
  * axis should still be inverted (going from bottom to top). `distance()` returns
  * simple euclidean distance.
  */
-
 export const Simple = Util.extend({}, CRS, {
-	projection: LonLat,
-	transformation: toTransformation(1, 0, -1, 0),
 
-	scale(zoom) {
+	projection: LonLat,
+	transformation: new Transformation(1, 0, -1, 0),
+	infinite: true,
+
+	scale(zoom: number): number {
 		return Math.pow(2, zoom);
 	},
 
-	zoom(scale) {
+	zoom(scale: number): number {
 		return Math.log(scale) / Math.LN2;
 	},
 
-	distance(latlng1, latlng2) {
-		const dx = latlng2.lng - latlng1.lng,
+	distance(latlng1: LatLng, latlng2: LatLng): number {
+		const
+			dx = latlng2.lng - latlng1.lng,
 		    dy = latlng2.lat - latlng1.lat;
 
-		return Math.sqrt(dx * dx + dy * dy);
+		return Math.sqrt(dx*dx + dy*dy);
 	},
 
-	infinite: true
 });

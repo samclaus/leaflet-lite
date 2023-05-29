@@ -33,9 +33,8 @@ import {LatLng, toLatLng} from './LatLng.js';
  */
 export class LatLngBounds {
 
-	constructor(corner1, corner2) { // (LatLng, LatLng) or (LatLng[])
-		const latlngs = corner2 ? [corner1, corner2] : corner1;
-	
+	constructor(...latlngs: readonly LatLng[]) {
+		// TODO: need to enforce that enough points are passed, preferably without guarding here
 		for (let i = 0, len = latlngs.length; i < len; i++) {
 			this.extend(latlngs[i]);
 		}

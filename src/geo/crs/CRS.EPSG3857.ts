@@ -1,9 +1,9 @@
-import {Earth} from './CRS.Earth.js';
-import {SphericalMercator} from '../projection/Projection.SphericalMercator.js';
-import {toTransformation} from '../../geometry/Transformation.js';
 import * as Util from '../../core/Util.js';
+import { Transformation } from '../../geometry/Transformation.js';
+import { SphericalMercator } from '../projection/Projection.SphericalMercator.js';
+import { Earth } from './CRS.Earth.js';
 
-/*
+/**
  * @namespace CRS
  * @crs L.CRS.EPSG3857
  *
@@ -11,14 +11,12 @@ import * as Util from '../../core/Util.js';
  * tile providers. Uses Spherical Mercator projection. Set in by default in
  * Map's `crs` option.
  */
-
 export const EPSG3857 = Util.extend({}, Earth, {
 	code: 'EPSG:3857',
 	projection: SphericalMercator,
-
 	transformation: (function () {
 		const scale = 0.5 / (Math.PI * SphericalMercator.R);
-		return toTransformation(scale, 0.5, -scale, 0.5);
+		return new Transformation(scale, 0.5, -scale, 0.5);
 	}())
 });
 

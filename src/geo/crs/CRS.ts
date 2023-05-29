@@ -1,10 +1,11 @@
 
-import {Bounds} from '../../geometry/Bounds.js';
-import {LatLng} from '../LatLng.js';
-import {LatLngBounds} from '../LatLngBounds.js';
+import type { Point } from '../../Leaflet.js';
 import * as Util from '../../core/Util.js';
+import { Bounds } from '../../geometry/Bounds.js';
+import { LatLng } from '../LatLng.js';
+import { LatLngBounds } from '../LatLngBounds.js';
 
-/*
+/**
  * @namespace CRS
  * @crs L.CRS.Base
  * Object that defines coordinate reference systems for projecting
@@ -20,7 +21,6 @@ import * as Util from '../../core/Util.js';
  * and can't be instantiated. Also, new classes can't inherit from them,
  * and methods can't be added to them with the `include` function.
  */
-
 export const CRS = {
 
 	// @method latLngToPoint(latlng: LatLng, zoom: Number): Point
@@ -36,23 +36,22 @@ export const CRS = {
 	// The inverse of `latLngToPoint`. Projects pixel coordinates on a given
 	// zoom into geographical coordinates.
 	pointToLatLng(point, zoom) {
-		const scale = this.scale(zoom),
+		const
+			scale = this.scale(zoom),
 		    untransformedPoint = this.transformation.untransform(point, scale);
 
 		return this.projection.unproject(untransformedPoint);
 	},
 
-	// @method project(latlng: LatLng): Point
 	// Projects geographical coordinates into coordinates in units accepted for
 	// this CRS (e.g. meters for EPSG:3857, for passing it to WMS services).
-	project(latlng) {
+	project(latlng: LatLng): Point {
 		return this.projection.project(latlng);
 	},
 
-	// @method unproject(point: Point): LatLng
 	// Given a projected coordinate returns the corresponding LatLng.
 	// The inverse of `project`.
-	unproject(point) {
+	unproject(point: Point): LatLng {
 		return this.projection.unproject(point);
 	},
 
@@ -71,12 +70,12 @@ export const CRS = {
 		return Math.log(scale / 256) / Math.LN2;
 	},
 
-	// @method getProjectedBounds(zoom: Number): Bounds
 	// Returns the projection's bounds scaled and transformed for the provided `zoom`.
-	getProjectedBounds(zoom) {
+	getProjectedBounds(zoom: number): Bounds | null {
 		if (this.infinite) { return null; }
 
-		const b = this.projection.bounds,
+		const
+			b = this.projection.bounds,
 		    s = this.scale(zoom),
 		    min = this.transformation.transform(b.min, s),
 		    max = this.transformation.transform(b.max, s);
@@ -116,12 +115,12 @@ export const CRS = {
 		return new LatLng(lat, lng, alt);
 	},
 
-	// @method wrapLatLngBounds(bounds: LatLngBounds): LatLngBounds
 	// Returns a `LatLngBounds` with the same size as the given one, ensuring
 	// that its center is within the CRS's bounds.
 	// Only accepts actual `L.LatLngBounds` instances, not arrays.
-	wrapLatLngBounds(bounds) {
-		const center = bounds.getCenter(),
+	wrapLatLngBounds(bounds: LatLngBounds): LatLngBounds {
+		const
+			center = bounds.getCenter(),
 		    newCenter = this.wrapLatLng(center),
 		    latShift = center.lat - newCenter.lat,
 		    lngShift = center.lng - newCenter.lng;
@@ -130,7 +129,8 @@ export const CRS = {
 			return bounds;
 		}
 
-		const sw = bounds.getSouthWest(),
+		const
+			sw = bounds.getSouthWest(),
 		    ne = bounds.getNorthEast(),
 		    newSw = new LatLng(sw.lat - latShift, sw.lng - lngShift),
 		    newNe = new LatLng(ne.lat - latShift, ne.lng - lngShift);
