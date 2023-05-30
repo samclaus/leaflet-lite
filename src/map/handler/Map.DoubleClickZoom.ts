@@ -1,5 +1,5 @@
-import {Map} from '../Map.js';
-import {Handler} from '../../core/Handler.js';
+import { Handler } from '../../core/Handler.js';
+import { Map } from '../Map.js';
 
 /*
  * L.Handler.DoubleClickZoom is used to handle double-click zoom on the map, enabled by default.
@@ -39,17 +39,3 @@ export const DoubleClickZoom = Handler.extend({
 		}
 	}
 });
-
-// @section Handlers
-//
-// Map properties include interaction handlers that allow you to control
-// interaction behavior in runtime, enabling or disabling certain features such
-// as dragging or touch zoom (see `Handler` methods). For example:
-//
-// ```js
-// map.doubleClickZoom.disable();
-// ```
-//
-// @property doubleClickZoom: Handler
-// Double click zoom handler.
-Map.addInitHook('addHandler', 'doubleClickZoom', DoubleClickZoom);

@@ -1,17 +1,11 @@
 
-import {Control} from './Control.js';
-import {Map} from '../map/Map.js';
-import * as DomUtil from '../dom/DomUtil.js';
 import * as DomEvent from '../dom/DomEvent.js';
+import * as DomUtil from '../dom/DomUtil.js';
+import { Control } from './Control.js';
 
-/*
- * @class Control.Zoom
- * @aka L.Control.Zoom
- * @inherits Control
- *
- * A basic zoom control with two buttons (zoom in and zoom out). It is put on the map by default unless you set its [`zoomControl` option](#map-zoomcontrol) to `false`. Extends `Control`.
+/**
+ * A basic zoom control with two buttons (zoom in and zoom out). Extends `Control`.
  */
-
 export const Zoom = Control.extend({
 	// @section
 	// @aka Control.Zoom options
@@ -119,24 +113,5 @@ export const Zoom = Control.extend({
 			this._zoomInButton.classList.add(className);
 			this._zoomInButton.setAttribute('aria-disabled', 'true');
 		}
-	}
-});
-
-// @namespace Map
-// @section Control options
-// @option zoomControl: Boolean = true
-// Whether a [zoom control](#control-zoom) is added to the map by default.
-Map.mergeOptions({
-	zoomControl: true
-});
-
-Map.addInitHook(function () {
-	if (this.options.zoomControl) {
-		// @section Controls
-		// @property zoomControl: Control.Zoom
-		// The default zoom control (only available if the
-		// [`zoomControl` option](#map-zoomcontrol) was `true` when creating the map).
-		this.zoomControl = new Zoom();
-		this.addControl(this.zoomControl);
 	}
 });

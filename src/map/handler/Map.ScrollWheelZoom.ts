@@ -2,12 +2,9 @@ import {Map} from '../Map.js';
 import {Handler} from '../../core/Handler.js';
 import * as DomEvent from '../../dom/DomEvent.js';
 
-/*
+/**
  * L.Handler.ScrollWheelZoom is used by L.Map to enable mouse scroll wheel zoom on the map.
  */
-
-// @namespace Map
-// @section Interaction Options
 Map.mergeOptions({
 	// @section Mouse wheel options
 	// @option scrollWheelZoom: Boolean|String = true
@@ -83,8 +80,3 @@ export const ScrollWheelZoom = Handler.extend({
 		}
 	}
 });
-
-// @section Handlers
-// @property scrollWheelZoom: Handler
-// Scroll wheel zoom handler.
-Map.addInitHook('addHandler', 'scrollWheelZoom', ScrollWheelZoom);

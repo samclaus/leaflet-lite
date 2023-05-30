@@ -1,18 +1,16 @@
-import {Map} from '../Map.js';
-import {Handler} from '../../core/Handler.js';
-import * as DomEvent from '../../dom/DomEvent.js';
-import {Point} from '../../geometry/Point.js';
 import Browser from '../../core/Browser.js';
+import { Handler } from '../../core/Handler.js';
+import * as DomEvent from '../../dom/DomEvent.js';
+import { Point } from '../../geometry/Point.js';
+import { Map } from '../Map.js';
 
-/*
+/**
  * L.Map.TapHold is used to simulate `contextmenu` event on long hold,
  * which otherwise is not fired by mobile Safari.
  */
 
 const tapHoldDelay = 600;
 
-// @namespace Map
-// @section Interaction Options
 Map.mergeOptions({
 	// @section Touch interaction options
 	// @option tapHold: Boolean
@@ -94,8 +92,3 @@ export const TapHold = Handler.extend({
 		e.target.dispatchEvent(simulatedEvent);
 	}
 });
-
-// @section Handlers
-// @property tapHold: Handler
-// Long tap handler to simulate `contextmenu` event (useful in mobile Safari).
-Map.addInitHook('addHandler', 'tapHold', TapHold);

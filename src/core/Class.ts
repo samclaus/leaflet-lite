@@ -1,18 +1,14 @@
 import * as Util from './Util.js';
 
-// @class Class
-// @aka L.Class
-
-// @section
-// @uninheritable
-
-// Thanks to John Resig and Dean Edwards for inspiration!
-
+/**
+ * Base class for most Leaflet classes with generic options-merging functionality.
+ */
 export class Class {
+
 	// @function extend(props: Object): Function
 	// [Extends the current class](#class-inheritance) given the properties to be included.
 	// Returns a Javascript function that is a class constructor (to be called with `new`).
-	static extend({statics, ...props}: { statics?: any; [key: string]: any }) {
+	static extend(props: { [key: string]: any }) {
 		class NewClass extends this {};
 
 		// inherit parent's static properties
@@ -20,11 +16,6 @@ export class Class {
 
 		const parentProto = this.prototype;
 		const proto = NewClass.prototype;
-
-		// mix static properties into the class
-		if (statics) {
-			Util.extend(NewClass, statics);
-		}
 
 		// mix given properties into the prototype
 		Util.extend(proto, props);
@@ -34,8 +25,6 @@ export class Class {
 			proto.options = parentProto.options ? Object.create(parentProto.options) : {};
 			Util.extend(proto.options, props.options);
 		}
-
-		proto._initHooks = [];
 
 		return NewClass;
 	}
@@ -52,26 +41,11 @@ export class Class {
 		return this;
 	}
 
-	// @function mergeOptions(options: Object): this
 	// [Merges `options`](#class-options) into the defaults of the class.
-	static mergeOptions(options) {
+	static mergeOptions(options: any): this {
 		Util.extend(this.prototype.options, options);
 		return this;
 	}
-
-	// @function addInitHook(fn: Function): this
-	// Adds a [constructor hook](#class-constructor-hooks) to the class.
-	static addInitHook(fn, ...args) { // (Function) || (String, args...)
-		const init = typeof fn === 'function' ? fn : function () {
-			this[fn].apply(this, args);
-		};
-
-		this.prototype._initHooks = this.prototype._initHooks || [];
-		this.prototype._initHooks.push(init);
-		return this;
-	}
-
-	_initHooksCalled = false;
 
 	constructor(...args) {
 		Util.setOptions(this);
@@ -80,34 +54,6 @@ export class Class {
 		if (this.initialize) {
 			this.initialize(...args);
 		}
-
-		// call all constructor hooks
-		this.callInitHooks();
 	}
 
-	callInitHooks() {
-		if (this._initHooksCalled) {
-			return;
-		}
-
-		// collect all prototypes in chain
-		const prototypes = [];
-		let current = this;
-
-		while ((current = Object.getPrototypeOf(current)) !== null) {
-			prototypes.push(current);
-		}
-
-		// reverse so the parent prototype is first
-		prototypes.reverse();
-
-		// call init hooks on each prototype
-		for (const proto of prototypes) {
-			for (const hook of proto._initHooks ?? []) {
-				hook.call(this);
-			}
-		}
-
-		this._initHooksCalled = true;
-	}
 }

@@ -1,15 +1,9 @@
-import {Map} from '../Map.js';
-import {Handler} from '../../core/Handler.js';
-import * as DomEvent from '../../dom/DomEvent.js';
-import * as Util from '../../core/Util.js';
 import Browser from '../../core/Browser.js';
+import { Handler } from '../../core/Handler.js';
+import * as DomEvent from '../../dom/DomEvent.js';
+import { Map } from '../Map.js';
 
-/*
- * L.Handler.TouchZoom is used by L.Map to add pinch zoom on supported mobile browsers.
- */
-
-// @namespace Map
-// @section Interaction Options
+// TODO: best way to get options to handlers with sensible defaults?
 Map.mergeOptions({
 	// @section Touch interaction options
 	// @option touchZoom: Boolean|String = *
@@ -25,22 +19,32 @@ Map.mergeOptions({
 	bounceAtZoomLimits: true
 });
 
-export const TouchZoom = Handler.extend({
+/**
+ * L.Handler.TouchZoom is used by L.Map to add pinch zoom on supported mobile browsers.
+ */
+export class TouchZoom extends Handler {
+
+	_moved = false;
+	_zooming = false;
+	_animRequest = -1; // requestAnimationFrame handle
+
 	addHooks() {
 		this._map._container.classList.add('leaflet-touch-zoom');
 		DomEvent.on(this._map._container, 'touchstart', this._onTouchStart, this);
-	},
+	}
 
 	removeHooks() {
 		this._map._container.classList.remove('leaflet-touch-zoom');
 		DomEvent.off(this._map._container, 'touchstart', this._onTouchStart, this);
-	},
+	}
 
-	_onTouchStart(e) {
+	_onTouchStart(e: TouchEvent) {
 		const map = this._map;
+
 		if (!e.touches || e.touches.length !== 2 || map._animatingZoom || this._zooming) { return; }
 
-		const p1 = map.mouseEventToContainerPoint(e.touches[0]),
+		const
+			p1 = map.mouseEventToContainerPoint(e.touches[0]),
 		    p2 = map.mouseEventToContainerPoint(e.touches[1]);
 
 		this._centerPoint = map.getSize()._divideBy(2);
@@ -51,7 +55,6 @@ export const TouchZoom = Handler.extend({
 
 		this._startDist = p1.distanceTo(p2);
 		this._startZoom = map.getZoom();
-
 		this._moved = false;
 		this._zooming = true;
 
@@ -59,11 +62,10 @@ export const TouchZoom = Handler.extend({
 
 		DomEvent.on(document, 'touchmove', this._onTouchMove, this);
 		DomEvent.on(document, 'touchend touchcancel', this._onTouchEnd, this);
-
 		DomEvent.preventDefault(e);
-	},
+	}
 
-	_onTouchMove(e) {
+	_onTouchMove(e: TouchEvent) {
 		if (!e.touches || e.touches.length !== 2 || !this._zooming) { return; }
 
 		const map = this._map,
@@ -100,7 +102,7 @@ export const TouchZoom = Handler.extend({
 		this._animRequest = requestAnimationFrame(moveFn.bind(this));
 
 		DomEvent.preventDefault(e);
-	},
+	}
 
 	_onTouchEnd() {
 		if (!this._moved || !this._zooming) {
@@ -121,9 +123,5 @@ export const TouchZoom = Handler.extend({
 			this._map._resetView(this._center, this._map._limitZoom(this._zoom));
 		}
 	}
-});
 
-// @section Handlers
-// @property touchZoom: Handler
-// Touch zoom handler.
-Map.addInitHook('addHandler', 'touchZoom', TouchZoom);
+}

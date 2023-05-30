@@ -1,21 +1,14 @@
-import {Class} from './Class.js';
+import { Class } from './Class.js';
 import * as Util from './Util.js';
 
-/*
- * @class Evented
- * @aka L.Evented
- * @inherits Class
- *
+/**
  * A set of methods shared between event-powered classes (like `Map` and `Marker`). Generally, events allow you to execute some function when something happens with an object (e.g. the user clicks on the map, causing the map to fire `'click'` event).
- *
- * @example
  *
  * ```js
  * map.on('click', function(e) {
  * 	alert(e.latlng);
  * } );
  * ```
- *
  * Leaflet deals with event listeners by reference, so if you want to add a listener and then remove it, define it as a function:
  *
  * ```js
@@ -25,8 +18,8 @@ import * as Util from './Util.js';
  * map.off('click', onClick);
  * ```
  */
+export class Evented extends Class {
 
-export const Events = {
 	/* @method on(type: String, fn: Function, context?: Object): this
 	 * Adds a listener function (`fn`) to a particular event type of the object. You can optionally specify the context of the listener (object the this keyword will point to). You can also pass several space-separated types (e.g. `'click dblclick'`).
 	 *
@@ -53,7 +46,7 @@ export const Events = {
 		}
 
 		return this;
-	},
+	}
 
 	/* @method off(type: String, fn?: Function, context?: Object): this
 	 * Removes a previously added listener function. If no function is specified, it will remove all the listeners of that particular event from the object. Note that if you passed a custom context to `on`, you must pass the same context to `off` in order to remove the listener.
@@ -90,7 +83,7 @@ export const Events = {
 		}
 
 		return this;
-	},
+	}
 
 	// attach listener (without syntactic sugar now)
 	_on(type, fn, context, _once) {
@@ -117,7 +110,7 @@ export const Events = {
 		this._events = this._events || {};
 		this._events[type] = this._events[type] || [];
 		this._events[type].push(newListener);
-	},
+	}
 
 	_off(type, fn, context) {
 		let listeners,
@@ -164,7 +157,7 @@ export const Events = {
 			}
 			listeners.splice(index, 1);
 		}
-	},
+	}
 
 	// @method fire(type: String, data?: Object, propagate?: Boolean): this
 	// Fires an event of the specified type. You can optionally provide a data
@@ -203,7 +196,7 @@ export const Events = {
 		}
 
 		return this;
-	},
+	}
 
 	// @method listens(type: String, propagate?: Boolean): Boolean
 	// @method listens(type: String, fn: Function, context?: Object, propagate?: Boolean): Boolean
@@ -236,7 +229,7 @@ export const Events = {
 			}
 		}
 		return false;
-	},
+	}
 
 	// returns the index (number) or false
 	_listens(type, fn, context) {
@@ -259,9 +252,9 @@ export const Events = {
 				return i;
 			}
 		}
-		return false;
 
-	},
+		return false;
+	}
 
 	// @method once(…): this
 	// Behaves as [`on(…)`](#evented-on), except the listener will only get fired once and then removed.
@@ -284,7 +277,7 @@ export const Events = {
 		}
 
 		return this;
-	},
+	}
 
 	// @method addEventParent(obj: Evented): this
 	// Adds an event parent - an `Evented` that will receive propagated events
@@ -292,7 +285,7 @@ export const Events = {
 		this._eventParents = this._eventParents || {};
 		this._eventParents[Util.stamp(obj)] = obj;
 		return this;
-	},
+	}
 
 	// @method removeEventParent(obj: Evented): this
 	// Removes an event parent, so it will stop receiving propagated events
@@ -301,7 +294,7 @@ export const Events = {
 			delete this._eventParents[Util.stamp(obj)];
 		}
 		return this;
-	},
+	}
 
 	_propagateEvent(e) {
 		for (const parent of Object.values(this._eventParents)) {
@@ -311,31 +304,12 @@ export const Events = {
 			}, e), true);
 		}
 	}
-};
 
-// aliases; we should ditch those eventually
+	// Alias to [`on(…)`](#evented-on)
+	// TODO: remove alias?
+	addEventListener = this.on;
 
-// @method addEventListener(…): this
-// Alias to [`on(…)`](#evented-on)
-Events.addEventListener = Events.on;
-
-// @method removeEventListener(…): this
-// Alias to [`off(…)`](#evented-off)
-
-// @method clearAllEventListeners(…): this
-// Alias to [`off()`](#evented-off)
-Events.removeEventListener = Events.clearAllEventListeners = Events.off;
-
-// @method addOneTimeEventListener(…): this
-// Alias to [`once(…)`](#evented-once)
-Events.addOneTimeEventListener = Events.once;
-
-// @method fireEvent(…): this
-// Alias to [`fire(…)`](#evented-fire)
-Events.fireEvent = Events.fire;
-
-// @method hasEventListeners(…): Boolean
-// Alias to [`listens(…)`](#evented-listens)
-Events.hasEventListeners = Events.listens;
-
-export const Evented = Class.extend(Events);
+	// Alias to [`off(…)`](#evented-off)
+	// TODO: remove alias?
+	removeEventListener = this.off;
+}

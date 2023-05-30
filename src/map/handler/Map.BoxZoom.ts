@@ -144,8 +144,3 @@ export const BoxZoom = Handler.extend({
 		}
 	}
 });
-
-// @section Handlers
-// @property boxZoom: Handler
-// Box (shift-drag with mouse) zoom handler.
-Map.addInitHook('addHandler', 'boxZoom', BoxZoom);

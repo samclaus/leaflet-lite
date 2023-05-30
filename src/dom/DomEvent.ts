@@ -21,7 +21,7 @@ import {getScale} from './DomUtil.js';
 // @alternative
 // @function on(el: HTMLElement, eventMap: Object, context?: Object): this
 // Adds a set of type/listener pairs, e.g. `{click: onClick, mousemove: onMouseMove}`
-export function on(obj, types, fn, context) {
+export function on(obj, types, fn, context?) {
 
 	if (types && typeof types === 'object') {
 		for (const [type, listener] of Object.entries(types)) {
@@ -56,7 +56,7 @@ const eventsKey = '_leaflet_events';
 // @alternative
 // @function off(el: HTMLElement): this
 // Removes all previously added listeners from given HTMLElement
-export function off(obj, types, fn, context) {
+export function off(obj, types, fn, context?) {
 
 	if (arguments.length === 1) {
 		batchRemove(obj);
@@ -172,8 +172,7 @@ function removeOne(obj, type, fn, context, id) {
 // 	L.DomEvent.stopPropagation(ev);
 // });
 // ```
-export function stopPropagation(e) {
-
+export function stopPropagation<This>(this: This, e: Event & { originalEvent?: any; }): This {
 	if (e.stopPropagation) {
 		e.stopPropagation();
 	} else if (e.originalEvent) {  // In case of Leaflet event.
@@ -305,11 +304,3 @@ export function isExternalTarget(el, e) {
 	}
 	return (related !== el);
 }
-
-// @function addListener(…): this
-// Alias to [`L.DomEvent.on`](#domevent-on)
-export {on as addListener};
-
-// @function removeListener(…): this
-// Alias to [`L.DomEvent.off`](#domevent-off)
-export {off as removeListener};

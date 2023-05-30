@@ -1,15 +1,12 @@
-import {Map} from '../Map.js';
-import {Handler} from '../../core/Handler.js';
-import {on, off, stop} from '../../dom/DomEvent.js';
-import {toPoint} from '../../geometry/Point.js';
+import { Handler } from '../../core/Handler.js';
+import { off, on, stop } from '../../dom/DomEvent.js';
+import { toPoint } from '../../geometry/Point.js';
+import { Map } from '../Map.js';
 
 
-/*
+/**
  * L.Map.Keyboard is handling keyboard interaction with the map, enabled by default.
  */
-
-// @namespace Map
-// @section Keyboard Navigation Options
 Map.mergeOptions({
 	// @option keyboard: Boolean = true
 	// Makes the map focusable and allows users to navigate the map with keyboard
@@ -176,9 +173,3 @@ export const Keyboard = Handler.extend({
 		stop(e);
 	}
 });
-
-// @section Handlers
-// @section Handlers
-// @property keyboard: Handler
-// Keyboard navigation handler.
-Map.addInitHook('addHandler', 'keyboard', Keyboard);

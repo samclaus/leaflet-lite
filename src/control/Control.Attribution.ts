@@ -1,21 +1,14 @@
 
-import {Control} from './Control.js';
-import {Map} from '../map/Map.js';
 import * as Util from '../core/Util.js';
 import * as DomEvent from '../dom/DomEvent.js';
 import * as DomUtil from '../dom/DomUtil.js';
+import { Control } from './Control.js';
 
 const ukrainianFlag = '<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="12" height="8" viewBox="0 0 12 8" class="leaflet-attribution-flag"><path fill="#4C7BE1" d="M0 0h12v4H0z"/><path fill="#FFD500" d="M0 4h12v3H0z"/><path fill="#E0BC00" d="M0 7h12v1H0z"/></svg>';
 
-
-/*
- * @class Control.Attribution
- * @aka L.Control.Attribution
- * @inherits Control
- *
+/**
  * The attribution control allows you to display attribution data in a small text box on a map. It is put on the map by default unless you set its [`attributionControl` option](#map-attributioncontrol) to `false`, and it fetches attribution texts from layers with the [`getAttribution` method](#layer-getattribution) automatically. Extends Control.
  */
-
 export const Attribution = Control.extend({
 	// @section
 	// @aka Control.Attribution options
@@ -125,19 +118,5 @@ export const Attribution = Control.extend({
 		}
 
 		this._container.innerHTML = prefixAndAttribs.join(' <span aria-hidden="true">|</span> ');
-	}
-});
-
-// @namespace Map
-// @section Control options
-// @option attributionControl: Boolean = true
-// Whether a [attribution control](#control-attribution) is added to the map by default.
-Map.mergeOptions({
-	attributionControl: true
-});
-
-Map.addInitHook(function () {
-	if (this.options.attributionControl) {
-		new Attribution().addTo(this);
 	}
 });

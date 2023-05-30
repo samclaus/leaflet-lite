@@ -4,12 +4,9 @@ import { toLatLngBounds as latLngBounds } from '../../geo/LatLngBounds.js';
 import { toBounds } from '../../geometry/Bounds.js';
 import { Map } from '../Map.js';
 
-/*
+/**
  * L.Handler.MapDrag is used to make the map draggable (with panning inertia), enabled by default.
  */
-
-// @namespace Map
-// @section Interaction Options
 Map.mergeOptions({
 	// @option dragging: Boolean = true
 	// Whether the map is draggable with mouse/touch or not.
@@ -225,8 +222,3 @@ export const Drag = Handler.extend({
 		}
 	}
 });
-
-// @section Handlers
-// @property dragging: Handler
-// Map dragging handler (by both mouse and touch).
-Map.addInitHook('addHandler', 'dragging', Drag);

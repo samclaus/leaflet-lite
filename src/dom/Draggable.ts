@@ -107,6 +107,11 @@ export const Draggable = Evented.extend({
 		const first = e.touches ? e.touches[0] : e,
 		    sizedParent = DomUtil.getSizedParentNode(this._element);
 
+		if (!sizedParent) {
+			// TODO: better solution?
+			throw new Error("Draggable: could not find sized parent for element!");
+		}
+
 		this._startPoint = new Point(first.clientX, first.clientY);
 		this._startPos = DomUtil.getPosition(this._element);
 
