@@ -2,12 +2,7 @@ import {Evented} from '../core/Events.js';
 import {Map} from '../map/Map.js';
 import * as Util from '../core/Util.js';
 
-/*
- * @class Layer
- * @inherits Evented
- * @aka L.Layer
- * @aka ILayer
- *
+/**
  * A set of methods from the Layer base class that all Leaflet layers use.
  * Inherits all methods, options and events from `L.Evented`.
  *
@@ -25,12 +20,10 @@ import * as Util from '../core/Util.js';
  * @event remove: Event
  * Fired after the layer is removed from a map
  */
-
-
-export const Layer = Evented.extend({
+export class Layer extends Evented {
 
 	// Classes extending `L.Layer` will inherit the following options:
-	options: {
+	options = {
 		// @option pane: String = 'overlayPane'
 		// By default the layer will be added to the map's [overlay pane](#map-overlaypane). Overriding this option will cause the layer to be placed on another pane by default.
 		pane: 'overlayPane',
@@ -39,8 +32,11 @@ export const Layer = Evented.extend({
 		// String to be shown in the attribution control, e.g. "© OpenStreetMap contributors". It describes the layer data and is often a legal obligation towards copyright holders and tile providers.
 		attribution: null,
 
-		bubblingMouseEvents: true
-	},
+		bubblingMouseEvents: true,
+	};
+
+	_mapToAdd: Map | undefined;
+	_map: Map | undefined;
 
 	/* @section
 	 * Classes extending `L.Layer` will inherit the following methods:
@@ -48,16 +44,16 @@ export const Layer = Evented.extend({
 	 * @method addTo(map: Map|LayerGroup): this
 	 * Adds the layer to the given map or layer group.
 	 */
-	addTo(map) {
+	addTo(map: Map): this {
 		map.addLayer(this);
 		return this;
-	},
+	}
 
 	// @method remove: this
 	// Removes the layer from the map it is currently active on.
-	remove() {
+	remove(): this {
 		return this.removeFrom(this._map || this._mapToAdd);
-	},
+	}
 
 	// @method removeFrom(map: Map): this
 	// Removes the layer from the given map
@@ -65,37 +61,38 @@ export const Layer = Evented.extend({
 	// @alternative
 	// @method removeFrom(group: LayerGroup): this
 	// Removes the layer from the given `LayerGroup`
-	removeFrom(obj) {
-		if (obj) {
-			obj.removeLayer(this);
+	removeFrom(map: Map | undefined): this {
+		if (map) {
+			map.removeLayer(this);
 		}
 		return this;
-	},
+	}
 
-	// @method getPane(name? : String): HTMLElement
 	// Returns the `HTMLElement` representing the named pane on the map. If `name` is omitted, returns the pane for this layer.
-	getPane(name) {
-		return this._map.getPane(name ? (this.options[name] || name) : this.options.pane);
-	},
+	getPane(name: string): HTMLElement | undefined {
+		return this._map?.getPane(name ? (this.options[name] || name) : this.options.pane);
+	}
 
-	addInteractiveTarget(targetEl) {
-		this._map._targets[Util.stamp(targetEl)] = this;
+	addInteractiveTarget(targetEl: HTMLElement): this {
+		if (this._map) {
+			this._map._targets[Util.stamp(targetEl)] = this;
+		}
 		return this;
-	},
+	}
 
-	removeInteractiveTarget(targetEl) {
+	removeInteractiveTarget(targetEl: HTMLElement): this {
 		delete this._map._targets[Util.stamp(targetEl)];
 		return this;
-	},
+	}
 
 	// @method getAttribution: String
 	// Used by the `attribution control`, returns the [attribution option](#gridlayer-attribution).
 	getAttribution() {
 		return this.options.attribution;
-	},
+	}
 
 	_layerAdd(e) {
-		const map = e.target;
+		const map = e.target as Map;
 
 		// check in case layer gets added and then removed before the map is ready
 		if (!map.hasLayer(this)) { return; }
@@ -116,7 +113,8 @@ export const Layer = Evented.extend({
 		this.fire('add');
 		map.fire('layeradd', {layer: this});
 	}
-});
+
+}
 
 /* @section Extension methods
  * @uninheritable
@@ -270,4 +268,5 @@ Map.include({
 			this.setZoom(this._layersMinZoom);
 		}
 	}
+
 });

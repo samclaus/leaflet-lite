@@ -1,6 +1,14 @@
 import { Class } from './Class.js';
 import * as Util from './Util.js';
 
+export interface HandlerFn {
+	(this: any, ev: any): void;
+}
+
+export interface HandlerMap {
+	readonly [eventName: string]: HandlerFn;
+}
+
 /**
  * A set of methods shared between event-powered classes (like `Map` and `Marker`). Generally, events allow you to execute some function when something happens with an object (e.g. the user clicks on the map, causing the map to fire `'click'` event).
  *
@@ -20,6 +28,8 @@ import * as Util from './Util.js';
  */
 export class Evented extends Class {
 
+	readonly _events: { [key: string]: any } = Object.create(null);
+
 	/* @method on(type: String, fn: Function, context?: Object): this
 	 * Adds a listener function (`fn`) to a particular event type of the object. You can optionally specify the context of the listener (object the this keyword will point to). You can also pass several space-separated types (e.g. `'click dblclick'`).
 	 *
@@ -27,21 +37,20 @@ export class Evented extends Class {
 	 * @method on(eventMap: Object): this
 	 * Adds a set of type/listener pairs, e.g. `{click: onClick, mousemove: onMouseMove}`
 	 */
-	on(types, fn, context) {
+	on(types: string, handler: HandlerFn, context?: any, once?: boolean): this;
+	on(types: HandlerMap, context?: any, once?: boolean): this;
+	on(types: string | HandlerMap, handlerOrContext: any, contextOrOnce?: any, once?: boolean): this {
 
-		// types can be a map of types/handlers
-		if (typeof types === 'object') {
-			for (const [type, listener] of Object.entries(types)) {
-				// we don't process space-separated events here for performance;
-				// it's a hot path since Layer uses the on(obj) syntax
-				this._on(type, listener, fn);
+		if (typeof types === 'string') {
+			// types can be a string of space-separated words
+			for (const eventName of Util.splitWords(types)) {
+				this._on(eventName, handlerOrContext, contextOrOnce, once);
 			}
 		} else {
-			// types can be a string of space-separated words
-			types = Util.splitWords(types);
-
-			for (let i = 0, len = types.length; i < len; i++) {
-				this._on(types[i], fn, context);
+			for (const [type, handler] of Object.entries(types)) {
+				// we don't process space-separated events here for performance;
+				// it's a hot path since Layer uses the on(obj) syntax
+				this._on(type, handler, handlerOrContext, contextOrOnce);
 			}
 		}
 
@@ -86,12 +95,7 @@ export class Evented extends Class {
 	}
 
 	// attach listener (without syntactic sugar now)
-	_on(type, fn, context, _once) {
-		if (typeof fn !== 'function') {
-			console.warn(`wrong listener type: ${typeof fn}`);
-			return;
-		}
-
+	_on(type: string, fn: HandlerFn, context?: any, _once?: boolean): void {
 		// check if fn already there
 		if (this._listens(type, fn, context) !== false) {
 			return;
@@ -163,7 +167,7 @@ export class Evented extends Class {
 	// Fires an event of the specified type. You can optionally provide a data
 	// object — the first argument of the listener function will contain its
 	// properties. The event can optionally be propagated to event parents.
-	fire(type, data, propagate) {
+	fire(type, data?, propagate?) {
 		if (!this.listens(type, propagate)) { return this; }
 
 		const event = Util.extend({}, data, {
@@ -232,13 +236,15 @@ export class Evented extends Class {
 	}
 
 	// returns the index (number) or false
-	_listens(type, fn, context) {
+	_listens(type: string, fn: HandlerFn, context: any): number | false {
 		if (!this._events) {
 			return false;
 		}
 
 		const listeners = this._events[type] || [];
+
 		if (!fn) {
+			// TODO: this legit breaks the whole premise of this method
 			return !!listeners.length;
 		}
 
@@ -256,9 +262,11 @@ export class Evented extends Class {
 		return false;
 	}
 
-	// @method once(…): this
 	// Behaves as [`on(…)`](#evented-on), except the listener will only get fired once and then removed.
-	once(types, fn, context) {
+	// TODO: remove this and just add optional 'once' parameter to on() method (this is basically identical
+	// to the on() logic)
+	/** @deprecated */
+	once(types, fn, context): this {
 		// types can be a map of types/handlers
 		if (typeof types === 'object') {
 			for (const [type, listener] of Object.entries(types)) {

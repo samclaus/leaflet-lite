@@ -241,16 +241,20 @@ export function getPropagationPath(ev) {
 	return path;
 }
 
+export interface MouseEventLike {
+	readonly clientX: number;
+	readonly clientY: number;
+}
 
-// @function getMousePosition(ev: DOMEvent, container?: HTMLElement): Point
 // Gets normalized mouse position from a DOM event relative to the
 // `container` (border excluded) or to the whole page if not specified.
-export function getMousePosition(e, container) {
+export function getMousePosition(e: MouseEventLike, container?: HTMLElement): Point {
 	if (!container) {
 		return new Point(e.clientX, e.clientY);
 	}
 
-	const scale = getScale(container),
+	const
+		scale = getScale(container),
 	    offset = scale.boundingClientRect; // left and top  values are in page scale (like the event clientX/Y)
 
 	return new Point(

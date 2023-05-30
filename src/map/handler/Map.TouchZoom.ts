@@ -1,3 +1,4 @@
+import type { LatLng, Point } from '../../Leaflet.js';
 import Browser from '../../core/Browser.js';
 import { Handler } from '../../core/Handler.js';
 import * as DomEvent from '../../dom/DomEvent.js';
@@ -27,6 +28,10 @@ export class TouchZoom extends Handler {
 	_moved = false;
 	_zooming = false;
 	_animRequest = -1; // requestAnimationFrame handle
+	_startDist = 0;
+	_startZoom = 0;
+	_centerPoint: Point | undefined;
+	_center: LatLng | undefined;
 
 	addHooks() {
 		this._map._container.classList.add('leaflet-touch-zoom');
@@ -68,7 +73,8 @@ export class TouchZoom extends Handler {
 	_onTouchMove(e: TouchEvent) {
 		if (!e.touches || e.touches.length !== 2 || !this._zooming) { return; }
 
-		const map = this._map,
+		const
+			map = this._map,
 		    p1 = map.mouseEventToContainerPoint(e.touches[0]),
 		    p2 = map.mouseEventToContainerPoint(e.touches[1]),
 		    scale = p1.distanceTo(p2) / this._startDist;
