@@ -27,7 +27,7 @@ export class TouchZoom extends Handler {
 
 	_moved = false;
 	_zooming = false;
-	_animRequest = -1; // requestAnimationFrame handle
+	_animRequest = 0; // requestAnimationFrame handle
 	_startDist = 0;
 	_startZoom = 0;
 	_centerPoint: Point | undefined;

@@ -20,7 +20,7 @@ import * as Util from '../core/Util.js';
  * @event remove: Event
  * Fired after the layer is removed from a map
  */
-export class Layer extends Evented {
+export abstract class Layer extends Evented {
 
 	// Classes extending `L.Layer` will inherit the following options:
 	options = {
@@ -37,6 +37,8 @@ export class Layer extends Evented {
 
 	_mapToAdd: Map | undefined;
 	_map: Map | undefined;
+
+	abstract beforeAdd?(map: Map): void;
 
 	/* @section
 	 * Classes extending `L.Layer` will inherit the following methods:
@@ -150,9 +152,9 @@ export class Layer extends Evented {
  * @section Methods for Layers and Controls
  */
 Map.include({
-	// @method addLayer(layer: Layer): this
+
 	// Adds the given layer to the map
-	addLayer(layer) {
+	addLayer(this: Map, layer: Layer): Map {
 		if (!layer._layerAdd) {
 			throw new Error('The provided object is not a Layer.');
 		}
@@ -174,7 +176,7 @@ Map.include({
 
 	// @method removeLayer(layer: Layer): this
 	// Removes the given layer from the map.
-	removeLayer(layer) {
+	removeLayer(this: Map, layer: Layer): Map {
 		const id = Util.stamp(layer);
 
 		if (!this._layers[id]) { return this; }
@@ -190,7 +192,8 @@ Map.include({
 			layer.fire('remove');
 		}
 
-		layer._map = layer._mapToAdd = null;
+		layer._map = undefined;
+		layer._mapToAdd = undefined;
 
 		return this;
 	},

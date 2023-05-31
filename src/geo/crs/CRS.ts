@@ -71,8 +71,8 @@ export const CRS = {
 	},
 
 	// Returns the projection's bounds scaled and transformed for the provided `zoom`.
-	getProjectedBounds(zoom: number): Bounds | null {
-		if (this.infinite) { return null; }
+	getProjectedBounds(zoom: number): Bounds | undefined {
+		if (this.infinite) { return; }
 
 		const
 			b = this.projection.bounds,

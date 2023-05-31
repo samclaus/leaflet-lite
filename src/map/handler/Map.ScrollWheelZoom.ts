@@ -69,7 +69,7 @@ export const ScrollWheelZoom = Handler.extend({
 		    delta = map._limitZoom(zoom + (this._delta > 0 ? d4 : -d4)) - zoom;
 
 		this._delta = 0;
-		this._startTime = null;
+		this._startTime = undefined;
 
 		if (!delta) { return; }
 
