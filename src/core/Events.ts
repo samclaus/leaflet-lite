@@ -10,14 +10,18 @@ export interface HandlerMap {
 }
 
 /**
- * A set of methods shared between event-powered classes (like `Map` and `Marker`). Generally, events allow you to execute some function when something happens with an object (e.g. the user clicks on the map, causing the map to fire `'click'` event).
+ * A set of methods shared between event-powered classes (like `Map` and `Marker`).
+ * Generally, events allow you to execute some function when something happens with
+ * an object (e.g. the user clicks on the map, causing the map to fire `'click'`
+ * event).
  *
  * ```js
  * map.on('click', function(e) {
  * 	alert(e.latlng);
  * } );
  * ```
- * Leaflet deals with event listeners by reference, so if you want to add a listener and then remove it, define it as a function:
+ * Leaflet deals with event listeners by reference, so if you want to add a listener
+ * and then remove it, define it as a function:
  *
  * ```js
  * function onClick(e) { ... }
@@ -28,19 +32,17 @@ export interface HandlerMap {
  */
 export class Evented extends Class {
 
-	readonly _events: { [key: string]: any } = Object.create(null);
+	_events: { [key: string]: [HandlerFn, any, boolean][] } = Object.create(null);
+	_parents: Evented[] | undefined; // lazy allocate map since uncommon
 
-	/* @method on(type: String, fn: Function, context?: Object): this
-	 * Adds a listener function (`fn`) to a particular event type of the object. You can optionally specify the context of the listener (object the this keyword will point to). You can also pass several space-separated types (e.g. `'click dblclick'`).
-	 *
-	 * @alternative
-	 * @method on(eventMap: Object): this
-	 * Adds a set of type/listener pairs, e.g. `{click: onClick, mousemove: onMouseMove}`
+	/**
+	 * Adds a listener function (`fn`) to a particular event type of the object. You can optionally
+	 * specify the context of the listener (object the this keyword will point to). You can also
+	 * pass several space-separated types (e.g. `'click dblclick'`).
 	 */
 	on(types: string, handler: HandlerFn, context?: any, once?: boolean): this;
 	on(types: HandlerMap, context?: any, once?: boolean): this;
 	on(types: string | HandlerMap, handlerOrContext: any, contextOrOnce?: any, once?: boolean): this {
-
 		if (typeof types === 'string') {
 			// types can be a string of space-separated words
 			for (const eventName of Util.splitWords(types)) {
@@ -57,37 +59,26 @@ export class Evented extends Class {
 		return this;
 	}
 
-	/* @method off(type: String, fn?: Function, context?: Object): this
-	 * Removes a previously added listener function. If no function is specified, it will remove all the listeners of that particular event from the object. Note that if you passed a custom context to `on`, you must pass the same context to `off` in order to remove the listener.
-	 *
-	 * @alternative
-	 * @method off(eventMap: Object): this
-	 * Removes a set of type/listener pairs.
-	 *
-	 * @alternative
-	 * @method off: this
-	 * Removes all listeners to all events on the object. This includes implicitly attached events.
+	/**
+	 * Removes a previously added listener function. If no function is specified, it will remove
+	 * all the listeners of that particular event from the object. Note that if you passed a
+	 * custom context to `on`, you must pass the same context to `off` in order to remove the
+	 * listener.
 	 */
-	off(types, fn, context) {
-
-		if (!arguments.length) {
+	off(): this;
+	off(types: string, handler?: HandlerFn, context?: any): this;
+	off(types: HandlerMap, context?: any): this;
+	off(types?: string | HandlerMap, handlerOrContext?: any, context?: any): this {
+		if (types === undefined) {
 			// clear all listeners if called without arguments
-			delete this._events;
-
+			this._events = Object.create(null);
 		} else if (typeof types === 'object') {
-			for (const [type, listener] of Object.entries(types)) {
-				this._off(type, listener, fn);
+			for (const [type, handler] of Object.entries(types)) {
+				this._off(type, handler, handlerOrContext);
 			}
 		} else {
-			types = Util.splitWords(types);
-
-			const removeAll = arguments.length === 1;
-			for (let i = 0, len = types.length; i < len; i++) {
-				if (removeAll) {
-					this._off(types[i]);
-				} else {
-					this._off(types[i], fn, context);
-				}
+			for (const eventName of Util.splitWords(types)) {
+				this._off(eventName, handlerOrContext, context);
 			}
 		}
 
@@ -95,9 +86,9 @@ export class Evented extends Class {
 	}
 
 	// attach listener (without syntactic sugar now)
-	_on(type: string, fn: HandlerFn, context?: any, _once?: boolean): void {
+	_on(type: string, fn: HandlerFn, context?: any, once?: boolean): void {
 		// check if fn already there
-		if (this._listens(type, fn, context) !== false) {
+		if (this._indexOfHandler(type, fn, context) >= 0) {
 			return;
 		}
 
@@ -106,218 +97,141 @@ export class Evented extends Class {
 			context = undefined;
 		}
 
-		const newListener = {fn, ctx: context};
-		if (_once) {
-			newListener.once = true;
-		}
-
-		this._events = this._events || {};
-		this._events[type] = this._events[type] || [];
-		this._events[type].push(newListener);
+		(this._events[type] ||= []).push([fn, context, !!once]);
 	}
 
-	_off(type, fn, context) {
-		let listeners,
-		    i,
-		    len;
+	_off(type: string, fn?: HandlerFn, context?: any): void {
+		const listeners = this._events[type];
 
-		if (!this._events) {
-			return;
-		}
-
-		listeners = this._events[type];
 		if (!listeners) {
 			return;
 		}
 
-		if (arguments.length === 1) { // remove all
-			if (this._firingCount) {
-				// Set all removed listeners to noop
-				// so they are not called if remove happens in fire
-				for (i = 0, len = listeners.length; i < len; i++) {
-					listeners[i].fn = Util.falseFn;
-				}
-			}
+		if (!fn) {
 			// clear all listeners for a type if function isn't specified
 			delete this._events[type];
 			return;
 		}
 
-		if (typeof fn !== 'function') {
-			console.warn(`wrong listener type: ${typeof fn}`);
-			return;
-		}
+		const index = this._indexOfHandler(type, fn, context);
 
-		// find fn and remove it
-		const index = this._listens(type, fn, context);
-		if (index !== false) {
-			const listener = listeners[index];
-			if (this._firingCount) {
-				// set the removed listener to noop so that's not called if remove happens in fire
-				listener.fn = Util.falseFn;
-
-				/* copy array in case events are being fired */
-				this._events[type] = listeners = listeners.slice();
+		if (index >= 0) {
+			if (listeners.length === 1) {
+				listeners.length = 0;
+				delete this._events[type]
+			} else {
+				listeners.splice(index, 1);
 			}
-			listeners.splice(index, 1);
 		}
 	}
 
-	// @method fire(type: String, data?: Object, propagate?: Boolean): this
 	// Fires an event of the specified type. You can optionally provide a data
 	// object — the first argument of the listener function will contain its
 	// properties. The event can optionally be propagated to event parents.
-	fire(type, data?, propagate?) {
-		if (!this.listens(type, propagate)) { return this; }
-
+	fire(type: string, data?: any, propagate?: boolean): this {
 		const event = Util.extend({}, data, {
 			type,
 			target: this,
-			sourceTarget: data && data.sourceTarget || this
+			sourceTarget: data?.sourceTarget || this
 		});
+		const listeners = this._events[type];
 
-		if (this._events) {
-			const listeners = this._events[type];
-			if (listeners) {
-				this._firingCount = (this._firingCount + 1) || 1;
-				for (let i = 0, len = listeners.length; i < len; i++) {
-					const l = listeners[i];
-					// off overwrites l.fn, so we need to copy fn to a var
-					const fn = l.fn;
-					if (l.once) {
-						this.off(type, fn, l.ctx);
-					}
-					fn.call(l.ctx || this, event);
+		if (listeners) {
+			// NOTE: array is mutated in-place from within the loop if there are
+			// any one-time ('once') listeners
+			for (let i = 0; i < listeners.length; i++) {
+				const [fn, ctx, once] = listeners[i];
+
+				if (once) {
+					listeners.splice(i, 1);
+					--i;
 				}
 
-				this._firingCount--;
+				fn.call(ctx || this, event);
+			}
+			
+			// In case all listeners were one-time
+			if (!listeners.length) {
+				delete this._events[type];
 			}
 		}
 
-		if (propagate) {
+		if (propagate && this._parents) {
 			// propagate the event to parents (set with addEventParent)
-			this._propagateEvent(event);
+			for (const parent of this._parents) {
+				parent.fire(event.type, Util.extend({
+					layer: event.target,
+					propagatedFrom: event.target,
+					...event,
+				}, event), true);
+			}
 		}
 
 		return this;
 	}
 
-	// @method listens(type: String, propagate?: Boolean): Boolean
-	// @method listens(type: String, fn: Function, context?: Object, propagate?: Boolean): Boolean
 	// Returns `true` if a particular event type has any listeners attached to it.
 	// The verification can optionally be propagated, it will return `true` if parents have the listener attached to it.
-	listens(type, fn, context, propagate) {
-		if (typeof type !== 'string') {
-			console.warn('"string" type argument expected');
-		}
-
-		// we don't overwrite the input `fn` value, because we need to use it for propagation
-		let _fn = fn;
+	listens(type: string, propagate?: boolean): boolean;
+	listens(type: string, fn?: HandlerFn, context?: any, propagate?: boolean): boolean;
+	listens(type: string, fn?: HandlerFn | boolean, context?: any, propagate?: boolean): boolean {
 		if (typeof fn !== 'function') {
-			propagate = !!fn;
-			_fn = undefined;
-			context = undefined;
-		}
-
-		const listeners = this._events && this._events[type];
-		if (listeners && listeners.length) {
-			if (this._listens(type, _fn, context) !== false) {
+			if (this._events[type]?.length) {
 				return true;
 			}
+
+			propagate = fn;
+			fn = undefined;
+		} else if (this._indexOfHandler(type, fn, context) >= 0) {
+			return true;
 		}
 
-		if (propagate) {
+		if (propagate && this._parents) {
 			// also check parents for listeners if event propagates
-			for (const id in this._eventParents) {
-				if (this._eventParents[id].listens(type, fn, context, propagate)) { return true; }
-			}
-		}
-		return false;
-	}
-
-	// returns the index (number) or false
-	_listens(type: string, fn: HandlerFn, context: any): number | false {
-		if (!this._events) {
-			return false;
-		}
-
-		const listeners = this._events[type] || [];
-
-		if (!fn) {
-			// TODO: this legit breaks the whole premise of this method
-			return !!listeners.length;
-		}
-
-		if (context === this) {
-			// Less memory footprint.
-			context = undefined;
-		}
-
-		for (let i = 0, len = listeners.length; i < len; i++) {
-			if (listeners[i].fn === fn && listeners[i].ctx === context) {
-				return i;
+			for (const parent of this._parents) {
+				if (parent.listens(type, fn, context, true)) {
+					return true;
+				}
 			}
 		}
 
 		return false;
 	}
 
-	// Behaves as [`on(…)`](#evented-on), except the listener will only get fired once and then removed.
-	// TODO: remove this and just add optional 'once' parameter to on() method (this is basically identical
-	// to the on() logic)
-	/** @deprecated */
-	once(types, fn, context): this {
-		// types can be a map of types/handlers
-		if (typeof types === 'object') {
-			for (const [type, listener] of Object.entries(types)) {
-				// we don't process space-separated events here for performance;
-				// it's a hot path since Layer uses the on(obj) syntax
-				this._on(type, listener, fn, true);
+	// returns the index (number) or -1 if not found
+	_indexOfHandler(type: string, fn: HandlerFn, context: any): number {
+		const listeners = this._events[type];
+
+		if (listeners) {
+			if (context === this) {
+				// Less memory footprint.
+				context = undefined;
 			}
+	
+			for (let i = 0; i < listeners.length; i++) {
+				const listener = listeners[i];
 
-		} else {
-			// types can be a string of space-separated words
-			types = Util.splitWords(types);
-
-			for (let i = 0, len = types.length; i < len; i++) {
-				this._on(types[i], fn, context, true);
+				if (listener[0] === fn && listener[1] === context) {
+					return i;
+				}
 			}
 		}
 
-		return this;
+		return -1;
 	}
 
-	// @method addEventParent(obj: Evented): this
 	// Adds an event parent - an `Evented` that will receive propagated events
-	addEventParent(obj) {
-		this._eventParents = this._eventParents || {};
-		this._eventParents[Util.stamp(obj)] = obj;
-		return this;
+	addEventParent(parent: Evented): void {
+		(this._parents ||= []).push(parent);
 	}
 
-	// @method removeEventParent(obj: Evented): this
 	// Removes an event parent, so it will stop receiving propagated events
-	removeEventParent(obj) {
-		if (this._eventParents) {
-			delete this._eventParents[Util.stamp(obj)];
-		}
-		return this;
-	}
+	removeEventParent(parent: Evented): void {
+		const index = this._parents?.indexOf(parent);
 
-	_propagateEvent(e) {
-		for (const parent of Object.values(this._eventParents)) {
-			parent.fire(e.type, Util.extend({
-				layer: e.target,
-				propagatedFrom: e.target
-			}, e), true);
+		if (typeof index === "number") {
+			this._parents!.splice(index, 1);
 		}
 	}
 
-	// Alias to [`on(…)`](#evented-on)
-	// TODO: remove alias?
-	addEventListener = this.on;
-
-	// Alias to [`off(…)`](#evented-off)
-	// TODO: remove alias?
-	removeEventListener = this.off;
 }

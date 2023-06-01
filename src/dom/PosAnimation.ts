@@ -13,10 +13,10 @@ import * as DomUtil from '../dom/DomUtil.js';
  * 	pos.y -= 25;
  * 	var fx = new L.PosAnimation();
  *
- * 	fx.once('end',function() {
+ * 	fx.on('end',function() {
  * 		pos.y += 25;
  * 		fx.run(myPositionMarker._icon, pos, 0.8);
- * 	});
+ * 	}, undefined, true);
  *
  * 	fx.run(myPositionMarker._icon, pos, 0.3);
  * });

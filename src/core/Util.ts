@@ -17,15 +17,13 @@ export function extend(dest: any, ...args: any[]): any {
 	return dest;
 }
 
-// @property lastId: Number
 // Last unique ID used by [`stamp()`](#util-stamp)
 export let lastId = 0;
 
-// @function stamp(obj: Object): Number
 // Returns the unique ID of an object, assigning it one if it doesn't have it.
 export function stamp(obj: any): number {
-	if (!('_leaflet_id' in obj)) {
-		obj['_leaflet_id'] = ++lastId;
+	if (typeof obj._leaflet_id !== "number") {
+		obj._leaflet_id = ++lastId;
 	}
 	return obj._leaflet_id;
 }

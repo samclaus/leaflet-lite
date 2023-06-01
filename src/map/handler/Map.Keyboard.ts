@@ -1,17 +1,7 @@
+import { Point } from '../../Leaflet.js';
 import { Handler } from '../../core/Handler.js';
 import { off, on, stop } from '../../dom/DomEvent.js';
 import { Map } from '../Map.js';
-
-Map.mergeOptions({
-	// @option keyboard: Boolean = true
-	// Makes the map focusable and allows users to navigate the map with keyboard
-	// arrows and `+`/`-` keys.
-	keyboard: true,
-
-	// @option keyboardPanDelta: Number = 80
-	// Amount of pixels to pan when pressing an arrow key.
-	keyboardPanDelta: 80
-});
 
 const keyCodes = {
 	left:    ['ArrowLeft'],
@@ -28,7 +18,7 @@ const keyCodes = {
 export class Keyboard extends Handler {
 
 	_focused = false;
-	_panKeys: Dict<number> = Object.create(null);
+	_panKeys: Dict<Point> = Object.create(null);
 	_zoomKeys: Dict<number> = Object.create(null);
 
 	constructor(map: Map) {
@@ -99,22 +89,22 @@ export class Keyboard extends Handler {
 
 	_setPanDelta(panDelta: number): void {
 		const
-			keys = this._panKeys = {} as { [key: string]: any },
+			keys: typeof this._panKeys = this._panKeys = {},
 		    codes = keyCodes;
 
 		let i, len;
 
 		for (i = 0, len = codes.left.length; i < len; i++) {
-			keys[codes.left[i]] = [-1 * panDelta, 0];
+			keys[codes.left[i]] = new Point(-1 * panDelta, 0);
 		}
 		for (i = 0, len = codes.right.length; i < len; i++) {
-			keys[codes.right[i]] = [panDelta, 0];
+			keys[codes.right[i]] = new Point(panDelta, 0);
 		}
 		for (i = 0, len = codes.down.length; i < len; i++) {
-			keys[codes.down[i]] = [0, panDelta];
+			keys[codes.down[i]] = new Point(0, panDelta);
 		}
 		for (i = 0, len = codes.up.length; i < len; i++) {
-			keys[codes.up[i]] = [0, -1 * panDelta];
+			keys[codes.up[i]] = new Point(0, -1 * panDelta);
 		}
 	}
 
@@ -168,11 +158,9 @@ export class Keyboard extends Handler {
 				}
 			}
 		} else if (key in this._zoomKeys) {
-			map.setZoom(map.getZoom() + (e.shiftKey ? 3 : 1) * this._zoomKeys[key]);
-
+			map.setZoom(map._zoom + (e.shiftKey ? 3 : 1) * this._zoomKeys[key]);
 		} else if (key === 'Escape' && map._popup && map._popup.options.closeOnEscapeKey) {
 			map.closePopup();
-
 		} else {
 			return;
 		}

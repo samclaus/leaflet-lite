@@ -55,9 +55,9 @@ export const Attribution = Control.extend({
 	_addAttribution(ev) {
 		if (ev.layer.getAttribution) {
 			this.addAttribution(ev.layer.getAttribution());
-			ev.layer.once('remove', function () {
+			ev.layer.on('remove', function () {
 				this.removeAttribution(ev.layer.getAttribution());
-			}, this);
+			}, this, true);
 		}
 	},
 

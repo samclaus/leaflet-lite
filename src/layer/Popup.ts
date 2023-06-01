@@ -253,7 +253,8 @@ export const Popup = DivOverlay.extend({
 	},
 
 	_animateZoom(e) {
-		const pos = this._map._latLngToNewLayerPoint(this._latlng, e.zoom, e.center),
+		const
+			pos = this._map._latLngToNewLayerPoint(this._latlng, e.zoom, e.center),
 		    anchor = this._getAnchor();
 		DomUtil.setPosition(this._container, pos.add(anchor));
 	},
@@ -314,9 +315,9 @@ export const Popup = DivOverlay.extend({
 		}
 	},
 
-	_getAnchor() {
+	_getAnchor(): Point {
 		// Where should we anchor the popup on the source layer?
-		return toPoint(this._source && this._source._getPopupAnchor ? this._source._getPopupAnchor() : [0, 0]);
+		return this._source?._getPopupAnchor?.() || new Point(0, 0);
 	}
 
 });

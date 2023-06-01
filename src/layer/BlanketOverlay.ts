@@ -4,7 +4,7 @@ import * as Util from '../core/Util.js';
 import * as DomEvent from '../dom/DomEvent.js';
 import {Bounds} from '../geometry/Bounds.js';
 
-/*
+/**
  * @class BlanketOverlay
  * @inherits Layer
  * @aka L.BlanketOverlay
@@ -15,7 +15,6 @@ import {Bounds} from '../geometry/Bounds.js';
  * Do not use this class directly. It's meant for `Renderer`, and for plugins
  * that rely on one single HTML element
  */
-
 export const BlanketOverlay = Layer.extend({
 	// @section
 	// @aka BlanketOverlay options

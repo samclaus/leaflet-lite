@@ -191,13 +191,11 @@ export function disableScrollPropagation(el) {
 	return this;
 }
 
-// @function disableClickPropagation(el: HTMLElement): this
 // Adds `stopPropagation` to the element's `'click'`, `'dblclick'`, `'contextmenu'`,
 // `'mousedown'` and `'touchstart'` events (plus browser variants).
-export function disableClickPropagation(el) {
+export function disableClickPropagation(el: HTMLElement): void {
 	on(el, 'mousedown touchstart dblclick contextmenu', stopPropagation);
-	el['_leaflet_disable_click'] = true;
-	return this;
+	el._leaflet_disable_click = true;
 }
 
 // @function preventDefault(ev: DOMEvent): this
@@ -281,12 +279,11 @@ export function getWheelPxFactor() {
 // pixels scrolled (negative if scrolling down).
 // Events from pointing devices without precise scrolling are mapped to
 // a best guess of 60 pixels.
-export function getWheelDelta(e) {
+export function getWheelDelta(e: WheelEvent): number {
 	return (e.deltaY && e.deltaMode === 0) ? -e.deltaY / getWheelPxFactor() : // Pixels
 	       (e.deltaY && e.deltaMode === 1) ? -e.deltaY * 20 : // Lines
 	       (e.deltaY && e.deltaMode === 2) ? -e.deltaY * 60 : // Pages
 	       (e.deltaX || e.deltaZ) ? 0 :	// Skip horizontal/depth wheel events
-	       e.wheelDelta ? (e.wheelDeltaY || e.wheelDelta) / 2 : // Legacy IE pixels
 	       (e.detail && Math.abs(e.detail) < 32765) ? -e.detail * 20 : // Legacy Moz lines
 	       e.detail ? e.detail / -32765 * 60 : // Legacy Moz pages
 	       0;

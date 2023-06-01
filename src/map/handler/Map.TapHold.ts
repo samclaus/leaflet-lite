@@ -1,38 +1,28 @@
-import Browser from '../../core/Browser.js';
 import { Handler } from '../../core/Handler.js';
 import * as DomEvent from '../../dom/DomEvent.js';
 import { Point } from '../../geometry/Point.js';
-import { Map } from '../Map.js';
+
+const tapHoldDelay = 600;
 
 /**
  * L.Map.TapHold is used to simulate `contextmenu` event on long hold,
  * which otherwise is not fired by mobile Safari.
  */
+export class TapHold extends Handler {
 
-const tapHoldDelay = 600;
+	_holdTimeout: number | undefined;
+	_startPos!: Point; // TODO: null safety
+	_newPos!: Point; // TODO: null safety
 
-Map.mergeOptions({
-	// @section Touch interaction options
-	// @option tapHold: Boolean
-	// Enables simulation of `contextmenu` event, default is `true` for mobile Safari.
-	tapHold: Browser.touchNative && Browser.safari && Browser.mobile,
-
-	// @option tapTolerance: Number = 15
-	// The max number of pixels a user can shift his finger during touch
-	// for it to be considered a valid tap.
-	tapTolerance: 15
-});
-
-export const TapHold = Handler.extend({
-	addHooks() {
+	addHooks(): void {
 		DomEvent.on(this._map._container, 'touchstart', this._onDown, this);
-	},
+	}
 
-	removeHooks() {
+	removeHooks(): void {
 		DomEvent.off(this._map._container, 'touchstart', this._onDown, this);
-	},
+	}
 
-	_onDown(e) {
+	_onDown(e: TouchEvent): void {
 		clearTimeout(this._holdTimeout);
 		if (e.touches.length !== 1) { return; }
 
@@ -51,29 +41,29 @@ export const TapHold = Handler.extend({
 
 		DomEvent.on(document, 'touchend touchcancel contextmenu', this._cancel, this);
 		DomEvent.on(document, 'touchmove', this._onMove, this);
-	},
+	}
 
-	_cancelClickPrevent: function _cancelClickPrevent() {
+	_cancelClickPrevent = function _cancelClickPrevent(): void {
 		DomEvent.off(document, 'touchend', DomEvent.preventDefault);
 		DomEvent.off(document, 'touchend touchcancel', _cancelClickPrevent);
-	},
+	};
 
-	_cancel() {
+	_cancel(): void {
 		clearTimeout(this._holdTimeout);
 		DomEvent.off(document, 'touchend touchcancel contextmenu', this._cancel, this);
 		DomEvent.off(document, 'touchmove', this._onMove, this);
-	},
+	}
 
-	_onMove(e) {
+	_onMove(e: TouchEvent): void {
 		const first = e.touches[0];
 		this._newPos = new Point(first.clientX, first.clientY);
-	},
+	}
 
-	_isTapValid() {
+	_isTapValid(): boolean {
 		return this._newPos.distanceTo(this._startPos) <= this._map.options.tapTolerance;
-	},
+	}
 
-	_simulateEvent(type, e) {
+	_simulateEvent(type: string, e: Touch): void {
 		const simulatedEvent = new MouseEvent(type, {
 			bubbles: true,
 			cancelable: true,
@@ -87,8 +77,9 @@ export const TapHold = Handler.extend({
 			// buttons: 2
 		});
 
-		simulatedEvent._simulated = true;
-
-		e.target.dispatchEvent(simulatedEvent);
+		if (e.target) {
+			e.target.dispatchEvent(simulatedEvent);
+		}
 	}
-});
+
+}

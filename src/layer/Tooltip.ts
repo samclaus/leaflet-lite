@@ -1,5 +1,5 @@
 import {DivOverlay} from './DivOverlay.js';
-import {toPoint} from '../geometry/Point.js';
+import {Point, toPoint} from '../geometry/Point.js';
 import {Map} from '../map/Map.js';
 import {Layer} from './Layer.js';
 import * as DomUtil from '../dom/DomUtil.js';
@@ -211,9 +211,9 @@ export const Tooltip = DivOverlay.extend({
 		this._setPosition(pos);
 	},
 
-	_getAnchor() {
+	_getAnchor(): Point {
 		// Where should we anchor the tooltip on the source layer?
-		return toPoint(this._source && this._source._getTooltipAnchor && !this.options.sticky ? this._source._getTooltipAnchor() : [0, 0]);
+		return (!this.options.sticky && this._source?._getTooltipAnchor?.()) || new Point(0, 0);
 	}
 
 });
@@ -420,10 +420,10 @@ Layer.include({
 		// If the map is moving, we will show the tooltip after it's done.
 		if (this._map.dragging && this._map.dragging.moving() && !this._openOnceFlag) {
 			this._openOnceFlag = true;
-			this._map.once('moveend', () => {
+			this._map.on('moveend', () => {
 				this._openOnceFlag = false;
 				this._openTooltip(e);
-			});
+			}, undefined, true);
 			return;
 		}
 

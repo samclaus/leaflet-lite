@@ -31,12 +31,10 @@ export class Bounds {
 
 	// TODO: figure out where this is called and make sure Bounds is always constructed
 	// with at least a single Point (also make constructor monomorphic)
-	constructor(a, b) {
-		if (!a) { return; }
-	
-		const points = b ? [a, b] : a;
-	
-		for (let i = 0; i < points.length; i++) {
+
+	constructor(...points: readonly Point[]) {
+		// TODO: need to enforce that enough points are passed, preferably without guarding here
+		for (let i = 0, len = points.length; i < len; i++) {
 			this.extend(points[i]);
 		}
 	}

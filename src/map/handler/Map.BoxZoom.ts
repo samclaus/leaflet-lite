@@ -4,60 +4,54 @@ import * as DomUtil from '../../dom/DomUtil.js';
 import * as DomEvent from '../../dom/DomEvent.js';
 import {LatLngBounds} from '../../geo/LatLngBounds.js';
 import {Bounds} from '../../geometry/Bounds.js';
+import type { Point } from '../../Leaflet.js';
 
-/*
+/**
  * L.Handler.BoxZoom is used to add shift-drag zoom interaction to the map
  * (zoom to a selected bounding box), enabled by default.
  */
+export class BoxZoom extends Handler {
 
-// @namespace Map
-// @section Interaction Options
-Map.mergeOptions({
-	// @option boxZoom: Boolean = true
-	// Whether the map can be zoomed to a rectangular area specified by
-	// dragging the mouse while pressing the shift key.
-	boxZoom: true
-});
+	_container: HTMLElement;
+	_pane: any; // TODO: type?
+	_resetStateTimeout = 0;
+	_moved = false;
+	_startPoint: Point | undefined;
+	_box: HTMLElement | undefined;
 
-export const BoxZoom = Handler.extend({
-	initialize(map) {
-		this._map = map;
+	constructor(map: Map) {
+		super(map);
+
 		this._container = map._container;
 		this._pane = map._panes.overlayPane;
-		this._resetStateTimeout = 0;
+
 		map.on('unload', this._destroy, this);
-	},
+	}
 
-	addHooks() {
+	addHooks(): void {
 		DomEvent.on(this._container, 'mousedown', this._onMouseDown, this);
-	},
+	}
 
-	removeHooks() {
+	removeHooks(): void {
 		DomEvent.off(this._container, 'mousedown', this._onMouseDown, this);
-	},
+	}
 
-	moved() {
-		return this._moved;
-	},
-
-	_destroy() {
+	_destroy(): void {
 		this._pane.remove();
 		delete this._pane;
-	},
+	}
 
-	_resetState() {
+	_resetState(): void {
 		this._resetStateTimeout = 0;
 		this._moved = false;
-	},
+	}
 
-	_clearDeferredResetState() {
-		if (this._resetStateTimeout !== 0) {
-			clearTimeout(this._resetStateTimeout);
-			this._resetStateTimeout = 0;
-		}
-	},
+	_clearDeferredResetState(): void {
+		clearTimeout(this._resetStateTimeout);
+		this._resetStateTimeout = 0;
+	}
 
-	_onMouseDown(e) {
+	_onMouseDown(e: MouseEvent): void {
 		if (!e.shiftKey || (e.button !== 0)) { return false; }
 
 		// Clear the deferred resetState if it hasn't executed yet, otherwise it
@@ -76,30 +70,29 @@ export const BoxZoom = Handler.extend({
 			mouseup: this._onMouseUp,
 			keydown: this._onKeyDown
 		}, this);
-	},
+	}
 
 	_onMouseMove(e) {
 		if (!this._moved) {
 			this._moved = true;
-
 			this._box = DomUtil.create('div', 'leaflet-zoom-box', this._container);
 			this._container.classList.add('leaflet-crosshair');
-
 			this._map.fire('boxzoomstart');
 		}
 
 		this._point = this._map.mouseEventToContainerPoint(e);
 
-		const bounds = new Bounds(this._point, this._startPoint),
+		const
+			bounds = new Bounds(this._point, this._startPoint),
 		    size = bounds.getSize();
 
 		DomUtil.setPosition(this._box, bounds.min);
 
 		this._box.style.width  = `${size.x}px`;
 		this._box.style.height = `${size.y}px`;
-	},
+	}
 
-	_finish() {
+	_finish(): void {
 		if (this._moved) {
 			this._box.remove();
 			this._container.classList.remove('leaflet-crosshair');
@@ -107,16 +100,15 @@ export const BoxZoom = Handler.extend({
 
 		DomUtil.enableTextSelection();
 		DomUtil.enableImageDrag();
-
 		DomEvent.off(document, {
 			contextmenu: DomEvent.stop,
 			mousemove: this._onMouseMove,
 			mouseup: this._onMouseUp,
 			keydown: this._onKeyDown
 		}, this);
-	},
+	}
 
-	_onMouseUp(e) {
+	_onMouseUp(e: MouseEvent): void {
 		if (e.button !== 0) { return; }
 
 		this._finish();
@@ -128,19 +120,21 @@ export const BoxZoom = Handler.extend({
 		this._resetStateTimeout = setTimeout(this._resetState.bind(this), 0);
 
 		const bounds = new LatLngBounds(
-		        this._map.containerPointToLatLng(this._startPoint),
-		        this._map.containerPointToLatLng(this._point));
+			this._map.containerPointToLatLng(this._startPoint),
+			this._map.containerPointToLatLng(this._point),
+		);
 
 		this._map
 			.fitBounds(bounds)
 			.fire('boxzoomend', {boxZoomBounds: bounds});
-	},
+	}
 
-	_onKeyDown(e) {
+	_onKeyDown(e: KeyboardEvent): void {
 		if (e.code === 'Escape') {
 			this._finish();
 			this._clearDeferredResetState();
 			this._resetState();
 		}
 	}
-});
+
+}
