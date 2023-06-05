@@ -1,15 +1,10 @@
 import {Icon} from './Icon.js';
-import {toPoint as point} from '../../geometry/Point.js';
+import {Point, toPoint as point} from '../../geometry/Point.js';
 
-/*
- * @class DivIcon
- * @aka L.DivIcon
- * @inherits Icon
- *
+/**
  * Represents a lightweight icon for markers that uses a simple `<div>`
- * element instead of an image. Inherits from `Icon` but ignores the `iconUrl` and shadow options.
+ * element instead of an image. Inherits from `Icon` but ignores the `iconUrl` option.
  *
- * @example
  * ```js
  * var myIcon = L.divIcon({className: 'my-div-icon'});
  * // you can set .my-div-icon styles in CSS
@@ -19,9 +14,9 @@ import {toPoint as point} from '../../geometry/Point.js';
  *
  * By default, it has a 'leaflet-div-icon' CSS class and is styled as a little white square with a shadow.
  */
+export class DivIcon extends Icon {
 
-export const DivIcon = Icon.extend({
-	options: {
+	options = {
 		// @section
 		// @aka DivIcon options
 		iconSize: [12, 12], // also can be set through CSS
@@ -32,42 +27,30 @@ export const DivIcon = Icon.extend({
 		// @option html: String|HTMLElement = ''
 		// Custom HTML code to put inside the div element, empty by default. Alternatively,
 		// an instance of `HTMLElement`.
-		html: false,
+		html: '',
 
-		// @option bgPos: Point = [0, 0]
 		// Optional relative position of the background, in pixels
-		bgPos: null,
+		bgPos: new Point(0, 0),
 
-		className: 'leaflet-div-icon'
-	},
+		className: 'leaflet-div-icon',
+	};
 
-	createIcon(oldIcon) {
-		const div = (oldIcon && oldIcon.tagName === 'DIV') ? oldIcon : document.createElement('div'),
-		    options = this.options;
+	createIcon(el: HTMLElement = document.createElement('div')): HTMLElement {
+		const {html, bgPos} = this.options;
 
-		if (options.html instanceof Element) {
-			div.replaceChildren();
-			div.appendChild(options.html);
+		if (html instanceof Element) {
+			el.replaceChildren();
+			el.appendChild(html);
 		} else {
-			div.innerHTML = options.html !== false ? options.html : '';
+			el.innerHTML = html;
 		}
 
-		if (options.bgPos) {
-			const bgPos = point(options.bgPos);
-			div.style.backgroundPosition = `${-bgPos.x}px ${-bgPos.y}px`;
+		if (bgPos) {
+			el.style.backgroundPosition = `${-bgPos.x}px ${-bgPos.y}px`;
 		}
-		this._setIconStyles(div, 'icon');
+		this._setIconStyles(el);
 
-		return div;
-	},
-
-	createShadow() {
-		return null;
+		return el;
 	}
-});
 
-// @factory L.divIcon(options: DivIcon options)
-// Creates a `DivIcon` instance with the given options.
-export function divIcon(options) {
-	return new DivIcon(options);
 }

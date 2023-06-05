@@ -78,11 +78,10 @@ export function wrapNum(x, range, includeMax) {
 // Returns a function which always returns `false`.
 export function falseFn() { return false; }
 
-// @function formatNum(num: Number, precision?: Number|false): Number
 // Returns the number `num` rounded with specified `precision`.
 // The default `precision` value is 6 decimal places.
 // `false` can be passed to skip any processing (can be useful to avoid round-off errors).
-export function formatNum(num, precision?: number | false) {
+export function formatNum(num: number, precision?: number | false) {
 	if (precision === false) { return num; }
 	const pow = Math.pow(10, precision === undefined ? 6 : precision);
 	return Math.round(num * pow) / pow;
@@ -94,9 +93,9 @@ export function splitWords(str: string): string[] {
 	return str.trim().split(/\s+/);
 }
 
-// @function setOptions(obj: Object, options: Object): Object
-// Merges the given properties to the `options` of the `obj` object, returning the resulting options. See `Class options`. Has an `L.setOptions` shortcut.
-export function setOptions(obj, options?) {
+// Merges the given properties to the `options` of the `obj` object, returning the resulting
+// options. See `Class options`. Has an `L.setOptions` shortcut.
+export function setOptions(obj: { options?: any; }, options?: any): any {
 	if (!Object.hasOwn(obj, 'options')) {
 		obj.options = obj.options ? Object.create(obj.options) : {};
 	}

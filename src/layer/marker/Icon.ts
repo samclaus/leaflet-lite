@@ -1,165 +1,99 @@
-import {Class} from '../../core/Class.js';
-import {setOptions} from '../../core/Util.js';
-import {toPoint as point} from '../../geometry/Point.js';
-import Browser from '../../core/Browser.js';
+import { Point } from '../../geometry/Point.js';
 
-/*
- * @class Icon
- * @aka L.Icon
- *
+export interface IconOptions {
+	/**
+	 * The URL to the icon image (absolute or relative to your script path).
+	 */
+	iconUrl: string;
+	/**
+	 * Width/height of the icon in pixels.
+	 */
+	iconSize: Point;
+	/**
+	 * The coordinates of the "tip" of the icon (relative to its top left corner). The icon
+	 * will be aligned so that this point is at the marker's geographical location. Centered
+	 * by default if size is specified, also can be set in CSS with negative margins.
+	 */
+	iconAnchor?: Point | undefined;
+	/**
+	 * The coordinates of the point from which popups will "open", relative to the icon anchor.
+	 */
+	popupAnchor?: Point;
+	/**
+	 * The coordinates of the point from which tooltips will "open", relative to the icon anchor.
+	 */
+	tooltipAnchor?: Point;
+	/**
+	 * A custom class name to assign to icon <img> element. Empty by default.
+	 */
+	className?: string;
+	/**
+	 * Whether the crossOrigin attribute will be added to the tiles.
+	 * If a String is provided, all tiles will have their crossOrigin attribute set to the String provided. This is needed if you want to access tile pixel data.
+	 * Refer to [CORS Settings](https://developer.mozilla.org/en-US/docs/Web/HTML/CORS_settings_attributes) for valid String values.
+	 */
+	crossOrigin?: string | boolean;
+}
+
+/**
  * Represents an icon to provide when creating a marker.
- *
- * @example
  *
  * ```js
  * var myIcon = L.icon({
  *     iconUrl: 'my-icon.png',
- *     iconRetinaUrl: 'my-icon@2x.png',
  *     iconSize: [38, 95],
  *     iconAnchor: [22, 94],
  *     popupAnchor: [-3, -76],
- *     shadowUrl: 'my-icon-shadow.png',
- *     shadowRetinaUrl: 'my-icon-shadow@2x.png',
- *     shadowSize: [68, 95],
- *     shadowAnchor: [22, 94]
  * });
  *
  * L.marker([50.505, 30.57], {icon: myIcon}).addTo(map);
  * ```
  *
- * `L.Icon.Default` extends `L.Icon` and is the blue icon Leaflet uses for markers by default.
+ * Use the `defaultIcon()` factory to instantiate the icon Leaflet uses for markers by default.
  *
  */
+export class Icon {
 
-export const Icon = Class.extend({
+	options: Required<IconOptions>;
 
-	/* @section
-	 * @aka Icon options
-	 *
-	 * @option iconUrl: String = null
-	 * **(required)** The URL to the icon image (absolute or relative to your script path).
-	 *
-	 * @option iconRetinaUrl: String = null
-	 * The URL to a retina sized version of the icon image (absolute or relative to your
-	 * script path). Used for Retina screen devices.
-	 *
-	 * @option iconSize: Point = null
-	 * Size of the icon image in pixels.
-	 *
-	 * @option iconAnchor: Point = null
-	 * The coordinates of the "tip" of the icon (relative to its top left corner). The icon
-	 * will be aligned so that this point is at the marker's geographical location. Centered
-	 * by default if size is specified, also can be set in CSS with negative margins.
-	 *
-	 * @option popupAnchor: Point = [0, 0]
-	 * The coordinates of the point from which popups will "open", relative to the icon anchor.
-	 *
-	 * @option tooltipAnchor: Point = [0, 0]
-	 * The coordinates of the point from which tooltips will "open", relative to the icon anchor.
-	 *
-	 * @option shadowUrl: String = null
-	 * The URL to the icon shadow image. If not specified, no shadow image will be created.
-	 *
-	 * @option shadowRetinaUrl: String = null
-	 *
-	 * @option shadowSize: Point = null
-	 * Size of the shadow image in pixels.
-	 *
-	 * @option shadowAnchor: Point = null
-	 * The coordinates of the "tip" of the shadow (relative to its top left corner) (the same
-	 * as iconAnchor if not specified).
-	 *
-	 * @option className: String = ''
-	 * A custom class name to assign to both icon and shadow images. Empty by default.
-	 */
+	constructor(options: IconOptions) {
+		// TODO: how to make TypeScript not complain? This code should be correct
+		this.options = {
+			popupAnchor: new Point(0, 0),
+			tooltipAnchor: new Point(0, 0),
+			crossOrigin: false,
+			className: '',
+			...options,
+		} as any;
+	}
 
-	options: {
-		popupAnchor: [0, 0],
-		tooltipAnchor: [0, 0],
-
-		// @option crossOrigin: Boolean|String = false
-		// Whether the crossOrigin attribute will be added to the tiles.
-		// If a String is provided, all tiles will have their crossOrigin attribute set to the String provided. This is needed if you want to access tile pixel data.
-		// Refer to [CORS Settings](https://developer.mozilla.org/en-US/docs/Web/HTML/CORS_settings_attributes) for valid String values.
-		crossOrigin: false
-	},
-
-	initialize(options) {
-		setOptions(this, options);
-	},
-
-	// @method createIcon(oldIcon?: HTMLElement): HTMLElement
 	// Called internally when the icon has to be shown, returns a `<img>` HTML element
 	// styled according to the options.
-	createIcon(oldIcon) {
-		return this._createIcon('icon', oldIcon);
-	},
+	createIcon(el: HTMLImageElement = document.createElement("img")): HTMLImageElement {
+		const {iconUrl, crossOrigin} = this.options as IconOptions;
+		el.src = iconUrl;
+		this._setIconStyles(el);
 
-	// @method createShadow(oldIcon?: HTMLElement): HTMLElement
-	// As `createIcon`, but for the shadow beneath it.
-	createShadow(oldIcon) {
-		return this._createIcon('shadow', oldIcon);
-	},
-
-	_createIcon(name, oldIcon) {
-		const src = this._getIconUrl(name);
-
-		if (!src) {
-			if (name === 'icon') {
-				throw new Error('iconUrl not set in Icon options (see the docs).');
-			}
-			return null;
+		if (crossOrigin || crossOrigin === '') {
+			el.crossOrigin = crossOrigin === true ? '' : crossOrigin;
 		}
 
-		const img = this._createImg(src, oldIcon && oldIcon.tagName === 'IMG' ? oldIcon : null);
-		this._setIconStyles(img, name);
-
-		if (this.options.crossOrigin || this.options.crossOrigin === '') {
-			img.crossOrigin = this.options.crossOrigin === true ? '' : this.options.crossOrigin;
-		}
-
-		return img;
-	},
-
-	_setIconStyles(img, name) {
-		const options = this.options;
-		let sizeOption = options[`${name}Size`];
-
-		if (typeof sizeOption === 'number') {
-			sizeOption = [sizeOption, sizeOption];
-		}
-
-		const size = point(sizeOption),
-		    anchor = point(name === 'shadow' && options.shadowAnchor || options.iconAnchor ||
-		            size && size.divideBy(2, true));
-
-		img.className = `leaflet-marker-${name} ${options.className || ''}`;
-
-		if (anchor) {
-			img.style.marginLeft = `${-anchor.x}px`;
-			img.style.marginTop  = `${-anchor.y}px`;
-		}
-
-		if (size) {
-			img.style.width  = `${size.x}px`;
-			img.style.height = `${size.y}px`;
-		}
-	},
-
-	_createImg(src, el) {
-		el = el || document.createElement('img');
-		el.src = src;
 		return el;
-	},
-
-	_getIconUrl(name) {
-		return Browser.retina && this.options[`${name}RetinaUrl`] || this.options[`${name}Url`];
 	}
-});
 
+	_setIconStyles(el: HTMLImageElement): void {
+		this.options.iconAnchor
+		const {
+			iconSize,
+			iconAnchor = iconSize.divideBy(2),
+			className,
+		} = this.options;
 
-// @factory L.icon(options: Icon options)
-// Creates an icon instance with the given options.
-export function icon(options) {
-	return new Icon(options);
+		el.className = `leaflet-marker-icon ${className}`;
+		el.style.width  = `${iconSize.x}px`;
+		el.style.height = `${iconSize.y}px`;
+		el.style.marginLeft = `${-iconAnchor.x}px`;
+		el.style.marginTop  = `${-iconAnchor.y}px`;
+	}
+
 }

@@ -1,11 +1,12 @@
-import {Layer} from '../Layer.js';
-import {IconDefault} from './Icon.Default.js';
+import type { Icon, Map, ZoomAnimationEvent } from '../../Leaflet.js';
 import * as Util from '../../core/Util.js';
-import {toLatLng as latLng} from '../../geo/LatLng.js';
-import {Point, toPoint as point} from '../../geometry/Point.js';
-import * as DomUtil from '../../dom/DomUtil.js';
 import * as DomEvent from '../../dom/DomEvent.js';
-import {MarkerDrag} from './Marker.Drag.js';
+import * as DomUtil from '../../dom/DomUtil.js';
+import { LatLng } from '../../geo/LatLng.js';
+import { Point } from '../../geometry/Point.js';
+import { Layer } from '../Layer.js';
+import { MarkerDrag } from './Marker.Drag.js';
+import { defaultIcon } from './default-icon.js';
 
 /**
  * L.Marker is used to display clickable/draggable icons on the map. Extends `Layer`.
@@ -16,14 +17,14 @@ import {MarkerDrag} from './Marker.Drag.js';
  */
 export class Marker extends Layer {
 
-	// @section
-	// @aka Marker options
-	options: {
+	options = {
+		...super.options,
+
 		// @option icon: Icon = *
 		// Icon instance to use for rendering the marker.
 		// See [Icon documentation](#L.Icon) for details on how to customize the marker icon.
-		// If not specified, a common instance of `L.Icon.Default` is used.
-		icon: new IconDefault(),
+		// If not specified, an icon is created using `defaultIcon()`.
+		icon: defaultIcon(),
 
 		// Option inherited from "Interactive layer" abstract class
 		interactive: true,
@@ -62,10 +63,6 @@ export class Marker extends Layer {
 		// `Map pane` where the markers icon will be added.
 		pane: 'markerPane',
 
-		// @option shadowPane: String = 'shadowPane'
-		// `Map pane` where the markers shadow will be added.
-		shadowPane: 'shadowPane',
-
 		// @option bubblingMouseEvents: Boolean = false
 		// When `true`, a mouse event on this marker will trigger the same event on the map
 		// (unless [`L.DomEvent.stopPropagation`](#domevent-stoppropagation) is used).
@@ -94,19 +91,22 @@ export class Marker extends Layer {
 		// @option autoPanSpeed: Number = 10
 		// Number of pixels the map should pan by.
 		autoPanSpeed: 10
-	}
+	};
 
-	/* @section
-	 *
-	 * In addition to [shared layer methods](#Layer) like `addTo()` and `remove()` and [popup methods](#Popup) like bindPopup() you can also use the following methods:
-	 */
+	_icon: HTMLElement | undefined;
+	_zIndex = 0; // TODO: safe to make it a number from the get-go?
+	dragging: MarkerDrag | undefined;
 
-	initialize(latlng, options) {
+	constructor(
+		public _latlng: LatLng,
+		options?: any,
+	) {
+		super();
+
 		Util.setOptions(this, options);
-		this._latlng = latLng(latlng);
 	}
 
-	onAdd(map) {
+	onAdd(map: Map): this {
 		this._zoomAnimated &&= map.options.markerZoomAnimation;
 
 		if (this._zoomAnimated) {
@@ -115,10 +115,12 @@ export class Marker extends Layer {
 
 		this._initIcon();
 		this.update();
+
+		return this;
 	}
 
-	onRemove(map) {
-		if (this.dragging && this.dragging.enabled()) {
+	onRemove(map: Map): this {
+		if (this.dragging?.enabled()) {
 			this.options.draggable = true;
 			this.dragging.removeHooks();
 		}
@@ -129,7 +131,8 @@ export class Marker extends Layer {
 		}
 
 		this._removeIcon();
-		this._removeShadow();
+
+		return this;
 	}
 
 	getEvents() {
@@ -139,41 +142,36 @@ export class Marker extends Layer {
 		};
 	}
 
-	// @method getLatLng: LatLng
 	// Returns the current geographical position of the marker.
-	getLatLng() {
+	getLatLng(): LatLng {
 		return this._latlng;
 	}
 
-	// @method setLatLng(latlng: LatLng): this
 	// Changes the marker position to the given point.
-	setLatLng(latlng) {
+	setLatLng(latlng: LatLng): this {
 		const oldLatLng = this._latlng;
-		this._latlng = latLng(latlng);
+
+		this._latlng = latlng;
 		this.update();
 
 		// @event move: Event
 		// Fired when the marker is moved via [`setLatLng`](#marker-setlatlng) or by [dragging](#marker-dragging). Old and new coordinates are included in event arguments as `oldLatLng`, `latlng`.
-		return this.fire('move', {oldLatLng, latlng: this._latlng});
+		return this.fire('move', { oldLatLng, latlng: this._latlng });
 	}
 
-	// @method setZIndexOffset(offset: Number): this
 	// Changes the [zIndex offset](#marker-zindexoffset) of the marker.
-	setZIndexOffset(offset) {
+	setZIndexOffset(offset: number): this {
 		this.options.zIndexOffset = offset;
 		return this.update();
 	}
 
-	// @method getIcon: Icon
 	// Returns the current icon used by the marker
-	getIcon() {
+	getIcon(): Icon {
 		return this.options.icon;
 	}
 
-	// @method setIcon(icon: Icon): this
 	// Changes the marker icon.
-	setIcon(icon) {
-
+	setIcon(icon: Icon): this {
 		this.options.icon = icon;
 
 		if (this._map) {
@@ -188,12 +186,11 @@ export class Marker extends Layer {
 		return this;
 	}
 
-	getElement() {
+	getElement(): HTMLElement | undefined {
 		return this._icon;
 	}
 
-	update() {
-
+	update(): this {
 		if (this._icon && this._map) {
 			const pos = this._map.latLngToLayerPoint(this._latlng).round();
 			this._setPos(pos);
@@ -202,11 +199,12 @@ export class Marker extends Layer {
 		return this;
 	}
 
-	_initIcon() {
-		const options = this.options,
-		    classToAdd = `leaflet-zoom-${this._zoomAnimated ? 'animated' : 'hide'}`;
+	_initIcon(): void {
+		const
+			options = this.options,
+		    classToAdd = `leaflet-zoom-${this._zoomAnimated ? 'animated' : 'hide'}`,
+			icon = options.icon.createIcon(this._icon);
 
-		const icon = options.icon.createIcon(this._icon);
 		let addIcon = false;
 
 		// if we're not reusing the icon, remove the old one and init new one
@@ -245,36 +243,19 @@ export class Marker extends Layer {
 			DomEvent.on(icon, 'focus', this._panOnFocus, this);
 		}
 
-		const newShadow = options.icon.createShadow(this._shadow);
-		let addShadow = false;
-
-		if (newShadow !== this._shadow) {
-			this._removeShadow();
-			addShadow = true;
-		}
-
-		if (newShadow) {
-			newShadow.classList.add(classToAdd);
-			newShadow.alt = '';
-		}
-		this._shadow = newShadow;
-
-
 		if (options.opacity < 1) {
 			this._updateOpacity();
 		}
 
-
 		if (addIcon) {
-			this.getPane().appendChild(this._icon);
+			// TODO: null safety?
+			this.getPane()!.appendChild(this._icon!);
 		}
+
 		this._initInteraction();
-		if (newShadow && addShadow) {
-			this.getPane(options.shadowPane).appendChild(this._shadow);
-		}
 	}
 
-	_removeIcon() {
+	_removeIcon(): void {
 		if (this.options.riseOnHover) {
 			this.off({
 				mouseover: this._bringToFront,
@@ -286,62 +267,58 @@ export class Marker extends Layer {
 			DomEvent.off(this._icon, 'focus', this._panOnFocus, this);
 		}
 
-		this._icon.remove();
-		this.removeInteractiveTarget(this._icon);
-
-		this._icon = null;
-	}
-
-	_removeShadow() {
-		if (this._shadow) {
-			this._shadow.remove();
+		if (this._icon) {
+			this._icon.remove();
+			this.removeInteractiveTarget(this._icon);
+			this._icon = undefined;
 		}
-		this._shadow = null;
 	}
 
-	_setPos(pos) {
-
+	_setPos(pos: Point): void {
 		if (this._icon) {
 			DomUtil.setPosition(this._icon, pos);
 		}
 
-		if (this._shadow) {
-			DomUtil.setPosition(this._shadow, pos);
-		}
-
 		this._zIndex = pos.y + this.options.zIndexOffset;
-
 		this._resetZIndex();
 	}
 
-	_updateZIndex(offset) {
+	_updateZIndex(offset: number): void {
 		if (this._icon) {
-			this._icon.style.zIndex = this._zIndex + offset;
+			// Make TypeScript shut up here--number automatically gets converted to string
+			this._icon.style.zIndex = (this._zIndex + offset) as any;
 		}
 	}
 
-	_animateZoom(opt) {
-		const pos = this._map._latLngToNewLayerPoint(this._latlng, opt.zoom, opt.center).round();
-
-		this._setPos(pos);
+	_animateZoom(ev: ZoomAnimationEvent): void {
+		if (this._map) {
+			this._setPos(
+				this._map._latLngToNewLayerPoint(
+					this._latlng,
+					ev.zoom,
+					ev.center,
+				).round(),
+			);
+		}
 	}
 
-	_initInteraction() {
-
+	_initInteraction(): void {
 		if (!this.options.interactive) { return; }
 
-		this._icon.classList.add('leaflet-interactive');
+		if (this._icon) {
+			this._icon.classList.add('leaflet-interactive');
+			this.addInteractiveTarget(this._icon);
+		}
 
-		this.addInteractiveTarget(this._icon);
-
-		if (MarkerDrag) {
+		if (this._map) {
 			let draggable = this.options.draggable;
+
 			if (this.dragging) {
 				draggable = this.dragging.enabled();
 				this.dragging.disable();
 			}
 
-			this.dragging = new MarkerDrag(this);
+			this.dragging = new MarkerDrag(this._map, this);
 
 			if (draggable) {
 				this.dragging.enable();
@@ -349,10 +326,10 @@ export class Marker extends Layer {
 		}
 	}
 
-	// @method setOpacity(opacity: Number): this
 	// Changes the opacity of the marker.
-	setOpacity(opacity) {
+	setOpacity(opacity: number): this {
 		this.options.opacity = opacity;
+
 		if (this._map) {
 			this._updateOpacity();
 		}
@@ -360,33 +337,31 @@ export class Marker extends Layer {
 		return this;
 	}
 
-	_updateOpacity() {
+	_updateOpacity(): void {
 		const opacity = this.options.opacity;
 
 		if (this._icon) {
-			this._icon.style.opacity = opacity;
-		}
-
-		if (this._shadow) {
-			this._shadow.style.opacity = opacity;
+			this._icon.style.opacity = opacity as any; // will be coerced to string
 		}
 	}
 
-	_bringToFront() {
+	_bringToFront(): void {
 		this._updateZIndex(this.options.riseOffset);
 	}
 
-	_resetZIndex() {
+	_resetZIndex(): void {
 		this._updateZIndex(0);
 	}
 
-	_panOnFocus() {
+	_panOnFocus(): void {
 		const map = this._map;
+
 		if (!map) { return; }
 
-		const iconOpts = this.options.icon.options;
-		const size = iconOpts.iconSize ? point(iconOpts.iconSize) : point(0, 0);
-		const anchor = iconOpts.iconAnchor ? point(iconOpts.iconAnchor) : point(0, 0);
+		const
+			iconOpts = this.options.icon.options,
+			size = iconOpts.iconSize || new Point(0, 0),
+			anchor = iconOpts.iconAnchor || new Point(0, 0);
 
 		map.panInside(this._latlng, {
 			paddingTopLeft: anchor,

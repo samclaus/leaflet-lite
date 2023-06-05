@@ -124,14 +124,8 @@ export class MarkerDrag extends Handler {
 	_onDrag(e: Event): void {
 		const
 			marker = this._marker,
-		    shadow = marker._shadow,
 		    iconPos = DomUtil.getPosition(marker._icon),
 		    latlng = marker._map.layerPointToLatLng(iconPos);
-
-		// update shadow position
-		if (shadow) {
-			DomUtil.setPosition(shadow, iconPos);
-		}
 
 		marker._latlng = latlng;
 

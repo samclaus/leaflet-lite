@@ -44,6 +44,12 @@ export interface FitBoundsOptions {
 	maxZoom?: number;
 }
 
+export interface ZoomAnimationEvent {
+	center: LatLng,
+	zoom: number,
+	noUpdate: boolean | undefined;
+}
+
 /**
  * The central class of the API — it is used to create a map on a page and manipulate it.
  *
@@ -1220,9 +1226,7 @@ export class Map extends Evented {
 		// @pane overlayPane: HTMLElement = 400
 		// Pane for vectors (`Path`s, like `Polyline`s and `Polygon`s), `ImageOverlay`s and `VideoOverlay`s
 		this.createPane('overlayPane');
-		// @pane shadowPane: HTMLElement = 500
-		// Pane for overlay shadows (e.g. `Marker` shadows)
-		this.createPane('shadowPane');
+		// NOTE: previously there was 'shadowPane' (500) here until Sam removed it
 		// @pane markerPane: HTMLElement = 600
 		// Pane for `Icon`s of `Marker`s
 		this.createPane('markerPane');
@@ -1235,7 +1239,6 @@ export class Map extends Evented {
 
 		if (!this.options.markerZoomAnimation) {
 			panes.markerPane.classList.add('leaflet-zoom-hide');
-			panes.shadowPane.classList.add('leaflet-zoom-hide');
 		}
 	}
 

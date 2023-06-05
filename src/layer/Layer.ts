@@ -88,7 +88,7 @@ export abstract class Layer extends Evented {
 	}
 
 	// Returns the `HTMLElement` representing the named pane on the map. If `name` is omitted, returns the pane for this layer.
-	getPane(name: string): HTMLElement | undefined {
+	getPane(name?: string): HTMLElement | undefined {
 		return this._map?.getPane(name ? ((this.options as any)[name] || name) : this.options.pane);
 	}
 
