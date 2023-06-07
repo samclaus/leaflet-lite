@@ -930,15 +930,8 @@ export class Map extends Evented {
 		return this.layerPointToLatLng(this._getCenterLayerPoint());
 	}
 
-	// Returns the current zoom level of the map view
-	/** @deprecated Just grab the _zoom property directly */
-	getZoom(): number {
-		return this._zoom;
-	}
-
-	// @method getBounds(): LatLngBounds
 	// Returns the geographical bounds visible in the current map view
-	getBounds() {
+	getBounds(): LatLngBounds {
 		const bounds = this.getPixelBounds(),
 		    sw = this.unproject(bounds.getBottomLeft()),
 		    ne = this.unproject(bounds.getTopRight());
@@ -1108,8 +1101,8 @@ export class Map extends Evented {
 	// By default this means the center longitude is wrapped around the dateline so its
 	// value is between -180 and +180 degrees, and the majority of the bounds
 	// overlaps the CRS's bounds.
-	wrapLatLngBounds(latlng: LatLng): LatLngBounds {
-		return this.options.crs.wrapLatLngBounds(toLatLngBounds(latlng));
+	wrapLatLngBounds(bounds: LatLngBounds): LatLngBounds {
+		return this.options.crs.wrapLatLngBounds(bounds);
 	}
 
 	// Returns the distance between two geographical coordinates according to

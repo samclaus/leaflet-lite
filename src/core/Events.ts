@@ -6,7 +6,7 @@ export interface HandlerFn {
 }
 
 export interface HandlerMap {
-	readonly [eventName: string]: HandlerFn;
+	[eventName: string]: HandlerFn;
 }
 
 /**
@@ -41,8 +41,8 @@ export class Evented extends Class {
 	 * pass several space-separated types (e.g. `'click dblclick'`).
 	 */
 	on(types: string, handler: HandlerFn, context?: any, once?: boolean): this;
-	on(types: HandlerMap, context?: any, once?: boolean): this;
-	on(types: string | HandlerMap, handlerOrContext: any, contextOrOnce?: any, once?: boolean): this {
+	on(types: Readonly<HandlerMap>, context?: any, once?: boolean): this;
+	on(types: string | Readonly<HandlerMap>, handlerOrContext: any, contextOrOnce?: any, once?: boolean): this {
 		if (typeof types === 'string') {
 			// types can be a string of space-separated words
 			for (const eventName of Util.splitWords(types)) {
@@ -67,8 +67,8 @@ export class Evented extends Class {
 	 */
 	off(): this;
 	off(types: string, handler?: HandlerFn, context?: any): this;
-	off(types: HandlerMap, context?: any): this;
-	off(types?: string | HandlerMap, handlerOrContext?: any, context?: any): this {
+	off(types: Readonly<HandlerMap>, context?: any): this;
+	off(types?: string | Readonly<HandlerMap>, handlerOrContext?: any, context?: any): this {
 		if (types === undefined) {
 			// clear all listeners if called without arguments
 			this._events = Object.create(null);

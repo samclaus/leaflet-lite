@@ -75,7 +75,7 @@ export class TouchZoom extends Handler {
 		}
 
 		this._startDist = p1.distanceTo(p2);
-		this._startZoom = map.getZoom();
+		this._startZoom = map._zoom;
 		this._moved = false;
 		this._zooming = true;
 

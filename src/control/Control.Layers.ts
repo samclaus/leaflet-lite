@@ -3,7 +3,7 @@ import {Control} from './Control.js';
 import * as Util from '../core/Util.js';
 import * as DomEvent from '../dom/DomEvent.js';
 import * as DomUtil from '../dom/DomUtil.js';
-import type { Map } from '../Leaflet.js';
+import type { Layer, Map } from '../Leaflet.js';
 
 function createRadioElement(name: string, checked: boolean): HTMLInputElement {
 	const inputEl = document.createElement("input");
@@ -14,6 +14,12 @@ function createRadioElement(name: string, checked: boolean): HTMLInputElement {
 	inputEl.checked = checked;
 
 	return inputEl;
+}
+
+interface LayerModel {
+	layer: Layer;
+	name: string;
+	overlay: boolean;
 }
 
 /*
@@ -81,17 +87,17 @@ export class Layers extends Control {
 		}
 	};
 
+	_layers: LayerModel[] = [];
+	_layerControlInputs = [];
+	_lastZIndex = 0;
+	_preventClick = false;
+	_handlingClick = false;
+
 	initialize(baseLayers, overlays, options) {
 		Util.setOptions(this, options);
 
-		this._layerControlInputs = [];
-		this._layers = [];
-		this._lastZIndex = 0;
-		this._handlingClick = false;
-		this._preventClick = false;
-
 		for (const [i, layer] of Object.entries(baseLayers)) {
-			this._addLayer(layer, i);
+			this._addLayer(layer, i, false);
 		}
 
 		for (const [i, overlay] of Object.entries(overlays)) {
@@ -119,43 +125,39 @@ export class Layers extends Control {
 		return this._expandIfNotCollapsed();
 	}
 
-	onRemove() {
-		this._map.off('zoomend', this._checkDisabledLayers, this);
+	onRemove(map: Map): void {
+		map.off('zoomend', this._checkDisabledLayers, this);
 
 		for (let i = 0; i < this._layers.length; i++) {
 			this._layers[i].layer.off('add remove', this._onLayerChange, this);
 		}
 	}
 
-	// @method addBaseLayer(layer: Layer, name: String): this
 	// Adds a base layer (radio button entry) with the given name to the control.
-	addBaseLayer(layer, name) {
-		this._addLayer(layer, name);
-		return (this._map) ? this._update() : this;
+	addBaseLayer(layer: Layer, name: string): this {
+		this._addLayer(layer, name, false);
+		return this._map ? this._update() : this;
 	}
 
-	// @method addOverlay(layer: Layer, name: String): this
 	// Adds an overlay (checkbox entry) with the given name to the control.
-	addOverlay(layer, name) {
+	addOverlay(layer: Layer, name: string) {
 		this._addLayer(layer, name, true);
-		return (this._map) ? this._update() : this;
+		return this._map ? this._update() : this;
 	}
 
-	// @method removeLayer(layer: Layer): this
 	// Remove the given layer from the control.
-	removeLayer(layer) {
+	removeLayer(layer: Layer): this {
 		layer.off('add remove', this._onLayerChange, this);
 
 		const obj = this._getLayer(Util.stamp(layer));
 		if (obj) {
 			this._layers.splice(this._layers.indexOf(obj), 1);
 		}
-		return (this._map) ? this._update() : this;
+		return this._map ? this._update() : this;
 	}
 
-	// @method expand(): this
 	// Expand the control container if collapsed.
-	expand() {
+	expand(): this {
 		this._container.classList.add('leaflet-control-layers-expanded');
 		this._section.style.height = null;
 		const acceptableHeight = this._map.getSize().y - (this._container.offsetTop + 50);
@@ -169,14 +171,13 @@ export class Layers extends Control {
 		return this;
 	}
 
-	// @method collapse(): this
 	// Collapse the control container if expanded.
-	collapse() {
+	collapse(): this {
 		this._container.classList.remove('leaflet-control-layers-expanded');
 		return this;
 	}
 
-	_initLayout() {
+	_initLayout(): void {
 		const className = 'leaflet-control-layers',
 		    container = this._container = DomUtil.create('div', className),
 		    collapsed = this.options.collapsed;
@@ -227,16 +228,11 @@ export class Layers extends Control {
 		container.appendChild(section);
 	}
 
-	_getLayer(id) {
-		for (let i = 0; i < this._layers.length; i++) {
-
-			if (this._layers[i] && Util.stamp(this._layers[i].layer) === id) {
-				return this._layers[i];
-			}
-		}
+	_getLayer(id: number): LayerModel | undefined {
+		return this._layers.find(l => Util.stamp(l.layer) === id);
 	}
 
-	_addLayer(layer, name, overlay) {
+	_addLayer(layer: Layer, name: string, overlay: boolean): void {
 		if (this._map) {
 			layer.on('add remove', this._onLayerChange, this);
 		}
@@ -391,8 +387,10 @@ export class Layers extends Control {
 	}
 
 	_checkDisabledLayers(): void {
-		const inputs = this._layerControlInputs,
-		      zoom = this._map.getZoom();
+		const
+			inputs = this._layerControlInputs,
+		    zoom = this._map!._zoom; // TODO: null safety
+
 		let input, layer;
 
 		for (let i = inputs.length - 1; i >= 0; i--) {

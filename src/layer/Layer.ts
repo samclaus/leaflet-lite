@@ -52,6 +52,8 @@ export abstract class Layer extends Evented {
 	 */
 	abstract onRemove?(map: Map): this;
 
+	setZIndex?(zIndex: number): void;
+
 	/**
 	 * This optional method should return an object like `{ viewreset: this._reset }` for
 	 * [`on`](#evented-on). The event handlers in this object will be automatically added
