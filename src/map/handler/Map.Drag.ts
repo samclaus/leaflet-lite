@@ -3,11 +3,10 @@ import { Draggable } from '../../dom/Draggable.js';
 import { Bounds } from '../../geometry/Bounds.js';
 import { Map } from '../Map.js';
 
-// TODO
-Map.mergeOptions({
+export interface DragOptions {
 	// @option dragging: Boolean = true
 	// Whether the map is draggable with mouse/touch or not.
-	dragging: true,
+	dragging: boolean;
 
 	// @section Panning Inertia Options
 	// @option inertia: Boolean = *
@@ -15,25 +14,25 @@ Map.mergeOptions({
 	// the map builds momentum while dragging and continues moving in
 	// the same direction for some time. Feels especially nice on touch
 	// devices. Enabled by default.
-	inertia: true,
+	inertia: boolean;
 
 	// @option inertiaDeceleration: Number = 3000
 	// The rate with which the inertial movement slows down, in pixels/second².
-	inertiaDeceleration: 3400, // px/s^2
+	inertiaDeceleration: number; // px/s^2
 
 	// @option inertiaMaxSpeed: Number = Infinity
 	// Max speed of the inertial movement, in pixels/second.
-	inertiaMaxSpeed: Infinity, // px/s
+	inertiaMaxSpeed: number; // px/s
 
 	// @option easeLinearity: Number = 0.2
-	easeLinearity: 0.2,
+	easeLinearity: number;
 
 	// TODO refactor, move to CRS
 	// @option worldCopyJump: Boolean = false
 	// With this option enabled, the map tracks when you pan to another "copy"
 	// of the world and seamlessly jumps to the original one so that all overlays
 	// like markers and vector layers are still visible.
-	worldCopyJump: false,
+	worldCopyJump: boolean;
 
 	// @option maxBoundsViscosity: Number = 0.0
 	// If `maxBounds` is set, this option will control how solid the bounds
@@ -41,8 +40,8 @@ Map.mergeOptions({
 	// user to drag outside the bounds at normal speed, higher values will
 	// slow down map dragging outside bounds, and `1.0` makes the bounds fully
 	// solid, preventing the user from dragging outside the bounds.
-	maxBoundsViscosity: 0.0
-});
+	maxBoundsViscosity: number;
+}
 
 /**
  * L.Handler.MapDrag is used to make the map draggable (with panning inertia), enabled by default.
@@ -50,10 +49,29 @@ Map.mergeOptions({
 export class Drag extends Handler {
 
 	_draggable: Draggable | undefined;
-	_viscosity: number;
+	_viscosity: number | undefined;
 	_positions = [];
 	_times = [];
 	_offsetLimit: Bounds | undefined;
+	options: DragOptions;
+
+	constructor(
+		map: Map,
+		options?: Partial<DragOptions>,
+	) {
+		super(map);
+
+		this.options = {
+			dragging: true,
+			inertia: true,
+			inertiaDeceleration: 3400,
+			inertiaMaxSpeed: Infinity,
+			easeLinearity: 0.2,
+			worldCopyJump: false,
+			maxBoundsViscosity: 0.0,
+			...options,
+		};
+	}
 
 	addHooks(): void {
 		if (!this._draggable) {
@@ -67,7 +85,7 @@ export class Drag extends Handler {
 				predrag: this._onPreDragLimit,
 			}, this);
 
-			if (map.options.worldCopyJump) {
+			if (this.options.worldCopyJump) {
 				this._draggable.on('predrag', this._onPreDragWrap, this);
 
 				map.on('zoomend', this._onZoomEnd, this);
@@ -82,7 +100,7 @@ export class Drag extends Handler {
 
 	removeHooks(): void {
 		this._map._container.classList.remove('leaflet-grab', 'leaflet-touch-drag');
-		this._draggable.disable();
+		this._draggable!.disable(); // TODO: null safety?
 	}
 
 	moved(): boolean {
@@ -98,14 +116,14 @@ export class Drag extends Handler {
 
 		map._stop();
 
-		if (this._map.options.maxBounds && this._map.options.maxBoundsViscosity) {
+		if (this._map.options.maxBounds && this.options.maxBoundsViscosity) {
 			const bounds = this._map.options.maxBounds;
 
 			this._offsetLimit = new Bounds(
 				this._map.latLngToContainerPoint(bounds.getNorthWest()).multiplyBy(-1),
 				this._map.latLngToContainerPoint(bounds.getSouthEast()).multiplyBy(-1).add(this._map.getSize()),
 			);
-			this._viscosity = Math.min(1.0, Math.max(0.0, this._map.options.maxBoundsViscosity));
+			this._viscosity = Math.min(1.0, Math.max(0.0, this.options.maxBoundsViscosity));
 		} else {
 			this._offsetLimit = undefined;
 		}
@@ -114,15 +132,16 @@ export class Drag extends Handler {
 		    .fire('movestart')
 		    .fire('dragstart');
 
-		if (map.options.inertia) {
+		if (this.options.inertia) {
 			this._positions = [];
 			this._times = [];
 		}
 	}
 
 	_onDrag(e: DragEvent): void {
-		if (this._map.options.inertia) {
-			const time = this._lastTime = +new Date(),
+		if (this.options.inertia) {
+			const
+				time = this._lastTime = +new Date(),
 			    pos = this._lastPos = this._draggable._absPos || this._draggable._newPos;
 
 			this._positions.push(pos);
@@ -185,10 +204,10 @@ export class Drag extends Handler {
 		this._draggable._newPos.x = newX;
 	}
 
-	_onDragEnd(e) {
+	_onDragEnd(e: any /* TODO: type; the event comes from Draggable class */) {
 		const
 			map = this._map,
-		    options = map.options,
+		    options = this.options,
 		    noInertia = !options.inertia || e.noInertia || this._times.length < 2;
 
 		map.fire('dragend', e);

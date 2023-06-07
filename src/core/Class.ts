@@ -5,11 +5,15 @@ import * as Util from './Util.js';
  */
 export class Class {
 
+	initialize?(...args: readonly any[]): void;
+
 	// @function extend(props: Object): Function
 	// [Extends the current class](#class-inheritance) given the properties to be included.
 	// Returns a Javascript function that is a class constructor (to be called with `new`).
 	static extend(props: { [key: string]: any }) {
-		class NewClass extends this {};
+		class NewClass extends this {
+			static bla = 2;
+		};
 
 		// inherit parent's static properties
 		Object.setPrototypeOf(NewClass, this);
@@ -47,7 +51,7 @@ export class Class {
 		return this;
 	}
 
-	constructor(...args) {
+	constructor(...args: readonly any[]) {
 		Util.setOptions(this);
 
 		// call the constructor

@@ -1,4 +1,5 @@
-import type { Handler, Layer } from '../Leaflet.js';
+import type { Control, Handler, Layer } from '../Leaflet.js';
+import type { ControlPosition } from '../control/Control.js';
 import Browser from '../core/Browser.js';
 import { Evented, type HandlerFn } from '../core/Events.js';
 import * as Util from '../core/Util.js';
@@ -231,6 +232,9 @@ export class Map extends Evented {
 	_animatingZoom = false;
 	_animateToCenter: LatLng | undefined;
 	_animateToZoom = 0;
+
+	_controlContainer: HTMLElement | undefined;
+	_controlCorners: { readonly [Pos in ControlPosition]: HTMLElement } | undefined;
 
 	constructor(
 		id: string | HTMLElement,
@@ -1195,10 +1199,7 @@ export class Map extends Evented {
 		}
 
 		this._initPanes();
-
-		if (this._initControlPos) {
-			this._initControlPos();
-		}
+		this._initControlPos();
 	}
 
 	_initPanes(): void {
@@ -1939,6 +1940,49 @@ export class Map extends Evented {
 		}
 		if (this.options.minZoom === undefined && this._layersMinZoom && this._zoom < this._layersMinZoom) {
 			this.setZoom(this._layersMinZoom);
+		}
+	}
+
+	// Methods for UI controls
+
+	// Adds the given control to the map
+	addControl(control: Control): this {
+		control.addTo(this);
+		return this;
+	}
+
+	// Removes the given control from the map
+	removeControl(control: Control): this {
+		control.remove();
+		return this;
+	}
+
+	_initControlPos(): void {
+		const
+		    l = 'leaflet-',
+		    container = DomUtil.create('div', `${l}control-container`, this._container);
+
+		function createCorner(vSide: string, hSide: string) {
+			return DomUtil.create('div', `${l + vSide} ${l + hSide}`, container);
+		}
+
+		this._controlContainer = container;
+		this._controlCorners = {
+			topleft: createCorner('top', 'left'),
+			topright: createCorner('top', 'right'),
+			bottomleft: createCorner('bottom', 'left'),
+			bottomright: createCorner('bottom', 'right'),
+		};
+	}
+
+	_clearControlPos(): void {
+		if (this._controlContainer) {
+			for (const corner of Object.values(this._controlCorners!)) {
+				corner.remove();
+			}
+			this._controlContainer.remove();
+			this._controlContainer = undefined;
+			this._controlCorners = undefined;
 		}
 	}
 

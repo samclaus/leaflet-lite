@@ -1,24 +1,21 @@
 import type { LatLng, Point } from '../../Leaflet.js';
-import Browser from '../../core/Browser.js';
 import { Handler } from '../../core/Handler.js';
 import * as DomEvent from '../../dom/DomEvent.js';
 import { Map } from '../Map.js';
 
-// TODO: best way to get options to handlers with sensible defaults?
-Map.mergeOptions({
-	// @section Touch interaction options
-	// @option touchZoom: Boolean|String = *
-	// Whether the map can be zoomed by touch-dragging with two fingers. If
-	// passed `'center'`, it will zoom to the center of the view regardless of
-	// where the touch events (fingers) were. Enabled for touch-capable web
-	// browsers.
-	touchZoom: Browser.touch,
+export interface TouchZoomOptions {
+	/**
+	 * Whether the map should zoom to the center of the view regardless of
+	 * where the touch events (fingers) were. Defaults to false;
+	 */
+	touchZoomCentered: boolean;
 
-	// @option bounceAtZoomLimits: Boolean = true
-	// Set it to false if you don't want the map to zoom beyond min/max zoom
-	// and then bounce back when pinch-zooming.
-	bounceAtZoomLimits: true
-});
+	/**
+	 * Set it to false if you don't want the map to zoom beyond min/max zoom
+	 * and then bounce back when pinch-zooming.
+	 */
+	bounceAtZoomLimits: boolean;
+}
 
 /**
  * L.Handler.TouchZoom is used by L.Map to add pinch zoom on supported mobile browsers.
@@ -32,6 +29,24 @@ export class TouchZoom extends Handler {
 	_startZoom = 0;
 	_centerPoint: Point | undefined;
 	_center: LatLng | undefined;
+	_zoom = 0;
+	_startLatLng: LatLng | undefined;
+	_pinchStartLatLng: LatLng | undefined;
+	
+	options: TouchZoomOptions;
+
+	constructor(
+		map: Map,
+		options: Partial<TouchZoomOptions>,
+	) {
+		super(map);
+
+		this.options = {
+			touchZoomCentered: false,
+			bounceAtZoomLimits: true,
+			...options,
+		};
+	}
 
 	addHooks() {
 		this._map._container.classList.add('leaflet-touch-zoom');
@@ -54,7 +69,8 @@ export class TouchZoom extends Handler {
 
 		this._centerPoint = map.getSize()._divideBy(2);
 		this._startLatLng = map.containerPointToLatLng(this._centerPoint);
-		if (map.options.touchZoom !== 'center') {
+
+		if (!this.options.touchZoomCentered) {
 			this._pinchStartLatLng = map.containerPointToLatLng(p1.add(p2)._divideBy(2));
 		}
 
@@ -81,20 +97,25 @@ export class TouchZoom extends Handler {
 
 		this._zoom = map.getScaleZoom(scale, this._startZoom);
 
-		if (!map.options.bounceAtZoomLimits && (
-			(this._zoom < map.getMinZoom() && scale < 1) ||
-			(this._zoom > map.getMaxZoom() && scale > 1))) {
+		if (
+			!this.options.bounceAtZoomLimits &&
+			(
+				(this._zoom < map.getMinZoom() && scale < 1) ||
+				(this._zoom > map.getMaxZoom() && scale > 1)
+			)
+		) {
 			this._zoom = map._limitZoom(this._zoom);
 		}
 
-		if (map.options.touchZoom === 'center') {
+		if (this.options.touchZoomCentered) {
 			this._center = this._startLatLng;
 			if (scale === 1) { return; }
 		} else {
 			// Get delta from pinch to center, so centerLatLng is delta applied to initial pinchLatLng
-			const delta = p1._add(p2)._divideBy(2)._subtract(this._centerPoint);
+			const delta = p1._add(p2)._divideBy(2)._subtract(this._centerPoint!); // TODO: null safety
 			if (scale === 1 && delta.x === 0 && delta.y === 0) { return; }
-			this._center = map.unproject(map.project(this._pinchStartLatLng, this._zoom).subtract(delta), this._zoom);
+			// TODO: null safety
+			this._center = map.unproject(map.project(this._pinchStartLatLng!, this._zoom).subtract(delta), this._zoom);
 		}
 
 		if (!this._moved) {
@@ -124,9 +145,11 @@ export class TouchZoom extends Handler {
 
 		// Pinch updates GridLayers' levels only when zoomSnap is off, so zoomSnap becomes noUpdate.
 		if (this._map.options.zoomAnimation) {
-			this._map._animateZoom(this._center, this._map._limitZoom(this._zoom), true, this._map.options.zoomSnap);
+			// TODO: null safety
+			this._map._animateZoom(this._center!, this._map._limitZoom(this._zoom), true, this._map.options.zoomSnap);
 		} else {
-			this._map._resetView(this._center, this._map._limitZoom(this._zoom));
+			// TODO: null safety
+			this._map._resetView(this._center!, this._map._limitZoom(this._zoom));
 		}
 	}
 
