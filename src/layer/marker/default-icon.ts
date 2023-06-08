@@ -32,7 +32,6 @@ export function defaultIcon(imagePath = getDefaultImagePath()): Icon {
 		iconUrl: imagePath + 'marker-icon.png',
 		iconSize: new Point(25, 41),
 		iconAnchor: new Point(12, 41),
-		popupAnchor: new Point(1, -34),
 		tooltipAnchor: new Point(16, -28),
 	});
 }

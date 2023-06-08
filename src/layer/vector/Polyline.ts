@@ -1,20 +1,19 @@
-import * as Util from '../../core/Util.js';
 import { LatLng } from '../../geo/LatLng.js';
 import { LatLngBounds } from '../../geo/LatLngBounds.js';
 import { Bounds } from '../../geometry/Bounds.js';
 import * as LineUtil from '../../geometry/LineUtil.js';
 import { Point } from '../../geometry/Point.js';
-import { Path, type PathOptions } from './Path.js';
+import { DEFAULT_PATH_OPTIONS, Path, type PathOptions } from './Path.js';
 
 export interface PolylineOptions extends PathOptions {
 	// @option smoothFactor: Number = 1.0
 	// How much to simplify the polyline on each zoom level. More means
 	// better performance and smoother look, and less means more accurate representation.
-	smoothFactor: 1.0,
+	smoothFactor: number;
 
 	// @option noClip: Boolean = false
 	// Disable polyline clipping.
-	noClip: false
+	noClip: boolean;
 }
 
 /**
@@ -52,42 +51,47 @@ export interface PolylineOptions extends PathOptions {
  */
 export class Polyline extends Path {
 
-	// @section
-	// @aka Polyline options
-	options = {
-		// @option smoothFactor: Number = 1.0
-		// How much to simplify the polyline on each zoom level. More means
-		// better performance and smoother look, and less means more accurate representation.
-		smoothFactor: 1.0,
+	options: PolylineOptions;
+	_parts: Point[][] = [];
+	_rings: any[]; // TODO
+	_latlngs!: LatLng[] | LatLng[][]; // initialized via _setLatLngs() call in constructor
+	_bounds!: LatLngBounds; // initialized via _setLatLngs() call in constructor
+	_pxBounds: Bounds | undefined;
+	_rawPxBounds: Bounds | undefined;
 
-		// @option noClip: Boolean = false
-		// Disable polyline clipping.
-		noClip: false
-	};
+	constructor(
+		latlngs: LatLng[],
+		options?: Partial<PolylineOptions>,
+	) {
+		super();
 
-	_parts: any[]; // TODO
-
-	initialize(latlngs, options) {
-		Util.setOptions(this, options);
+		this.options = {
+			...DEFAULT_PATH_OPTIONS,
+			smoothFactor: 1.0,
+			noClip: false,
+			...options,
+		};
 		this._setLatLngs(latlngs);
 	}
 
-	// @method getLatLngs(): LatLng[]
 	// Returns an array of the points in the path, or nested arrays of points in case of multi-polyline.
-	getLatLngs() {
+	getLatLngs(): LatLng[] | LatLng[][] {
 		return this._latlngs;
 	}
 
-	// @method setLatLngs(latlngs: LatLng[]): this
+	// Returns the `LatLngBounds` of the path.
+	getBounds(): LatLngBounds {
+		return this._bounds;
+	}
+
 	// Replaces all the points in the polyline with the given array of geographical points.
-	setLatLngs(latlngs): this {
+	setLatLngs(latlngs: LatLng[]): this {
 		this._setLatLngs(latlngs);
 		return this.redraw();
 	}
 
-	// @method isEmpty(): Boolean
 	// Returns `true` if the Polyline has no LatLngs.
-	isEmpty() {
+	isEmpty(): boolean {
 		return !this._latlngs.length;
 	}
 
@@ -143,12 +147,6 @@ export class Polyline extends Path {
 		return LineUtil.polylineCenter(latlngs, this._map.options.crs);
 	}
 
-	// @method getBounds(): LatLngBounds
-	// Returns the `LatLngBounds` of the path.
-	getBounds() {
-		return this._bounds;
-	}
-
 	// @method addLatLng(latlng: LatLng, latlngs?: LatLng[]): this
 	// Adds a given point to the polyline. By default, adds to the first ring of
 	// the polyline in case of a multi-polyline, but can be overridden by passing
@@ -161,34 +159,33 @@ export class Polyline extends Path {
 		return this.redraw();
 	}
 
-	_setLatLngs(latlngs) {
-		this._bounds = new LatLngBounds();
-		this._latlngs = this._convertLatLngs(latlngs);
+	_setLatLngs(latlngs: LatLng[] | LatLng[][]): void {
+		const bounds = new LatLngBounds();
+
+		this._bounds = bounds;
+		this._latlngs = latlngs;
+
+		// Now extend the bounds to include every coordinate
+		if (LineUtil.isFlat(latlngs)) {
+			for (const latlng of latlngs) {
+				bounds.extend(latlng);
+			}
+		} else {
+			for (const ring of latlngs) {
+				for (const latlng of ring) {
+					bounds.extend(latlng);
+				}
+			}
+		}
 	}
 
 	_defaultShape(): LatLng[] {
 		return LineUtil.isFlat(this._latlngs) ? this._latlngs : this._latlngs[0];
 	}
 
-	// recursively convert latlngs input into actual LatLng instances; calculate bounds along the way
-	_convertLatLngs(latlngs) {
-		const result = [],
-		    flat = LineUtil.isFlat(latlngs);
-
-		for (let i = 0, len = latlngs.length; i < len; i++) {
-			if (flat) {
-				result[i] = toLatLng(latlngs[i]);
-				this._bounds.extend(result[i]);
-			} else {
-				result[i] = this._convertLatLngs(latlngs[i]);
-			}
-		}
-
-		return result;
-	}
-
 	_project() {
 		const pxBounds = new Bounds();
+
 		this._rings = [];
 		this._projectLatlngs(this._latlngs, this._rings, pxBounds);
 
@@ -199,42 +196,43 @@ export class Polyline extends Path {
 	}
 
 	_updateBounds() {
-		const w = this._clickTolerance(),
+		const
+			w = this._clickTolerance(),
 		    p = new Point(w, w);
 
 		if (!this._rawPxBounds) {
 			return;
 		}
 
-		this._pxBounds = new Bounds([
+		this._pxBounds = new Bounds(
 			this._rawPxBounds.min.subtract(p),
 			this._rawPxBounds.max.add(p)
-		]);
+		);
 	}
 
 	// recursively turns latlngs into a set of rings with projected coordinates
-	_projectLatlngs(latlngs, result, projectedBounds) {
-		const flat = latlngs[0] instanceof LatLng,
-		      len = latlngs.length;
-		let i, ring;
-
-		if (flat) {
-			ring = [];
-			for (i = 0; i < len; i++) {
-				ring[i] = this._map.latLngToLayerPoint(latlngs[i]);
-				projectedBounds.extend(ring[i]);
-			}
-			result.push(ring);
-		} else {
-			for (i = 0; i < len; i++) {
+	_projectLatlngs(latlngs: LatLng[] | LatLng[][], result: Point[][], projectedBounds: Bounds): void {
+		if (!LineUtil.isFlat(latlngs)) {
+			for (let i = 0; i < latlngs.length; ++i) {
 				this._projectLatlngs(latlngs[i], result, projectedBounds);
 			}
+			return;
 		}
+
+		const ring: Point[] = [];
+
+		for (let i = 0; i < latlngs.length; ++i) {
+			// TODO: null safety
+			ring[i] = this._map!.latLngToLayerPoint(latlngs[i]);
+			projectedBounds.extend(ring[i]);
+		}
+
+		result.push(ring);
 	}
 
 	// clip polyline by renderer bounds so that we have less to render for performance
 	_clipPoints() {
-		const bounds = this._renderer._bounds;
+		const bounds = this._renderer!._bounds!; // TODO: null safety
 
 		this._parts = [];
 		if (!this._pxBounds || !this._pxBounds.intersects(bounds)) {
@@ -270,8 +268,9 @@ export class Polyline extends Path {
 	}
 
 	// simplify each clipped part of the polyline for performance
-	_simplifyPoints() {
-		const parts = this._parts,
+	_simplifyPoints(): void {
+		const
+			parts = this._parts,
 		    tolerance = this.options.smoothFactor;
 
 		for (let i = 0, len = parts.length; i < len; i++) {
@@ -279,7 +278,7 @@ export class Polyline extends Path {
 		}
 	}
 
-	_update() {
+	_update(): void {
 		if (!this._map) { return; }
 
 		this._clipPoints();
@@ -287,12 +286,13 @@ export class Polyline extends Path {
 		this._updatePath();
 	}
 
-	_updatePath() {
-		this._renderer._updatePoly(this);
+	_updatePath(): void {
+		// TODO: null safety
+		this._renderer!._updatePoly(this);
 	}
 
 	// Needed by the `Canvas` renderer for interactivity
-	_containsPoint(p, closed) {
+	_containsPoint(p: Point, closed?: boolean): boolean {
 		let i, j, k, len, len2, part;
 		const w = this._clickTolerance();
 

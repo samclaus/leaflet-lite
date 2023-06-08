@@ -1,4 +1,4 @@
-import type { CircleMarker, Layer, Map, Path } from '../../Leaflet.js';
+import type { CircleMarker, Layer, Map, Path, Polyline } from '../../Leaflet.js';
 import * as Util from '../../core/Util.js';
 import { BlanketOverlay } from '../BlanketOverlay.js';
 
@@ -38,7 +38,8 @@ export abstract class Renderer extends BlanketOverlay {
 	abstract _bringToFront(path: Path): void;
 	abstract _bringToBack(path: Path): void;
 	abstract _removePath(path: Path): void;
-	abstract _updateCircle(layer: CircleMarker): void
+	abstract _updateCircle(layer: CircleMarker): void;
+	abstract _updatePoly(layer: Polyline, closed?: boolean): void;
 
 	// Subclasses are responsible of implementing `_update()`. It should fire
 	// the 'update' event whenever appropriate (before/after rendering).

@@ -91,7 +91,7 @@ export class LayerGroup extends Layer {
 	 * Iterates over the layers of the group, optionally specifying context of the iterator function.
 	 * ```
 	 * group.eachLayer(function(layer){
-	 *     layer.bindPopup('Hello');
+	 *     layer.bindTooltip('Hello');
 	 * });
 	 * ```
 	 */

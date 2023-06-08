@@ -1,4 +1,4 @@
-import type { LatLng, Map } from '../../Leaflet.js';
+import type { LatLng, Map, Marker } from '../../Leaflet.js';
 import { Handler } from '../../core/Handler.js';
 import * as DomUtil from '../../dom/DomUtil.js';
 import { Draggable } from '../../dom/Draggable.js';
@@ -26,13 +26,13 @@ export class MarkerDrag extends Handler {
 
 	constructor(
 		map: Map,
-		public _marker: any,
+		public _marker: Marker,
 	) {
 		super(map);
 	}
 
 	addHooks(): void {
-		const icon = this._marker._icon;
+		const icon = this._marker._icon!; // TODO: null safety
 
 		this._draggable ||= new Draggable(icon, icon, true);
 		this._draggable.on({
@@ -65,12 +65,12 @@ export class MarkerDrag extends Handler {
 	_adjustPan(e: Event): void {
 		const
 			marker = this._marker,
-		    map = marker._map,
+		    map = marker._map!, // TODO: null safety
 		    speed = this._marker.options.autoPanSpeed,
 		    padding = this._marker.options.autoPanPadding,
-		    iconPos = DomUtil.getPosition(marker._icon),
+		    iconPos = DomUtil.getPosition(marker._icon!), // TODO: null safety
 		    bounds = map.getPixelBounds(),
-		    origin = map.getPixelOrigin(),
+		    origin = map.getPixelOrigin()!, // TODO: null safety
 			panBounds = new Bounds(
 				bounds.min._subtract(origin).add(padding),
 				bounds.max._subtract(origin).subtract(padding),
@@ -100,9 +100,6 @@ export class MarkerDrag extends Handler {
 
 	_onDragStart(): void {
 		this._oldLatLng = this._marker.getLatLng();
-
-		// When using ES6 imports it could not be set when `Popup` was not imported as well
-		this._marker.closePopup && this._marker.closePopup();
 
 		// @section Dragging events
 		// @event movestart: Event

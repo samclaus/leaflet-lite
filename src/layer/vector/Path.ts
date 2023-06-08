@@ -1,5 +1,4 @@
 import type { Map, Renderer } from '../../Leaflet.js';
-import * as Util from '../../core/Util.js';
 import { DEFAULT_LAYER_OPTIONS, Layer, type LayerOptions } from '../Layer.js';
 
 export interface PathOptions extends LayerOptions {

@@ -1,4 +1,4 @@
-import { LatLng, type CRS, LatLngBounds } from '../Leaflet.js';
+import { LatLng, LatLngBounds, type CRS } from '../Leaflet.js';
 import type { Bounds } from './Bounds.js';
 import { Point } from './Point.js';
 import { centroid } from './PolyUtil.js';
@@ -13,7 +13,6 @@ import { centroid } from './PolyUtil.js';
 // Simplify polyline with vertex reduction and Douglas-Peucker simplification.
 // Improves rendering performance dramatically by lessening the number of points to draw.
 
-// @function simplify(points: Point[], tolerance: Number): Point[]
 // Dramatically reduces the number of points in a polyline while retaining
 // its shape and returns a new array of simplified points, using the
 // [Ramer-Douglas-Peucker algorithm](https://en.wikipedia.org/wiki/Ramer-Douglas-Peucker_algorithm).
@@ -268,18 +267,20 @@ export function _sqClosestPointOnSegment(
 	return sqDist ? dx*dx + dy*dy : new Point(x, y);
 }
 
-
-// @function isFlat(latlngs: LatLng[]): Boolean
-// Returns true if `latlngs` is a flat array, false is nested.
-export function isFlat(latlngs: unknown[]): boolean {
-	return !Array.isArray(latlngs[0]) || (typeof latlngs[0][0] !== 'object' && typeof latlngs[0][0] !== 'undefined');
+/**
+ * Returns true if `latlngs` is a flat array, false is nested.
+ * 
+ * @deprecated Working with nested arrays should be very explicit throughout the code.
+ */
+export function isFlat(latlngs: LatLng[] | LatLng[][]): latlngs is LatLng[] {
+	return !latlngs.length || latlngs[0] instanceof LatLng;
 }
 
 /**
  * Returns the center ([centroid](http://en.wikipedia.org/wiki/Centroid)) of the passed LatLngs (first ring) from a polyline.
  */
 export function polylineCenter(latlngs: readonly LatLng[], crs: typeof CRS): LatLng {
-	let i, halfDist, segDist, dist, p1, p2, ratio, center;
+	let i, halfDist, segDist, dist, p1, p2, ratio, center: Point;
 
 	if (!latlngs || latlngs.length === 0) {
 		throw new Error('latlngs not passed');
@@ -289,6 +290,7 @@ export function polylineCenter(latlngs: readonly LatLng[], crs: typeof CRS): Lat
 
 	const bounds = new LatLngBounds(...latlngs);
 	const areaBounds = bounds.getNorthWest().distanceTo(bounds.getSouthWest()) * bounds.getNorthEast().distanceTo(bounds.getNorthWest());
+
 	// tests showed that below 1700 rounding errors are happening
 	if (areaBounds < 1700) {
 		// getting a inexact center, to move the latlngs near to [0, 0] to prevent rounding errors
@@ -327,15 +329,19 @@ export function polylineCenter(latlngs: readonly LatLng[], crs: typeof CRS): Lat
 
 			if (dist > halfDist) {
 				ratio = (dist - halfDist) / segDist;
-				center = [
+				center = new Point(
 					p2.x - ratio * (p2.x - p1.x),
 					p2.y - ratio * (p2.y - p1.y)
-				];
+				);
 				break;
 			}
 		}
 	}
 
-	const latlngCenter = crs.unproject(toPoint(center));
-	return toLatLng([latlngCenter.lat + centroidLatLng.lat, latlngCenter.lng + centroidLatLng.lng]);
+	const latlngCenter = crs.unproject(center!); // TODO: null safety
+
+	return new LatLng(
+		latlngCenter.lat + centroidLatLng.lat,
+		latlngCenter.lng + centroidLatLng.lng,
+	);
 }

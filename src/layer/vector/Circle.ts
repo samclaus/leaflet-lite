@@ -1,14 +1,10 @@
-import type { LatLng } from '../../Leaflet.js';
+import { Point, LatLng } from '../../Leaflet.js';
 import { LatLngBounds } from '../../geo/LatLngBounds.js';
 import { Earth } from '../../geo/crs/CRS.Earth.js';
 import { CircleMarker, type CircleMarkerOptions } from './CircleMarker.js';
 import { Path } from './Path.js';
 
 /**
- * @class Circle
- * @aka L.Circle
- * @inherits CircleMarker
- *
  * A class for drawing circle overlays on a map. Extends `CircleMarker`.
  *
  * It's an approximation and starts to diverge from a real circle closer to poles (due to projection distortion).
@@ -46,29 +42,34 @@ export class Circle extends CircleMarker {
 
 	// Returns the `LatLngBounds` of the path.
 	getBounds(): LatLngBounds {
-		const half = [this._radius, this._radiusY || this._radius];
+		const
+			half = new Point(this._radius, this._radiusY || this._radius),
+			map = this._map!, // TODO: null safety
+			point = this._point!; // TODO: null safety
 
 		return new LatLngBounds(
-			this._map.layerPointToLatLng(this._point.subtract(half)),
-			this._map.layerPointToLatLng(this._point.add(half)),
+			map.layerPointToLatLng(point.subtract(half)),
+			map.layerPointToLatLng(point.add(half)),
 		);
 	}
 
 	setStyle = Path.prototype.setStyle;
 
 	_project(): void {
-		const lng = this._latlng.lng,
+		const
+			lng = this._latlng.lng,
 		    lat = this._latlng.lat,
-		    map = this._map,
+		    map = this._map!, // TODO: null safety
 		    crs = map.options.crs;
 
 		if (crs.distance === Earth.distance) {
-			const d = Math.PI / 180,
-			      latR = (this._mRadius / Earth.R) / d,
-			      top = map.project([lat + latR, lng]),
-			      bottom = map.project([lat - latR, lng]),
-			      p = top.add(bottom).divideBy(2),
-			      lat2 = map.unproject(p).lat;
+			const
+				d = Math.PI / 180,
+				latR = (this._mRadius / Earth.R) / d,
+				top = map.project(new LatLng(lat + latR, lng)),
+				bottom = map.project(new LatLng(lat - latR, lng)),
+				p = top.add(bottom).divideBy(2),
+				lat2 = map.unproject(p).lat;
 			let lngR = Math.acos((Math.cos(latR * d) - Math.sin(lat * d) * Math.sin(lat2 * d)) /
 			            (Math.cos(lat * d) * Math.cos(lat2 * d))) / d;
 

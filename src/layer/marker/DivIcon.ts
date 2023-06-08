@@ -22,7 +22,6 @@ export class DivIcon extends Icon {
 		iconSize: [12, 12], // also can be set through CSS
 
 		// iconAnchor: (Point),
-		// popupAnchor: (Point),
 
 		// @option html: String|HTMLElement = ''
 		// Custom HTML code to put inside the div element, empty by default. Alternatively,

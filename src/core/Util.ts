@@ -130,7 +130,6 @@ export function template(str: string, data: Dict<any>): string {
 
 		if (value === undefined) {
 			throw new Error(`No value provided for variable ${str}`);
-
 		} else if (typeof value === 'function') {
 			value = value(data);
 		}

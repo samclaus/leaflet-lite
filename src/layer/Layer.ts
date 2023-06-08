@@ -1,3 +1,4 @@
+import type { LatLng, LatLngBounds } from '../Leaflet.js';
 import { Evented, type HandlerMap } from '../core/Events.js';
 import * as Util from '../core/Util.js';
 import { Map } from '../map/Map.js';
@@ -78,6 +79,9 @@ export abstract class Layer extends Evented {
 	 * usable state. Use for early initialization only.
 	 */
 	beforeAdd?(map: Map): this;
+
+	getBounds?(): LatLngBounds;
+	getLatLng?(): LatLng;
 
 	/**
 	 * Adds the layer to the given map or layer group.

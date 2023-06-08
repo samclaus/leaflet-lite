@@ -1,12 +1,7 @@
 import { formatNum } from '../core/Util.js';
 
-/*
- * @class Point
- * @aka L.Point
- *
+/**
  * Represents a point with `x` and `y` coordinates in pixels.
- *
- * @example
  *
  * ```js
  * var point = L.point(200, 300);

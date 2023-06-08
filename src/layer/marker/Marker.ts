@@ -179,10 +179,6 @@ export class Marker extends Layer {
 			this.update();
 		}
 
-		if (this._popup) {
-			this.bindPopup(this._popup, this._popup.options);
-		}
-
 		return this;
 	}
 
@@ -367,10 +363,6 @@ export class Marker extends Layer {
 			paddingTopLeft: anchor,
 			paddingBottomRight: size.subtract(anchor)
 		});
-	}
-
-	_getPopupAnchor(): Point {
-		return this.options.icon.options.popupAnchor;
 	}
 
 	_getTooltipAnchor(): Point {

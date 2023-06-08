@@ -16,10 +16,6 @@ export interface IconOptions {
 	 */
 	iconAnchor?: Point | undefined;
 	/**
-	 * The coordinates of the point from which popups will "open", relative to the icon anchor.
-	 */
-	popupAnchor?: Point;
-	/**
 	 * The coordinates of the point from which tooltips will "open", relative to the icon anchor.
 	 */
 	tooltipAnchor?: Point;
@@ -43,7 +39,6 @@ export interface IconOptions {
  *     iconUrl: 'my-icon.png',
  *     iconSize: [38, 95],
  *     iconAnchor: [22, 94],
- *     popupAnchor: [-3, -76],
  * });
  *
  * L.marker([50.505, 30.57], {icon: myIcon}).addTo(map);
@@ -59,7 +54,6 @@ export class Icon {
 	constructor(options: IconOptions) {
 		// TODO: how to make TypeScript not complain? This code should be correct
 		this.options = {
-			popupAnchor: new Point(0, 0),
 			tooltipAnchor: new Point(0, 0),
 			crossOrigin: false,
 			className: '',

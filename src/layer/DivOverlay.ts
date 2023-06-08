@@ -1,19 +1,19 @@
-import {Map} from '../map/Map.js';
-import {Layer} from './Layer.js';
-import {FeatureGroup} from './FeatureGroup.js';
 import * as Util from '../core/Util.js';
-import {LatLng} from '../geo/LatLng.js';
-import {Point, toPoint} from '../geometry/Point.js';
 import * as DomUtil from '../dom/DomUtil.js';
+import { LatLng } from '../geo/LatLng.js';
+import { Point } from '../geometry/Point.js';
+import { Map } from '../map/Map.js';
+import { FeatureGroup } from './FeatureGroup.js';
+import { Layer } from './Layer.js';
 
 /**
- * Base model for L.Popup and L.Tooltip. Inherit from it for custom overlays like plugins.
+ * Base model for L.Tooltip. Inherit from it for custom overlays like plugins.
  */
 export class DivOverlay extends Layer {
 
 	options = {
 		// @option interactive: Boolean = false
-		// If true, the popup/tooltip will listen to the mouse events.
+		// If true, the tooltip will listen to the mouse events.
 		interactive: false,
 
 		// The offset of the overlay position.
@@ -48,8 +48,7 @@ export class DivOverlay extends Layer {
 		}
 	}
 
-	// Adds the overlay to the map.
-	// Alternative to `map.openPopup(popup)`/`.openTooltip(tooltip)`.
+	// Adds the overlay to the map. Alternative to `map.openTooltip(tooltip)`.
 	openOn(map: Map = this._source._map): this {
 		if (!map.hasLayer(this)) {
 			map.addLayer(this);
@@ -57,9 +56,7 @@ export class DivOverlay extends Layer {
 		return this;
 	}
 
-	// Closes the overlay.
-	// Alternative to `map.closePopup(popup)`/`.closeTooltip(tooltip)`
-	// and `layer.closePopup()`/`.closeTooltip()`.
+	// Closes the overlay. Alternative to `map.closeTooltip(tooltip)` and `layer.closeTooltip()`.
 	close(): this {
 		if (this._map) {
 			this._map.removeLayer(this);
@@ -70,7 +67,7 @@ export class DivOverlay extends Layer {
 	// @method toggle(layer?: Layer): this
 	// Opens or closes the overlay bound to layer depending on its current state.
 	// Argument may be omitted only for overlay bound to layer.
-	// Alternative to `layer.togglePopup()`/`.toggleTooltip()`.
+	// Alternative to `.toggleTooltip()`.
 	toggle(layer): this {
 		if (this._map) {
 			this.close();

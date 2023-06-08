@@ -159,8 +159,6 @@ export class Keyboard extends Handler {
 			}
 		} else if (key in this._zoomKeys) {
 			map.setZoom(map._zoom + (e.shiftKey ? 3 : 1) * this._zoomKeys[key]);
-		} else if (key === 'Escape' && map._popup && map._popup.options.closeOnEscapeKey) {
-			map.closePopup();
 		} else {
 			return;
 		}

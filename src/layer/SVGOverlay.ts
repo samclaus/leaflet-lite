@@ -1,11 +1,7 @@
-import {ImageOverlay} from './ImageOverlay.js';
 import * as Util from '../core/Util.js';
+import { ImageOverlay } from './ImageOverlay.js';
 
-/*
- * @class SVGOverlay
- * @aka L.SVGOverlay
- * @inherits ImageOverlay
- *
+/**
  * Used to load, display and provide DOM access to an SVG file over specific bounds of the map. Extends `ImageOverlay`.
  *
  * An SVG overlay uses the [`<svg>`](https://developer.mozilla.org/docs/Web/SVG/Element/svg) element.
@@ -21,7 +17,6 @@ import * as Util from '../core/Util.js';
  * L.svgOverlay(svgElement, svgElementBounds).addTo(map);
  * ```
  */
-
 export const SVGOverlay = ImageOverlay.extend({
 	_initImage() {
 		const el = this._image = this._url;
@@ -38,12 +33,3 @@ export const SVGOverlay = ImageOverlay.extend({
 	// Returns the instance of [`SVGElement`](https://developer.mozilla.org/docs/Web/API/SVGElement)
 	// used by this overlay.
 });
-
-
-// @factory L.svgOverlay(svg: String|SVGElement, bounds: LatLngBounds, options?: SVGOverlay options)
-// Instantiates an image overlay object given an SVG element and the geographical bounds it is tied to.
-// A viewBox attribute is required on the SVG element to zoom in and out properly.
-
-export function svgOverlay(el, bounds, options) {
-	return new SVGOverlay(el, bounds, options);
-}

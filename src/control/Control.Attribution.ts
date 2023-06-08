@@ -56,7 +56,6 @@ export class Attribution extends Control {
 		}, this, true);
 	}
 
-	// @method setPrefix(prefix: String|false): this
 	// The HTML text shown before the attributions. Pass `false` to disable.
 	setPrefix(prefix: string): this {
 		this.prefix = prefix;

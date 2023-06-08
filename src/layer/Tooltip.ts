@@ -1,19 +1,15 @@
-import {DivOverlay} from './DivOverlay.js';
-import {Point, toPoint} from '../geometry/Point.js';
-import {Map} from '../map/Map.js';
-import {Layer} from './Layer.js';
-import * as DomUtil from '../dom/DomUtil.js';
-import * as DomEvent from '../dom/DomEvent.js';
 import * as Util from '../core/Util.js';
-import {FeatureGroup} from './FeatureGroup.js';
+import * as DomEvent from '../dom/DomEvent.js';
+import * as DomUtil from '../dom/DomUtil.js';
+import { Point } from '../geometry/Point.js';
+import { Map } from '../map/Map.js';
+import { DivOverlay } from './DivOverlay.js';
+import { FeatureGroup } from './FeatureGroup.js';
+import { Layer } from './Layer.js';
 
-/*
- * @class Tooltip
- * @inherits DivOverlay
- * @aka L.Tooltip
+/**
  * Used to display small texts on top of map layers.
  *
- * @example
  * If you want to just bind a tooltip to marker:
  *
  * ```js
@@ -44,9 +40,6 @@ import {FeatureGroup} from './FeatureGroup.js';
  * - the `tooltipAnchor` Icon option: this will only be considered for Marker. You
  *   should adapt this value if you use a custom icon.
  */
-
-
-// @namespace Tooltip
 export const Tooltip = DivOverlay.extend({
 
 	// @section

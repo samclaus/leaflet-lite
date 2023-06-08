@@ -23,19 +23,18 @@ import { LatLngBounds } from '../LatLngBounds.js';
  */
 export const CRS = {
 
-	// @method latLngToPoint(latlng: LatLng, zoom: Number): Point
 	// Projects geographical coordinates into pixel coordinates for a given zoom.
-	latLngToPoint(latlng: LatLng, zoom: number) {
-		const projectedPoint = this.projection.project(latlng),
+	latLngToPoint(latlng: LatLng, zoom: number): Point {
+		const
+			projectedPoint = this.projection.project(latlng),
 		    scale = this.scale(zoom);
 
 		return this.transformation._transform(projectedPoint, scale);
 	},
 
-	// @method pointToLatLng(point: Point, zoom: Number): LatLng
 	// The inverse of `latLngToPoint`. Projects pixel coordinates on a given
 	// zoom into geographical coordinates.
-	pointToLatLng(point, zoom) {
+	pointToLatLng(point: Point, zoom: number): LatLng {
 		const
 			scale = this.scale(zoom),
 		    untransformedPoint = this.transformation.untransform(point, scale);
@@ -55,7 +54,6 @@ export const CRS = {
 		return this.projection.unproject(point);
 	},
 
-	// @method scale(zoom: Number): Number
 	// Returns the scale used when transforming projected coordinates into
 	// pixel coordinates for a particular zoom. For example, it returns
 	// `256 * 2^zoom` for Mercator-based CRS.
@@ -63,7 +61,6 @@ export const CRS = {
 		return 256 * Math.pow(2, zoom);
 	},
 
-	// @method zoom(scale: Number): Number
 	// Inverse of `scale()`, returns the zoom level corresponding to a scale
 	// factor of `scale`.
 	zoom(scale: number): number {
@@ -104,10 +101,9 @@ export const CRS = {
 	// If true, the coordinate space will be unbounded (infinite in both axes)
 	infinite: false,
 
-	// @method wrapLatLng(latlng: LatLng): LatLng
 	// Returns a `LatLng` where lat and lng has been wrapped according to the
 	// CRS's `wrapLat` and `wrapLng` properties, if they are outside the CRS's bounds.
-	wrapLatLng(latlng) {
+	wrapLatLng(latlng: LatLng): LatLng {
 		const lng = this.wrapLng ? Util.wrapNum(latlng.lng, this.wrapLng, true) : latlng.lng,
 		    lat = this.wrapLat ? Util.wrapNum(latlng.lat, this.wrapLat, true) : latlng.lat,
 		    alt = latlng.alt;
@@ -137,4 +133,5 @@ export const CRS = {
 
 		return new LatLngBounds(newSw, newNe);
 	}
+
 };

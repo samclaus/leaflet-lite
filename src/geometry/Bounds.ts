@@ -1,9 +1,6 @@
 import { Point } from './Point.js';
 
-/*
- * @class Bounds
- * @aka L.Bounds
- *
+/**
  * Represents a rectangular area in pixel coordinates.
  *
  * @example
@@ -26,12 +23,11 @@ import { Point } from './Point.js';
  */
 export class Bounds {
 
-	min: Point;
-	max: Point;
+	min!: Point; // assigned by extend() call in constructor
+	max!: Point; // assigned by extend() call in constructor
 
 	// TODO: figure out where this is called and make sure Bounds is always constructed
 	// with at least a single Point (also make constructor monomorphic)
-
 	constructor(...points: readonly Point[]) {
 		// TODO: need to enforce that enough points are passed, preferably without guarding here
 		for (let i = 0, len = points.length; i < len; i++) {
@@ -39,13 +35,8 @@ export class Bounds {
 		}
 	}
 	
-	// @method extend(point: Point): this
-	// Extends the bounds to contain the given point.
-
-	// @alternative
-	// @method extend(otherBounds: Bounds): this
-	// Extend the bounds to contain the given bounds
-	// TODO: always take bounds and just construct bounds from point before passing
+	// Extends the bounds to contain the given point or bounds.
+	// TODO: separate into 2 monomorphic methods.
 	extend(obj: Point | Bounds): this {
 		let min2: Point;
 		let max2: Point;
@@ -74,7 +65,6 @@ export class Bounds {
 		return this;
 	}
 
-	// @method getCenter(round?: Boolean): Point
 	// Returns the center point of the bounds.
 	getCenter(round?: boolean): Point {
 		return new Point(
@@ -84,41 +74,32 @@ export class Bounds {
 		);
 	}
 
-	// @method getBottomLeft(): Point
 	// Returns the bottom-left point of the bounds.
 	getBottomLeft(): Point {
 		return new Point(this.min.x, this.max.y);
 	}
 
-	// @method getTopRight(): Point
 	// Returns the top-right point of the bounds.
 	getTopRight(): Point {
 		return new Point(this.max.x, this.min.y);
 	}
 
-	// @method getTopLeft(): Point
 	// Returns the top-left point of the bounds (i.e. [`this.min`](#bounds-min)).
 	getTopLeft(): Point {
 		return this.min;
 	}
 
-	// @method getBottomRight(): Point
 	// Returns the bottom-right point of the bounds (i.e. [`this.max`](#bounds-max)).
 	getBottomRight(): Point {
 		return this.max;
 	}
 
-	// @method getSize(): Point
 	// Returns the size of the given bounds
 	getSize(): Point {
 		return this.max.subtract(this.min);
 	}
 
-	// @method contains(otherBounds: Bounds): Boolean
-	// Returns `true` if the rectangle contains the given one.
-	// @alternative
-	// @method contains(point: Point): Boolean
-	// Returns `true` if the rectangle contains the given point.
+	// Returns true if these bounds contain the given point or bounds.
 	// TODO: make this not polymorphic, add "fromPoint" constructor for Bounds class
 	contains(obj: Point | Bounds): boolean {
 		let min: Point;
@@ -139,44 +120,40 @@ export class Bounds {
 		);
 	}
 
-	// @method intersects(otherBounds: Bounds): Boolean
 	// Returns `true` if the rectangle intersects the given bounds. Two bounds
 	// intersect if they have at least one point in common.
-	intersects(bounds: Bounds): boolean {
+	intersects(otherBounds: Bounds): boolean {
 		const
 			min = this.min,
 		    max = this.max,
-		    min2 = bounds.min,
-		    max2 = bounds.max,
+		    min2 = otherBounds.min,
+		    max2 = otherBounds.max,
 		    xIntersects = (max2.x >= min.x) && (min2.x <= max.x),
 		    yIntersects = (max2.y >= min.y) && (min2.y <= max.y);
 
 		return xIntersects && yIntersects;
 	}
 
-	// @method overlaps(otherBounds: Bounds): Boolean
 	// Returns `true` if the rectangle overlaps the given bounds. Two bounds
 	// overlap if their intersection is an area.
-	overlaps(bounds: Bounds): boolean {
+	overlaps(otherBounds: Bounds): boolean {
 		const
 			min = this.min,
 		    max = this.max,
-		    min2 = bounds.min,
-		    max2 = bounds.max,
+		    min2 = otherBounds.min,
+		    max2 = otherBounds.max,
 		    xOverlaps = (max2.x > min.x) && (min2.x < max.x),
 		    yOverlaps = (max2.y > min.y) && (min2.y < max.y);
 
 		return xOverlaps && yOverlaps;
 	}
 
-	// @method isValid(): Boolean
 	// Returns `true` if the bounds are properly initialized.
 	/** @deprecated Bounds should never be constructed with an "invalid" state-makes no sense */
-	isValid() {
+	isValid(): boolean {
 		return !!(this.min && this.max);
 	}
 
-	// @method pad(bufferRatio: Number): Bounds
 	// Returns bounds created by extending or retracting the current bounds by a given ratio in each direction.
 	// For example, a ratio of 0.5 extends the bounds by 50% in each direction.
 	// Negative values will retract the bounds.
@@ -193,12 +170,11 @@ export class Bounds {
 		);
 	}
 
-	// @method equals(otherBounds: Bounds): Boolean
 	// Returns `true` if the rectangle is equivalent to the given bounds.
-	equals(bounds: Bounds): boolean {
+	equals(otherBounds: Bounds): boolean {
 		return (
-			this.min.equals(bounds.min) &&
-			this.max.equals(bounds.max)
+			this.min.equals(otherBounds.min) &&
+			this.max.equals(otherBounds.max)
 		);
 	}
 

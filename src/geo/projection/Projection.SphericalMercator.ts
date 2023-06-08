@@ -1,6 +1,6 @@
-import {LatLng} from '../LatLng.js';
-import {Bounds} from '../../geometry/Bounds.js';
-import {Point} from '../../geometry/Point.js';
+import { Bounds } from '../../geometry/Bounds.js';
+import { Point } from '../../geometry/Point.js';
+import { LatLng } from '../LatLng.js';
 
 /*
  * @namespace Projection
@@ -42,6 +42,9 @@ export const SphericalMercator = {
 
 	bounds: (function () {
 		const d = earthRadius * Math.PI;
-		return new Bounds([-d, -d], [d, d]);
+		return new Bounds(
+			new Point(-d, -d),
+			new Point(d, d),
+		);
 	})()
 };

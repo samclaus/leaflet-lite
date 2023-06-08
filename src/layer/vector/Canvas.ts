@@ -1,4 +1,4 @@
-import type { CircleMarker, Map, Path } from '../../Leaflet.js';
+import type { CircleMarker, Map, Path, Polyline } from '../../Leaflet.js';
 import type { HandlerMap } from '../../core/Events.js';
 import * as Util from '../../core/Util.js';
 import * as DomEvent from '../../dom/DomEvent.js';
@@ -272,7 +272,7 @@ export class Canvas extends Renderer {
 		this._ctx.restore();  // Restore state before clipping.
 	}
 
-	_updatePoly(layer, closed) {
+	_updatePoly(layer: Polyline, closed?: boolean): void {
 		if (!this._drawing) { return; }
 
 		let i, j, len2, p;

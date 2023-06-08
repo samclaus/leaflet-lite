@@ -183,7 +183,7 @@ export class Layers extends Control {
 		    collapsed = this.options.collapsed;
 
 		// makes this work on IE touch devices by stopping it from firing a mouseout event when the touch is released
-		container.setAttribute('aria-haspopup', true);
+		container.setAttribute('aria-haspopup', true as any); // gets coerced to string
 
 		DomEvent.disableClickPropagation(container);
 		DomEvent.disableScrollPropagation(container);

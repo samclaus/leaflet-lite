@@ -1227,9 +1227,6 @@ export class Map extends Evented {
 		// @pane tooltipPane: HTMLElement = 650
 		// Pane for `Tooltip`s.
 		this.createPane('tooltipPane');
-		// @pane popupPane: HTMLElement = 700
-		// Pane for `Popup`s.
-		this.createPane('popupPane');
 
 		if (!this.options.markerZoomAnimation) {
 			panes.markerPane.classList.add('leaflet-zoom-hide');
@@ -1489,7 +1486,7 @@ export class Map extends Evented {
 	_fireDOMEvent(e: Event, type: string, canvasTargets?) {
 
 		if (e.type === 'click') {
-			// Fire a synthetic 'preclick' event which propagates up (mainly for closing popups).
+			// Fire a synthetic 'preclick' event which propagates up (mainly for closing tooltips).
 			// @event preclick: MouseEvent
 			// Fired before mouse click on the map (sometimes useful when you
 			// want something to happen on click before any existing click
@@ -1828,10 +1825,6 @@ export class Map extends Evented {
 
 	// Adds the given layer to the map
 	addLayer(layer: Layer): Map {
-		if (!layer._layerAdd) {
-			throw new Error('The provided object is not a Layer.');
-		}
-
 		const id = Util.stamp(layer);
 		if (this._layers[id]) { return this; }
 		this._layers[id] = layer;
@@ -1876,7 +1869,7 @@ export class Map extends Evented {
 	 * Iterates over the layers of the map, optionally specifying context of the iterator function.
 	 * ```
 	 * map.eachLayer(function(layer){
-	 *     layer.bindPopup('Hello');
+	 *     layer.bindTooltip('Hello');
 	 * });
 	 * ```
 	 */

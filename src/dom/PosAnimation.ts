@@ -39,7 +39,6 @@ export class PosAnimation extends Evented {
 	_startTime = 0;
 	_animId = 0; // from requestAnimationFrame
 
-	// @method run(el: HTMLElement, newPos: Point, duration?: Number, easeLinearity?: Number)
 	// Run an animation of a given element to a new position, optionally setting
 	// duration in seconds (`0.25` by default) and easing linearity factor (3rd
 	// argument of the [cubic bezier curve](https://cubic-bezier.com/#0,0,.5,1),

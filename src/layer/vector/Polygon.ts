@@ -1,21 +1,14 @@
-import {Polyline} from './Polyline.js';
-import {LatLng} from '../../geo/LatLng.js';
+import { LatLng } from '../../geo/LatLng.js';
+import { Bounds } from '../../geometry/Bounds.js';
 import * as LineUtil from '../../geometry/LineUtil.js';
-import {Point} from '../../geometry/Point.js';
-import {Bounds} from '../../geometry/Bounds.js';
+import { Point } from '../../geometry/Point.js';
 import * as PolyUtil from '../../geometry/PolyUtil.js';
+import { Polyline, type PolylineOptions } from './Polyline.js';
 
-/*
- * @class Polygon
- * @aka L.Polygon
- * @inherits Polyline
- *
+/**
  * A class for drawing polygon overlays on a map. Extends `Polyline`.
  *
  * Note that points you pass when creating a polygon shouldn't have an additional last point equal to the first one — it's better to filter out such points.
- *
- *
- * @example
  *
  * ```js
  * // create a red polygon from an array of LatLng points
@@ -50,55 +43,60 @@ import * as PolyUtil from '../../geometry/PolyUtil.js';
  * ];
  * ```
  */
+export class Polygon extends Polyline {
 
-export const Polygon = Polyline.extend({
+	constructor(
+		latlngs: LatLng[],
+		options?: Partial<PolylineOptions>,
+	) {
+		super(latlngs, options);
 
-	options: {
-		fill: true
-	},
+		// Default path options set 'fill' to false if not provided explicitly,
+		// but polygons should make it true by default
+		this.options.fill = options?.fill ?? true;
+		this._setLatLngs(latlngs);
+	}
 
-	isEmpty() {
-		return !this._latlngs.length || !this._latlngs[0].length;
-	},
+	isEmpty(): boolean {
+		return !this._latlngs.length || !(this._latlngs[0] as any).length;
+	}
 
-	// @method getCenter(): LatLng
 	// Returns the center ([centroid](http://en.wikipedia.org/wiki/Centroid)) of the Polygon.
-	getCenter() {
+	getCenter(): LatLng {
 		// throws error when not yet added to map as this center calculation requires projected coordinates
 		if (!this._map) {
 			throw new Error('Must add layer to map before using getCenter()');
 		}
 		return PolyUtil.polygonCenter(this._defaultShape(), this._map.options.crs);
-	},
+	}
 
-	_convertLatLngs(latlngs) {
-		const result = Polyline.prototype._convertLatLngs.call(this, latlngs),
-		    len = result.length;
-
-		// remove last point if it equals first one
-		if (len >= 2 && result[0] instanceof LatLng && result[0].equals(result[len - 1])) {
-			result.pop();
-		}
-		return result;
-	},
-
-	_setLatLngs(latlngs) {
+	_setLatLngs(latlngs: LatLng[] | LatLng[][]): void {
 		Polyline.prototype._setLatLngs.call(this, latlngs);
-		if (LineUtil.isFlat(this._latlngs)) {
-			this._latlngs = [this._latlngs];
+		latlngs = this._latlngs; // in case the Polyline method modified the coordinates
+
+		if (LineUtil.isFlat(latlngs)) {
+			// Remove the last point if it equals the first
+			if (latlngs.length >= 2 && latlngs[0].equals(latlngs[latlngs.length - 1])) {
+				latlngs.pop();
+			}
+
+			this._latlngs = [latlngs];
 		}
-	},
+	}
 
 	_defaultShape() {
+		// TODO: does this class use even deeper nested coordinate arrays than Polyline does??
 		return LineUtil.isFlat(this._latlngs[0]) ? this._latlngs[0] : this._latlngs[0][0];
-	},
+	}
 
-	_clipPoints() {
+	_clipPoints(): void {
 		// polygons need a different clipping algorithm so we redefine that
 
-		let bounds = this._renderer._bounds;
-		const w = this.options.weight,
-		      p = new Point(w, w);
+		// TODO: null safety
+		let bounds = this._renderer!._bounds!;
+		const
+			w = this.options.weight,
+		    p = new Point(w, w);
 
 		// increase clip padding by stroke width to avoid stroke on clip edges
 		bounds = new Bounds(bounds.min.subtract(p), bounds.max.add(p));
@@ -119,15 +117,17 @@ export const Polygon = Polyline.extend({
 				this._parts.push(clipped);
 			}
 		}
-	},
+	}
 
-	_updatePath() {
-		this._renderer._updatePoly(this, true);
-	},
+	_updatePath(): void {
+		// TODO: null safety
+		this._renderer!._updatePoly(this, true);
+	}
 
 	// Needed by the `Canvas` renderer for interactivity
-	_containsPoint(p) {
-		let inside = false,
+	_containsPoint(p: Point): boolean {
+		let
+			inside = false,
 		    part, p1, p2, i, j, k, len, len2;
 
 		if (!this._pxBounds || !this._pxBounds.contains(p)) { return false; }
@@ -150,4 +150,4 @@ export const Polygon = Polyline.extend({
 		return inside || Polyline.prototype._containsPoint.call(this, p, true);
 	}
 
-});
+}

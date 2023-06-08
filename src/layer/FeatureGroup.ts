@@ -1,31 +1,26 @@
-import {LayerGroup} from './LayerGroup.js';
-import {LatLngBounds} from '../geo/LatLngBounds.js';
+import { LatLngBounds } from '../geo/LatLngBounds.js';
+import type { Layer } from './Layer.js';
+import { LayerGroup } from './LayerGroup.js';
+import type { PathOptions } from './vector/Path.js';
 
-/*
- * @class FeatureGroup
- * @aka L.FeatureGroup
- * @inherits LayerGroup
- *
+/**
  * Extended `LayerGroup` that makes it easier to do the same thing to all its member layers:
- *  * [`bindPopup`](#layer-bindpopup) binds a popup to all of the layers at once (likewise with [`bindTooltip`](#layer-bindtooltip))
- *  * Events are propagated to the `FeatureGroup`, so if the group has an event
+ *  - [`bindTooltip`](#layer-bindtooltip) binds a tooltip to all of the layers at once
+ *  - Events are propagated to the `FeatureGroup`, so if the group has an event
  * handler, it will handle events from any of the layers. This includes mouse events
  * and custom events.
- *  * Has `layeradd` and `layerremove` events
- *
- * @example
+ *  - Has `layeradd` and `layerremove` events
  *
  * ```js
  * L.featureGroup([marker1, marker2, polyline])
- * 	.bindPopup('Hello world!')
+ * 	.bindTooltip('Hello world!')
  * 	.on('click', function() { alert('Clicked on a member of the group!'); })
  * 	.addTo(map);
  * ```
  */
+export class FeatureGroup extends LayerGroup {
 
-export const FeatureGroup = LayerGroup.extend({
-
-	addLayer(layer) {
+	addLayer(layer: Layer): this {
 		if (this.hasLayer(layer)) {
 			return this;
 		}
@@ -37,58 +32,58 @@ export const FeatureGroup = LayerGroup.extend({
 		// @event layeradd: LayerEvent
 		// Fired when a layer is added to this `FeatureGroup`
 		return this.fire('layeradd', {layer});
-	},
+	}
 
-	removeLayer(layer) {
+	removeLayer(layer: number | Layer): this {
 		if (!this.hasLayer(layer)) {
 			return this;
 		}
-		if (layer in this._layers) {
-			layer = this._layers[layer];
+
+		// NOTE: will not throw at runtime even if it's an object; I will not
+		// add extra runtime typechecking code just to satisfy TypeScript
+		if ((layer as number) in this._layers) {
+			layer = this._layers[layer as number];
 		}
 
-		layer.removeEventParent(this);
+		(layer as Layer).removeEventParent(this);
 
 		LayerGroup.prototype.removeLayer.call(this, layer);
 
 		// @event layerremove: LayerEvent
 		// Fired when a layer is removed from this `FeatureGroup`
 		return this.fire('layerremove', {layer});
-	},
+	}
 
-	// @method setStyle(style: Path options): this
 	// Sets the given path options to each layer of the group that has a `setStyle` method.
-	setStyle(style) {
+	setStyle(style: Partial<PathOptions>): this {
 		return this.invoke('setStyle', style);
-	},
+	}
 
-	// @method bringToFront(): this
 	// Brings the layer group to the top of all other layers
-	bringToFront() {
+	bringToFront(): this {
 		return this.invoke('bringToFront');
-	},
+	}
 
-	// @method bringToBack(): this
 	// Brings the layer group to the back of all other layers
-	bringToBack() {
+	bringToBack(): this {
 		return this.invoke('bringToBack');
-	},
+	}
 
-	// @method getBounds(): LatLngBounds
 	// Returns the LatLngBounds of the Feature Group (created from bounds and coordinates of its children).
-	getBounds() {
+	getBounds(): LatLngBounds {
 		const bounds = new LatLngBounds();
 
-		for (const layer of Object.values(this._layers)) {
-			bounds.extend(layer.getBounds ? layer.getBounds() : layer.getLatLng());
+		for (
+			const layer of Object.values(this._layers)
+		) {
+			if (layer.getBounds) {
+				bounds.extend(layer.getBounds());
+			} else if (layer.getLatLng) {
+				bounds.extend(layer.getLatLng());
+			}
 		}
 
 		return bounds;
 	}
-});
 
-// @factory L.featureGroup(layers?: Layer[], options?: Object)
-// Create a feature group, optionally given an initial set of layers and an `options` object.
-export const featureGroup = function (layers, options) {
-	return new FeatureGroup(layers, options);
-};
+}

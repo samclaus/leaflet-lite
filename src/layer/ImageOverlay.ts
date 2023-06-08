@@ -1,17 +1,10 @@
-import {Layer} from './Layer.js';
 import * as Util from '../core/Util.js';
-import {toLatLngBounds} from '../geo/LatLngBounds.js';
-import {Bounds} from '../geometry/Bounds.js';
 import * as DomUtil from '../dom/DomUtil.js';
+import { Bounds } from '../geometry/Bounds.js';
+import { Layer } from './Layer.js';
 
-/*
- * @class ImageOverlay
- * @aka L.ImageOverlay
- * @inherits Interactive layer
- *
+/**
  * Used to load and display a single image over specific bounds of the map. Extends `Layer`.
- *
- * @example
  *
  * ```js
  * var imageUrl = 'https://maps.lib.utexas.edu/maps/historical/newark_nj_1922.jpg',
@@ -19,12 +12,11 @@ import * as DomUtil from '../dom/DomUtil.js';
  * L.imageOverlay(imageUrl, imageBounds).addTo(map);
  * ```
  */
-
-export const ImageOverlay = Layer.extend({
+export class ImageOverlay extends Layer {
 
 	// @section
 	// @aka ImageOverlay options
-	options: {
+	options = {
 		// @option opacity: Number = 1.0
 		// The opacity of the image overlay.
 		opacity: 1,
@@ -61,14 +53,14 @@ export const ImageOverlay = Layer.extend({
 		// If the image overlay is flickering when being added/removed, set
 		// this option to `'sync'`.
 		decoding: 'auto'
-	},
+	};
 
 	initialize(url, bounds, options) { // (String, LatLngBounds, Object)
 		this._url = url;
 		this._bounds = toLatLngBounds(bounds);
 
 		Util.setOptions(this, options);
-	},
+	}
 
 	onAdd() {
 		if (!this._image) {
@@ -86,14 +78,14 @@ export const ImageOverlay = Layer.extend({
 
 		this.getPane().appendChild(this._image);
 		this._reset();
-	},
+	}
 
 	onRemove() {
 		this._image.remove();
 		if (this.options.interactive) {
 			this.removeInteractiveTarget(this._image);
 		}
-	},
+	}
 
 	// @method setOpacity(opacity: Number): this
 	// Sets the opacity of the overlay.
@@ -104,14 +96,14 @@ export const ImageOverlay = Layer.extend({
 			this._updateOpacity();
 		}
 		return this;
-	},
+	}
 
 	setStyle(styleOpts) {
 		if (styleOpts.opacity) {
 			this.setOpacity(styleOpts.opacity);
 		}
 		return this;
-	},
+	}
 
 	// @method bringToFront(): this
 	// Brings the layer to the top of all overlays.
@@ -120,7 +112,7 @@ export const ImageOverlay = Layer.extend({
 			DomUtil.toFront(this._image);
 		}
 		return this;
-	},
+	}
 
 	// @method bringToBack(): this
 	// Brings the layer to the bottom of all overlays.
@@ -129,7 +121,7 @@ export const ImageOverlay = Layer.extend({
 			DomUtil.toBack(this._image);
 		}
 		return this;
-	},
+	}
 
 	// @method setUrl(url: String): this
 	// Changes the URL of the image.
@@ -140,7 +132,7 @@ export const ImageOverlay = Layer.extend({
 			this._image.src = url;
 		}
 		return this;
-	},
+	}
 
 	// @method setBounds(bounds: LatLngBounds): this
 	// Update the bounds that this ImageOverlay covers
@@ -151,7 +143,7 @@ export const ImageOverlay = Layer.extend({
 			this._reset();
 		}
 		return this;
-	},
+	}
 
 	getEvents() {
 		const events = {
@@ -164,7 +156,7 @@ export const ImageOverlay = Layer.extend({
 		}
 
 		return events;
-	},
+	}
 
 	// @method setZIndex(value: Number): this
 	// Changes the [zIndex](#imageoverlay-zindex) of the image overlay.
@@ -172,20 +164,20 @@ export const ImageOverlay = Layer.extend({
 		this.options.zIndex = value;
 		this._updateZIndex();
 		return this;
-	},
+	}
 
 	// @method getBounds(): LatLngBounds
 	// Get the bounds that this ImageOverlay covers
 	getBounds() {
 		return this._bounds;
-	},
+	}
 
 	// @method getElement(): HTMLElement
 	// Returns the instance of [`HTMLImageElement`](https://developer.mozilla.org/docs/Web/API/HTMLImageElement)
 	// used by this overlay.
 	getElement() {
 		return this._image;
-	},
+	}
 
 	_initImage() {
 		const wasElementSupplied = this._url.tagName === 'IMG';
@@ -220,14 +212,14 @@ export const ImageOverlay = Layer.extend({
 
 		img.src = this._url;
 		img.alt = this.options.alt;
-	},
+	}
 
 	_animateZoom(e) {
 		const scale = this._map.getZoomScale(e.zoom),
 		    offset = this._map._latLngBoundsToNewLayerBounds(this._bounds, e.zoom, e.center).min;
 
 		DomUtil.setTransform(this._image, offset, scale);
-	},
+	}
 
 	_reset() {
 		const image = this._image,
@@ -240,17 +232,17 @@ export const ImageOverlay = Layer.extend({
 
 		image.style.width  = `${size.x}px`;
 		image.style.height = `${size.y}px`;
-	},
+	}
 
 	_updateOpacity() {
 		this._image.style.opacity = this.options.opacity;
-	},
+	}
 
 	_updateZIndex() {
 		if (this._image && this.options.zIndex !== undefined && this.options.zIndex !== null) {
 			this._image.style.zIndex = this.options.zIndex;
 		}
-	},
+	}
 
 	_overlayOnError() {
 		// @event error: Event
@@ -262,18 +254,12 @@ export const ImageOverlay = Layer.extend({
 			this._url = errorUrl;
 			this._image.src = errorUrl;
 		}
-	},
+	}
 
 	// @method getCenter(): LatLng
 	// Returns the center of the ImageOverlay.
 	getCenter() {
 		return this._bounds.getCenter();
 	}
-});
 
-// @factory L.imageOverlay(imageUrl: String, bounds: LatLngBounds, options?: ImageOverlay options)
-// Instantiates an image overlay object given the URL of the image and the
-// geographical bounds it is tied to.
-export const imageOverlay = function (url, bounds, options) {
-	return new ImageOverlay(url, bounds, options);
-};
+}
