@@ -1,109 +1,109 @@
-import {Path} from './Path.js';
-import * as Util from '../../core/Util.js';
-import {toLatLng} from '../../geo/LatLng.js';
-import {Bounds} from '../../geometry/Bounds.js';
+import { Point, type LatLng } from '../../Leaflet.js';
+import { Bounds } from '../../geometry/Bounds.js';
+import { DEFAULT_PATH_OPTIONS, Path, type PathOptions } from './Path.js';
 
+export interface CircleMarkerOptions extends PathOptions {
+	// @option radius: Number = 10
+	// Radius of the circle marker, in pixels
+	radius: number;
+}
 
-/*
- * @class CircleMarker
- * @aka L.CircleMarker
- * @inherits Path
- *
+/**
  * A circle of a fixed size with radius specified in pixels. Extends `Path`.
  */
+export class CircleMarker extends Path {
 
-export const CircleMarker = Path.extend({
+	options: CircleMarkerOptions;
+	_radius: number;
+	_radiusY: number = NaN; // needed for Circle inheritance
+	_point: Point | undefined;
+	_pxBounds: Bounds | undefined;
 
-	// @section
-	// @aka CircleMarker options
-	options: {
-		fill: true,
+	constructor(
+		public _latlng: LatLng,
+		options?: Partial<CircleMarkerOptions>,
+	) {
+		super();
 
-		// @option radius: Number = 10
-		// Radius of the circle marker, in pixels
-		radius: 10
-	},
-
-	initialize(latlng, options) {
-		Util.setOptions(this, options);
-		this._latlng = toLatLng(latlng);
+		this.options = {
+			...DEFAULT_PATH_OPTIONS,
+			fill: true,
+			radius: 10,
+			...options,
+		};
 		this._radius = this.options.radius;
-	},
+	}
 
-	// @method setLatLng(latLng: LatLng): this
 	// Sets the position of a circle marker to a new location.
-	setLatLng(latlng) {
+	setLatLng(latlng: LatLng): this {
 		const oldLatLng = this._latlng;
-		this._latlng = toLatLng(latlng);
+		this._latlng = latlng;
 		this.redraw();
 
 		// @event move: Event
 		// Fired when the marker is moved via [`setLatLng`](#circlemarker-setlatlng). Old and new coordinates are included in event arguments as `oldLatLng`, `latlng`.
-		return this.fire('move', {oldLatLng, latlng: this._latlng});
-	},
+		return this.fire('move', { oldLatLng, latlng: this._latlng });
+	}
 
-	// @method getLatLng(): LatLng
 	// Returns the current geographical position of the circle marker
-	getLatLng() {
+	getLatLng(): LatLng {
 		return this._latlng;
-	},
+	}
 
-	// @method setRadius(radius: Number): this
 	// Sets the radius of a circle marker. Units are in pixels.
-	setRadius(radius) {
+	setRadius(radius: number): this {
 		this.options.radius = this._radius = radius;
 		return this.redraw();
-	},
+	}
 
-	// @method getRadius(): Number
 	// Returns the current radius of the circle
-	getRadius() {
+	getRadius(): number {
 		return this._radius;
-	},
+	}
 
-	setStyle(options) {
-		const radius = options && options.radius || this._radius;
+	setStyle(options: Partial<CircleMarkerOptions>) {
+		const radius = options?.radius || this._radius;
 		Path.prototype.setStyle.call(this, options);
 		this.setRadius(radius);
 		return this;
-	},
+	}
 
-	_project() {
-		this._point = this._map.latLngToLayerPoint(this._latlng);
+	_project(): void {
+		// TODO: null safety
+		this._point = this._map!.latLngToLayerPoint(this._latlng);
 		this._updateBounds();
-	},
+	}
 
-	_updateBounds() {
-		const r = this._radius,
+	_updateBounds(): void {
+		const
+			point = this._point!, // TODO: null safety
+			r = this._radius,
 		    r2 = this._radiusY || r,
 		    w = this._clickTolerance(),
-		    p = [r + w, r2 + w];
-		this._pxBounds = new Bounds(this._point.subtract(p), this._point.add(p));
-	},
+		    p = new Point(r + w, r2 + w);
 
-	_update() {
+		this._pxBounds = new Bounds(point.subtract(p), point.add(p));
+	}
+
+	_update(): void {
 		if (this._map) {
 			this._updatePath();
 		}
-	},
+	}
 
-	_updatePath() {
-		this._renderer._updateCircle(this);
-	},
+	_updatePath(): void {
+		this._renderer!._updateCircle(this); // TODO: null safety
+	}
 
-	_empty() {
-		return this._radius && !this._renderer._bounds.intersects(this._pxBounds);
-	},
+	_empty(): boolean {
+		// TODO: null safety
+		return !!this._radius && !this._renderer!._bounds!.intersects(this._pxBounds!);
+	}
 
 	// Needed by the `Canvas` renderer for interactivity
-	_containsPoint(p) {
-		return p.distanceTo(this._point) <= this._radius + this._clickTolerance();
+	_containsPoint(p: Point): boolean {
+		// TODO: null safety
+		return p.distanceTo(this._point!) <= this._radius + this._clickTolerance();
 	}
-});
 
-
-// @factory L.circleMarker(latlng: LatLng, options?: CircleMarker options)
-// Instantiates a circle marker object given a geographical point, and an optional options object.
-export function circleMarker(latlng, options) {
-	return new CircleMarker(latlng, options);
 }

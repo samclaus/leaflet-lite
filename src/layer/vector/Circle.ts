@@ -1,12 +1,10 @@
-import {CircleMarker} from './CircleMarker.js';
-import {Path} from './Path.js';
-import * as Util from '../../core/Util.js';
-import {toLatLng} from '../../geo/LatLng.js';
-import {LatLngBounds} from '../../geo/LatLngBounds.js';
-import {Earth} from '../../geo/crs/CRS.Earth.js';
+import type { LatLng } from '../../Leaflet.js';
+import { LatLngBounds } from '../../geo/LatLngBounds.js';
+import { Earth } from '../../geo/crs/CRS.Earth.js';
+import { CircleMarker, type CircleMarkerOptions } from './CircleMarker.js';
+import { Path } from './Path.js';
 
-
-/*
+/**
  * @class Circle
  * @aka L.Circle
  * @inherits CircleMarker
@@ -15,58 +13,50 @@ import {Earth} from '../../geo/crs/CRS.Earth.js';
  *
  * It's an approximation and starts to diverge from a real circle closer to poles (due to projection distortion).
  *
- * @example
- *
  * ```js
  * L.circle([50.5, 30.5], {radius: 200}).addTo(map);
  * ```
  */
+export class Circle extends CircleMarker {
 
-export const Circle = CircleMarker.extend({
+	/** Radius of the circle in meters. */
+	_mRadius: number;
 
-	initialize(latlng, options, legacyOptions) {
-		if (typeof options === 'number') {
-			// Backwards compatibility with 0.7.x factory (latlng, radius, options?)
-			options = Util.extend({}, legacyOptions, {radius: options});
-		}
-		Util.setOptions(this, options);
-		this._latlng = toLatLng(latlng);
+	constructor(
+		latlng: LatLng,
+		options?: CircleMarkerOptions,
+	) {
+		super(latlng, options);
 
 		if (isNaN(this.options.radius)) { throw new Error('Circle radius cannot be NaN'); }
 
-		// @section
-		// @aka Circle options
-		// @option radius: Number; Radius of the circle, in meters.
 		this._mRadius = this.options.radius;
-	},
+	}
 
-	// @method setRadius(radius: Number): this
 	// Sets the radius of a circle. Units are in meters.
-	setRadius(radius) {
+	setRadius(radius: number): this {
 		this._mRadius = radius;
 		return this.redraw();
-	},
+	}
 
-	// @method getRadius(): Number
 	// Returns the current radius of a circle. Units are in meters.
-	getRadius() {
+	getRadius(): number {
 		return this._mRadius;
-	},
+	}
 
-	// @method getBounds(): LatLngBounds
 	// Returns the `LatLngBounds` of the path.
-	getBounds() {
+	getBounds(): LatLngBounds {
 		const half = [this._radius, this._radiusY || this._radius];
 
 		return new LatLngBounds(
 			this._map.layerPointToLatLng(this._point.subtract(half)),
-			this._map.layerPointToLatLng(this._point.add(half)));
-	},
+			this._map.layerPointToLatLng(this._point.add(half)),
+		);
+	}
 
-	setStyle: Path.prototype.setStyle,
+	setStyle = Path.prototype.setStyle;
 
-	_project() {
-
+	_project(): void {
 		const lng = this._latlng.lng,
 		    lat = this._latlng.lat,
 		    map = this._map,
@@ -99,15 +89,5 @@ export const Circle = CircleMarker.extend({
 
 		this._updateBounds();
 	}
-});
 
-// @factory L.circle(latlng: LatLng, options?: Circle options)
-// Instantiates a circle object given a geographical point, and an options object
-// which contains the circle radius.
-// @alternative
-// @factory L.circle(latlng: LatLng, radius: Number, options?: Circle options)
-// Obsolete way of instantiating a circle, for compatibility with 0.7.x code.
-// Do not use in new applications or plugins.
-export function circle(latlng, options, legacyOptions) {
-	return new Circle(latlng, options, legacyOptions);
 }

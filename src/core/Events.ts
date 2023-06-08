@@ -129,11 +129,12 @@ export class Evented extends Class {
 	// object — the first argument of the listener function will contain its
 	// properties. The event can optionally be propagated to event parents.
 	fire(type: string, data?: any, propagate?: boolean): this {
-		const event = Util.extend({}, data, {
+		const event = {
+			...data,
 			type,
 			target: this,
-			sourceTarget: data?.sourceTarget || this
-		});
+			sourceTarget: data?.sourceTarget || this,
+		};
 		const listeners = this._events[type];
 
 		if (listeners) {
@@ -159,11 +160,11 @@ export class Evented extends Class {
 		if (propagate && this._parents) {
 			// propagate the event to parents (set with addEventParent)
 			for (const parent of this._parents) {
-				parent.fire(event.type, Util.extend({
+				parent.fire(event.type, {
 					layer: event.target,
 					propagatedFrom: event.target,
 					...event,
-				}, event), true);
+				}, true);
 			}
 		}
 

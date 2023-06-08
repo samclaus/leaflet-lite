@@ -1,13 +1,11 @@
-import {Renderer} from './Renderer.js';
-import * as DomEvent from '../../dom/DomEvent.js';
+import type { CircleMarker, Map, Path } from '../../Leaflet.js';
+import type { HandlerMap } from '../../core/Events.js';
 import * as Util from '../../core/Util.js';
-import {Bounds} from '../../geometry/Bounds.js';
+import * as DomEvent from '../../dom/DomEvent.js';
+import { Bounds } from '../../geometry/Bounds.js';
+import { Renderer } from './Renderer.js';
 
-/*
- * @class Canvas
- * @inherits Renderer
- * @aka L.Canvas
- *
+/**
  * Allows vector layers to be displayed with [`<canvas>`](https://developer.mozilla.org/docs/Web/API/Canvas_API).
  * Inherits `Renderer`.
  *
@@ -34,37 +32,42 @@ import {Bounds} from '../../geometry/Bounds.js';
  * var circle = L.circle( center, { renderer: myRenderer } );
  * ```
  */
+export class Canvas extends Renderer {
 
-export const Canvas = Renderer.extend({
-
-	// @section
-	// @aka Canvas options
-	options: {
+	options = {
 		// @option tolerance: Number = 0
 		// How much to extend the click tolerance around a path/object on the map.
 		tolerance: 0
-	},
+	};
 
-	getEvents() {
+	_ctxScale = window.devicePixelRatio;
+	_ctx: CanvasRenderingContext2D | undefined;
+	_redrawBounds: Bounds | undefined;
+	_redrawRequest = 0;
+	_postponeUpdatePaths = false;
+
+	getEvents(): HandlerMap {
 		const events = Renderer.prototype.getEvents.call(this);
 		events.viewprereset = this._onViewPreReset;
 		return events;
-	},
+	}
 
-	_onViewPreReset() {
+	_onViewPreReset(): void {
 		// Set a flag so that a viewprereset+moveend+viewreset only updates&redraws once
 		this._postponeUpdatePaths = true;
-	},
+	}
 
-	onAdd(map) {
+	onAdd(map: Map): this {
 		Renderer.prototype.onAdd.call(this, map);
 
 		// Redraw vectors since canvas is cleared upon removal,
 		// in case of removing the renderer itself from the map.
 		this._draw();
-	},
 
-	_initContainer() {
+		return this;
+	}
+
+	_initContainer(): void {
 		const container = this._container = document.createElement('canvas');
 
 		DomEvent.on(container, 'mousemove', this._onMouseMove, this);
@@ -72,38 +75,40 @@ export const Canvas = Renderer.extend({
 		DomEvent.on(container, 'mouseout', this._handleMouseOut, this);
 		container['_leaflet_disable_events'] = true;
 
-		this._ctx = container.getContext('2d');
-	},
+		this._ctx = container.getContext('2d') || undefined;
+	}
 
-	_destroyContainer() {
+	_destroyContainer(): void {
 		cancelAnimationFrame(this._redrawRequest);
-		delete this._ctx;
+		this._ctx = undefined;
 		Renderer.prototype._destroyContainer.call(this);
-	},
+	}
 
-	_resizeContainer() {
-		const size = Renderer.prototype._resizeContainer.call(this);
-		const m = this._ctxScale = window.devicePixelRatio;
+	_resizeContainer(): void {
+		const
+			size = Renderer.prototype._resizeContainer.call(this),
+			m = this._ctxScale;
 
 		// set canvas size (also clearing it); use double size on retina
 		this._container.width = m * size.x;
 		this._container.height = m * size.y;
-	},
+	}
 
 	_updatePaths() {
 		if (this._postponeUpdatePaths) { return; }
 
-		this._redrawBounds = null;
+		this._redrawBounds = undefined;
 		for (const layer of Object.values(this._layers)) {
 			layer._update();
 		}
 		this._redraw();
-	},
+	}
 
 	_update() {
 		if (this._map._animatingZoom && this._bounds) { return; }
 
-		const b = this._bounds,
+		const
+			b = this._bounds,
 		    s = this._ctxScale;
 
 		// translate so we use the same path coordinates after canvas element moves
@@ -114,18 +119,18 @@ export const Canvas = Renderer.extend({
 
 		// Tell paths to redraw themselves
 		this.fire('update');
-	},
+	}
 
-	_reset() {
+	_reset(): void {
 		Renderer.prototype._reset.call(this);
 
 		if (this._postponeUpdatePaths) {
 			this._postponeUpdatePaths = false;
 			this._updatePaths();
 		}
-	},
+	}
 
-	_initPath(layer) {
+	_initPath(layer: Path): void {
 		this._updateDashArray(layer);
 		this._layers[Util.stamp(layer)] = layer;
 
@@ -137,13 +142,13 @@ export const Canvas = Renderer.extend({
 		if (this._drawLast) { this._drawLast.next = order; }
 		this._drawLast = order;
 		this._drawFirst = this._drawFirst || this._drawLast;
-	},
+	}
 
-	_addPath(layer) {
+	_addPath(layer: Path): void {
 		this._requestRedraw(layer);
-	},
+	}
 
-	_removePath(layer) {
+	_removePath(layer: Path): void {
 		const order = layer._order;
 		const next = order.next;
 		const prev = order.prev;
@@ -160,13 +165,12 @@ export const Canvas = Renderer.extend({
 		}
 
 		delete layer._order;
-
 		delete this._layers[Util.stamp(layer)];
 
 		this._requestRedraw(layer);
-	},
+	}
 
-	_updatePath(layer) {
+	_updatePath(layer: Path): void {
 		// Redraw the union of the layer's old pixel
 		// bounds and the new pixel bounds.
 		this._extendRedrawBounds(layer);
@@ -175,12 +179,12 @@ export const Canvas = Renderer.extend({
 		// The redraw will extend the redraw bounds
 		// with the new pixel bounds.
 		this._requestRedraw(layer);
-	},
+	}
 
-	_updateStyle(layer) {
+	_updateStyle(layer: Path): void {
 		this._updateDashArray(layer);
 		this._requestRedraw(layer);
-	},
+	}
 
 	_updateDashArray(layer) {
 		if (typeof layer.options.dashArray === 'string') {
@@ -198,26 +202,26 @@ export const Canvas = Renderer.extend({
 		} else {
 			layer.options._dashArray = layer.options.dashArray;
 		}
-	},
+	}
 
 	_requestRedraw(layer) {
 		if (!this._map) { return; }
 
 		this._extendRedrawBounds(layer);
 		this._redrawRequest ||= requestAnimationFrame(() => this._redraw());
-	},
+	}
 
 	_extendRedrawBounds(layer) {
 		if (layer._pxBounds) {
 			const padding = (layer.options.weight || 0) + 1;
-			this._redrawBounds = this._redrawBounds || new Bounds();
+			this._redrawBounds ||= new Bounds();
 			this._redrawBounds.extend(layer._pxBounds.min.subtract([padding, padding]));
 			this._redrawBounds.extend(layer._pxBounds.max.add([padding, padding]));
 		}
-	},
+	}
 
-	_redraw() {
-		this._redrawRequest = null;
+	_redraw(): void {
+		this._redrawRequest = 0;
 
 		if (this._redrawBounds) {
 			this._redrawBounds.min._floor();
@@ -227,10 +231,10 @@ export const Canvas = Renderer.extend({
 		this._clear(); // clear layers in redraw bounds
 		this._draw(); // draw layers
 
-		this._redrawBounds = null;
-	},
+		this._redrawBounds = undefined;
+	}
 
-	_clear() {
+	_clear(): void {
 		const bounds = this._redrawBounds;
 		if (bounds) {
 			const size = bounds.getSize();
@@ -241,7 +245,7 @@ export const Canvas = Renderer.extend({
 			this._ctx.clearRect(0, 0, this._container.width, this._container.height);
 			this._ctx.restore();
 		}
-	},
+	}
 
 	_draw() {
 		let layer;
@@ -266,7 +270,7 @@ export const Canvas = Renderer.extend({
 		this._drawing = false;
 
 		this._ctx.restore();  // Restore state before clipping.
-	},
+	}
 
 	_updatePoly(layer, closed) {
 		if (!this._drawing) { return; }
@@ -293,9 +297,9 @@ export const Canvas = Renderer.extend({
 		this._fillStroke(ctx, layer);
 
 		// TODO optimization: 1 fill/stroke for all features with equal style instead of 1 for each feature
-	},
+	}
 
-	_updateCircle(layer) {
+	_updateCircle(layer: CircleMarker): void {
 
 		if (!this._drawing || layer._empty()) { return; }
 
@@ -317,7 +321,7 @@ export const Canvas = Renderer.extend({
 		}
 
 		this._fillStroke(ctx, layer);
-	},
+	}
 
 	_fillStroke(ctx, layer) {
 		const options = layer.options;
@@ -339,12 +343,12 @@ export const Canvas = Renderer.extend({
 			ctx.lineJoin = options.lineJoin;
 			ctx.stroke();
 		}
-	},
+	}
 
 	// Canvas obviously doesn't have mouse events for individual drawn objects,
 	// so we emulate that by calculating what's under the mouse on mousemove/click manually
 
-	_onClick(e) {
+	_onClick(e): void {
 		const point = this._map.mouseEventToLayerPoint(e);
 		let layer, clickedLayer;
 
@@ -357,28 +361,29 @@ export const Canvas = Renderer.extend({
 			}
 		}
 		this._fireEvent(clickedLayer ? [clickedLayer] : false, e);
-	},
+	}
 
-	_onMouseMove(e) {
+	_onMouseMove(e): void {
 		if (!this._map || this._map.dragging.moving() || this._map._animatingZoom) { return; }
 
 		const point = this._map.mouseEventToLayerPoint(e);
 		this._handleMouseHover(e, point);
-	},
+	}
 
 
-	_handleMouseOut(e) {
+	_handleMouseOut(e): void {
 		const layer = this._hoveredLayer;
+
 		if (layer) {
 			// if we're leaving the layer, fire mouseout
 			this._container.classList.remove('leaflet-interactive');
 			this._fireEvent([layer], e, 'mouseout');
-			this._hoveredLayer = null;
+			this._hoveredLayer = undefined;
 			this._mouseHoverThrottled = false;
 		}
-	},
+	}
 
-	_handleMouseHover(e, point) {
+	_handleMouseHover(e, point): void {
 		if (this._mouseHoverThrottled) {
 			return;
 		}
@@ -408,13 +413,13 @@ export const Canvas = Renderer.extend({
 		setTimeout((() => {
 			this._mouseHoverThrottled = false;
 		}), 32);
-	},
+	}
 
-	_fireEvent(layers, e, type) {
+	_fireEvent(layers, e, type): void {
 		this._map._fireDOMEvent(e, type || e.type, layers);
-	},
+	}
 
-	_bringToFront(layer) {
+	_bringToFront(layer: Path): void {
 		const order = layer._order;
 
 		if (!order) { return; }
@@ -443,9 +448,9 @@ export const Canvas = Renderer.extend({
 		this._drawLast = order;
 
 		this._requestRedraw(layer);
-	},
+	}
 
-	_bringToBack(layer) {
+	_bringToBack(layer: Path): void {
 		const order = layer._order;
 
 		if (!order) { return; }
@@ -468,17 +473,12 @@ export const Canvas = Renderer.extend({
 		}
 
 		order.prev = null;
-
 		order.next = this._drawFirst;
+
 		this._drawFirst.prev = order;
 		this._drawFirst = order;
 
 		this._requestRedraw(layer);
 	}
-});
 
-// @factory L.canvas(options?: Renderer options)
-// Creates a Canvas renderer with the given options.
-export function canvas(options) {
-	return new Canvas(options);
 }

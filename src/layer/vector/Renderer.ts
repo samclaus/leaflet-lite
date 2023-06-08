@@ -1,11 +1,8 @@
-import {BlanketOverlay} from '../BlanketOverlay.js';
+import type { CircleMarker, Layer, Map, Path } from '../../Leaflet.js';
 import * as Util from '../../core/Util.js';
+import { BlanketOverlay } from '../BlanketOverlay.js';
 
-/*
- * @class Renderer
- * @inherits BlanketOverlay
- * @aka L.Renderer
- *
+/**
  * Base class for vector renderer implementations (`SVG`, `Canvas`). Handles the
  * DOM container of the renderer, its bounds, and its zoom animation.
  *
@@ -23,52 +20,63 @@ import * as Util from '../../core/Util.js';
  * Fired when the renderer updates its bounds, center and zoom, for example when
  * its map has moved
  */
+export abstract class Renderer extends BlanketOverlay {
 
-export const Renderer = BlanketOverlay.extend({
+	_layers: { [leafletID: number]: Layer } = {};
 
-	initialize(options) {
+	constructor(options) {
+		super(options);
+
 		Util.setOptions(this, {...options, continuous: false});
 		Util.stamp(this);
-		this._layers = this._layers || {};
-	},
+	}
 
-	onAdd(map) {
+	abstract _initPath(path: Path): void;
+	abstract _addPath(path: Path): void;
+	abstract _updatePath(path: Path): void;
+	abstract _updateStyle(path: Path): void;
+	abstract _bringToFront(path: Path): void;
+	abstract _bringToBack(path: Path): void;
+	abstract _removePath(path: Path): void;
+	abstract _updateCircle(layer: CircleMarker): void
+
+	// Subclasses are responsible of implementing `_update()`. It should fire
+	// the 'update' event whenever appropriate (before/after rendering).
+	abstract _update(): void;
+
+	onAdd(map: Map): this {
 		BlanketOverlay.prototype.onAdd.call(this, map);
-		this.on('update', this._updatePaths, this);
-	},
+		return this.on('update', this._updatePaths, this);
+	}
 
-	onRemove() {
+	onRemove(): this {
 		BlanketOverlay.prototype.onRemove.call(this);
-		this.off('update', this._updatePaths, this);
-	},
+		return this.off('update', this._updatePaths, this);
+	}
 
-	_onZoomEnd() {
+	_onZoomEnd(): void {
 		// When a zoom ends, the "origin pixel" changes. Internal coordinates
 		// of paths are relative to the origin pixel and therefore need to
 		// be recalculated.
 		for (const layer of Object.values(this._layers)) {
 			layer._project();
 		}
-	},
+	}
 
-	_updatePaths() {
+	_updatePaths(): void {
 		for (const layer of Object.values(this._layers)) {
 			layer._update();
 		}
-	},
+	}
 
-	_onViewReset() {
+	_onViewReset(): void {
 		for (const layer of Object.values(this._layers)) {
 			layer._reset();
 		}
-	},
+	}
 
-	_onSettled() {
+	_onSettled(): void {
 		this._update();
-	},
+	}
 
-	// Subclasses are responsible of implementing `_update()`. It should fire
-	// the 'update' event whenever appropriate (before/after rendering).
-	_update: Util.falseFn,
-
-});
+}

@@ -13,7 +13,7 @@ export function svgCreate(name) {
 // @function pointsToPath(rings: Point[], closed: Boolean): String
 // Generates a SVG path string for multiple rings, with each ring turning
 // into "M..L..L.." instructions
-export function pointsToPath(rings, closed) {
+export function pointsToPath(rings, closed?: boolean) {
 	let str = '',
 	i, j, len, len2, points, p;
 

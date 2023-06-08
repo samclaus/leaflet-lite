@@ -1,4 +1,3 @@
-import * as Util from '../../core/Util.js';
 import { Transformation } from '../../geometry/Transformation.js';
 import type { LatLng } from '../LatLng.js';
 import { LonLat } from '../projection/Projection.LonLat.js';
@@ -13,7 +12,9 @@ import { CRS } from './CRS.js';
  * axis should still be inverted (going from bottom to top). `distance()` returns
  * simple euclidean distance.
  */
-export const Simple = Util.extend({}, CRS, {
+export const Simple = {
+
+	...CRS,
 
 	projection: LonLat,
 	transformation: new Transformation(1, 0, -1, 0),
@@ -35,4 +36,4 @@ export const Simple = Util.extend({}, CRS, {
 		return Math.sqrt(dx*dx + dy*dy);
 	},
 
-});
+};

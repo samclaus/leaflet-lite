@@ -49,9 +49,3 @@ export const Rectangle = Polygon.extend({
 		];
 	}
 });
-
-
-// @factory L.rectangle(latLngBounds: LatLngBounds, options?: Polyline options)
-export function rectangle(latLngBounds, options) {
-	return new Rectangle(latLngBounds, options);
-}

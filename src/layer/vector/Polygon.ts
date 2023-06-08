@@ -151,9 +151,3 @@ export const Polygon = Polyline.extend({
 	}
 
 });
-
-
-// @factory L.polygon(latlngs: LatLng[], options?: Polyline options)
-export function polygon(latlngs, options) {
-	return new Polygon(latlngs, options);
-}

@@ -12,6 +12,7 @@ import { CRS } from './CRS.js';
  */
 export const Earth = {
 	...CRS,
+
 	wrapLng: [-180, 180],
 
 	// Mean Earth Radius, as recommended for use by

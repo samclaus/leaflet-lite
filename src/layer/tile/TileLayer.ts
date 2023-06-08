@@ -1,15 +1,11 @@
-import {GridLayer} from './GridLayer.js';
+import type { Point } from '../../Leaflet.js';
 import Browser from '../../core/Browser.js';
 import * as Util from '../../core/Util.js';
 import * as DomEvent from '../../dom/DomEvent.js';
+import { GridLayer } from './GridLayer.js';
 
-/*
- * @class TileLayer
- * @inherits GridLayer
- * @aka L.TileLayer
+/**
  * Used to load and display tile layers on the map. Note that most tile servers require attribution, which you can set under `Layer`. Extends `GridLayer`.
- *
- * @example
  *
  * ```js
  * L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png?{foo}', {foo: 'bar', attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
@@ -32,13 +28,11 @@ import * as DomEvent from '../../dom/DomEvent.js';
  * L.tileLayer('https://{s}.somedomain.com/{foo}/{z}/{x}/{y}.png', {foo: 'bar'});
  * ```
  */
-
-
-export const TileLayer = GridLayer.extend({
+export class TileLayer extends GridLayer {
 
 	// @section
 	// @aka TileLayer options
-	options: {
+	options = {
 		// @option minZoom: Number = 0
 		// The minimum zoom level down to which this layer will be displayed (inclusive).
 		minZoom: 0,
@@ -84,9 +78,10 @@ export const TileLayer = GridLayer.extend({
 		// (e.g. to validate an API token).
 		// Refer to [HTMLImageElement.referrerPolicy](https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/referrerPolicy) for valid String values.
 		referrerPolicy: false
-	},
+	};
 
-	initialize(url, options) {
+	constructor(url: string, options) {
+		super(options);
 
 		this._url = url;
 
@@ -119,7 +114,7 @@ export const TileLayer = GridLayer.extend({
 		}
 
 		this.on('tileunload', this._onTileRemove);
-	},
+	}
 
 	// @method setUrl(url: String, noRedraw?: Boolean): this
 	// Updates the layer's URL template and redraws it (unless `noRedraw` is set to `true`).
@@ -136,7 +131,7 @@ export const TileLayer = GridLayer.extend({
 			this.redraw();
 		}
 		return this;
-	},
+	}
 
 	// @method createTile(coords: Object, done?: Function): HTMLElement
 	// Called only internally, overrides GridLayer's [`createTile()`](#gridlayer-createtile)
@@ -167,7 +162,7 @@ export const TileLayer = GridLayer.extend({
 		tile.src = this.getTileUrl(coords);
 
 		return tile;
-	},
+	}
 
 	// @section Extension methods
 	// @uninheritable
@@ -175,7 +170,7 @@ export const TileLayer = GridLayer.extend({
 	// @method getTileUrl(coords: Object): String
 	// Called only internally, returns the URL for a tile given its coordinates.
 	// Classes extending `TileLayer` can override this function to provide custom tile URL naming schemes.
-	getTileUrl(coords) {
+	getTileUrl(coords: Point): string {
 		const data = {
 			r: Browser.retina ? '@2x' : '',
 			s: this._getSubdomain(coords),
@@ -192,11 +187,11 @@ export const TileLayer = GridLayer.extend({
 		}
 
 		return Util.template(this._url, Util.extend(data, this.options));
-	},
+	}
 
 	_tileOnLoad(done, tile) {
 		done(null, tile);
-	},
+	}
 
 	_tileOnError(done, tile, e) {
 		const errorUrl = this.options.errorTileUrl;
@@ -204,29 +199,28 @@ export const TileLayer = GridLayer.extend({
 			tile.src = errorUrl;
 		}
 		done(e, tile);
-	},
+	}
 
 	_onTileRemove(e) {
 		e.tile.onload = null;
-	},
+	}
 
-	_getZoomForUrl() {
+	_getZoomForUrl(): number {
 		let zoom = this._tileZoom;
-		const maxZoom = this.options.maxZoom,
-		      zoomReverse = this.options.zoomReverse,
-		      zoomOffset = this.options.zoomOffset;
+
+		const {maxZoom, zoomReverse, zoomOffset} = this.options;
 
 		if (zoomReverse) {
 			zoom = maxZoom - zoom;
 		}
 
 		return zoom + zoomOffset;
-	},
+	}
 
 	_getSubdomain(tilePoint) {
 		const index = Math.abs(tilePoint.x + tilePoint.y) % this.options.subdomains.length;
 		return this.options.subdomains[index];
-	},
+	}
 
 	// stops loading all tiles in the background layer
 	_abortLoading() {
@@ -252,7 +246,7 @@ export const TileLayer = GridLayer.extend({
 				}
 			}
 		}
-	},
+	}
 
 	_removeTile(key) {
 		const tile = this._tiles[key];
@@ -262,21 +256,14 @@ export const TileLayer = GridLayer.extend({
 		tile.el.setAttribute('src', Util.emptyImageUrl);
 
 		return GridLayer.prototype._removeTile.call(this, key);
-	},
+	}
 
-	_tileReady(coords, err, tile) {
+	_tileReady(coords: Point, err: unknown /* TODO */, tile): void {
 		if (!this._map || (tile && tile.getAttribute('src') === Util.emptyImageUrl)) {
 			return;
 		}
 
 		return GridLayer.prototype._tileReady.call(this, coords, err, tile);
 	}
-});
 
-
-// @factory L.tilelayer(urlTemplate: String, options?: TileLayer options)
-// Instantiates a tile layer object given a `URL template` and optionally an options object.
-
-export function tileLayer(url, options) {
-	return new TileLayer(url, options);
 }

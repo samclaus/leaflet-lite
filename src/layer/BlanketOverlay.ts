@@ -1,4 +1,4 @@
-import type { LatLng, Point } from '../Leaflet.js';
+import type { LatLng, Map, Point } from '../Leaflet.js';
 import type { HandlerMap } from '../core/Events.js';
 import * as Util from '../core/Util.js';
 import * as DomEvent from '../dom/DomEvent.js';
@@ -45,7 +45,7 @@ export abstract class BlanketOverlay extends Layer {
 	abstract _onViewReset(ev?: MouseEvent): void;
 	abstract _onSettled(): void;
 
-	onAdd(): this {
+	onAdd(_map: Map): this {
 		if (!this._container) {
 			this._initContainer(); // defined by renderer implementations
 

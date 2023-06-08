@@ -28,30 +28,31 @@ export function stamp(obj: any): number {
 	return obj._leaflet_id;
 }
 
-// @function throttle(fn: Function, time: Number, context: Object): Function
 // Returns a function which executes function `fn` with the given scope `context`
 // (so that the `this` keyword refers to `context` inside `fn`'s code). The function
 // `fn` will be called no more than one time per given amount of `time`. The arguments
 // received by the bound function will be any arguments passed when binding the
 // function, followed by any arguments passed when invoking the bound function.
 // Has an `L.throttle` shortcut.
-export function throttle(fn, time, context) {
-	let lock, queuedArgs;
+export function throttle(fn: Function, time: number, context?: any): Function {
+	let
+		lock = false,
+		queuedArgs: any[] | undefined;
 
-	function later() {
+	function later(): void {
 		// reset lock and call if queued
 		lock = false;
+
 		if (queuedArgs) {
 			wrapperFn.apply(context, queuedArgs);
-			queuedArgs = false;
+			queuedArgs = undefined;
 		}
 	}
 
-	function wrapperFn(...args) {
+	function wrapperFn(...args: any[]): void {
 		if (lock) {
 			// called too soon, queue to call later
 			queuedArgs = args;
-
 		} else {
 			// call and lock until later
 			fn.apply(context, args);
@@ -108,7 +109,7 @@ export function setOptions(obj: { options?: any; }, options?: any): any {
 // translates to `'?a=foo&b=bar'`. If `existingUrl` is set, the parameters will
 // be appended at the end. If `uppercase` is `true`, the parameter names will
 // be uppercased (e.g. `'?A=foo&B=bar'`)
-export function getParamString(obj, existingUrl, uppercase) {
+export function getParamString(obj: Dict<any>, existingUrl?: string, uppercase?: boolean): string {
 	const params = [];
 	for (const [i, value] of Object.entries(obj)) {
 		params.push(`${encodeURIComponent(uppercase ? i.toUpperCase() : i)}=${encodeURIComponent(value)}`);
@@ -123,7 +124,7 @@ const templateRe = /\{ *([\w_ -]+) *\}/g;
 // and a data object like `{a: 'foo', b: 'bar'}`, returns evaluated string
 // `('Hello foo, bar')`. You can also specify functions instead of strings for
 // data values — they will be evaluated passing `data` as an argument.
-export function template(str, data) {
+export function template(str: string, data: Dict<any>): string {
 	return str.replace(templateRe, (str, key) => {
 		let value = data[key];
 
@@ -133,6 +134,7 @@ export function template(str, data) {
 		} else if (typeof value === 'function') {
 			value = value(data);
 		}
+
 		return value;
 	});
 }

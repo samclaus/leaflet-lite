@@ -3,6 +3,30 @@ import * as Util from '../core/Util.js';
 import { Map } from '../map/Map.js';
 import type { LayerGroup } from './LayerGroup.js';
 
+export interface LayerOptions {
+	// @option pane: String = 'overlayPane'
+	// By default the layer will be added to the map's [overlay pane](#map-overlaypane). Overriding this option will cause the layer to be placed on another pane by default.
+	pane: string;
+
+	// @option attribution: String = undefined
+	// String to be shown in the attribution control, e.g. "© OpenStreetMap contributors". It describes the layer data and is often a legal obligation towards copyright holders and tile providers.
+	attribution: string | undefined;
+
+	// TODO: document
+	bubblingMouseEvents: boolean;
+}
+
+export const DEFAULT_LAYER_OPTIONS: Readonly<LayerOptions> = {
+	// @option pane: String = 'overlayPane'
+	// By default the layer will be added to the map's [overlay pane](#map-overlaypane). Overriding this option will cause the layer to be placed on another pane by default.
+	pane: 'overlayPane',
+
+	// @option attribution: String = undefined
+	// String to be shown in the attribution control, e.g. "© OpenStreetMap contributors". It describes the layer data and is often a legal obligation towards copyright holders and tile providers.
+	attribution: undefined,
+	bubblingMouseEvents: true,
+};
+
 /**
  * A set of methods from the Layer base class that all Leaflet layers use.
  * Inherits all methods, options and events from `L.Evented`.
@@ -20,19 +44,6 @@ import type { LayerGroup } from './LayerGroup.js';
  * Fired after the layer is removed from a map
  */
 export abstract class Layer extends Evented {
-
-	// Classes extending `L.Layer` will inherit the following options:
-	options = {
-		// @option pane: String = 'overlayPane'
-		// By default the layer will be added to the map's [overlay pane](#map-overlaypane). Overriding this option will cause the layer to be placed on another pane by default.
-		pane: 'overlayPane',
-
-		// @option attribution: String = undefined
-		// String to be shown in the attribution control, e.g. "© OpenStreetMap contributors". It describes the layer data and is often a legal obligation towards copyright holders and tile providers.
-		attribution: undefined,
-
-		bubblingMouseEvents: true,
-	};
 
 	_mapToAdd: Map | undefined;
 	_map: Map | undefined;
