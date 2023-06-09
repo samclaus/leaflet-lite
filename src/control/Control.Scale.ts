@@ -1,25 +1,18 @@
 
-import {Control} from './Control.js';
+import { Point, type Map } from '../Leaflet.js';
 import * as DomUtil from '../dom/DomUtil.js';
+import { Control } from './Control.js';
 
-/*
- * @class Control.Scale
- * @aka L.Control.Scale
- * @inherits Control
- *
+/**
  * A simple scale control that shows the scale of the current center of screen in metric (m/km) and imperial (mi/ft) systems. Extends `Control`.
- *
- * @example
  *
  * ```js
  * L.control.scale().addTo(map);
  * ```
  */
+export class Scale extends Control {
 
-export const Scale = Control.extend({
-	// @section
-	// @aka Control.Scale options
-	options: {
+	options = {
 		// @option position: String = 'bottomleft'
 		// The position of the control (one of the map corners). Possible values are `'topleft'`,
 		// `'topright'`, `'bottomleft'` or `'bottomright'`
@@ -39,82 +32,92 @@ export const Scale = Control.extend({
 
 		// @option updateWhenIdle: Boolean = false
 		// If `true`, the control is updated on [`moveend`](#map-moveend), otherwise it's always up-to-date (updated on [`move`](#map-move)).
-	},
+	};
 
-	onAdd(map) {
-		const className = 'leaflet-control-scale',
-		    container = DomUtil.create('div', className),
-		    options = this.options;
+	_mScale: HTMLElement | undefined;
+	_iScale: HTMLElement | undefined;
 
-		this._addScales(options, `${className}-line`, container);
+	onAdd(map: Map): HTMLElement {
+		const
+			className = 'leaflet-control-scale',
+		    container = DomUtil.create('div', className);
 
-		map.on(options.updateWhenIdle ? 'moveend' : 'move', this._update, this);
+		this._addScales(`${className}-line`, container);
+
+		map.on(this.options.updateWhenIdle ? 'moveend' : 'move', this._update, this);
 		map.whenReady(this._update, this);
 
 		return container;
-	},
+	}
 
-	onRemove(map) {
+	onRemove(map: Map): void {
 		map.off(this.options.updateWhenIdle ? 'moveend' : 'move', this._update, this);
-	},
+	}
 
-	_addScales(options, className, container) {
-		if (options.metric) {
+	_addScales(className: string, container: HTMLElement): void {
+		if (this.options.metric) {
 			this._mScale = DomUtil.create('div', className, container);
 		}
-		if (options.imperial) {
+		if (this.options.imperial) {
 			this._iScale = DomUtil.create('div', className, container);
 		}
-	},
+	}
 
-	_update() {
-		const map = this._map,
-		    y = map.getSize().y / 2;
-
-		const maxMeters = map.distance(
-			map.containerPointToLatLng([0, y]),
-			map.containerPointToLatLng([this.options.maxWidth, y]));
+	_update(): void {
+		const
+			map = this._map!, // TODO: null safety
+		    y = map.getSize().y / 2,
+			maxMeters = map.distance(
+				map.containerPointToLatLng(new Point(0, y)),
+				map.containerPointToLatLng(new Point(this.options.maxWidth, y)),
+			);
 
 		this._updateScales(maxMeters);
-	},
+	}
 
-	_updateScales(maxMeters) {
+	_updateScales(maxMeters: number): void {
 		if (this.options.metric && maxMeters) {
 			this._updateMetric(maxMeters);
 		}
 		if (this.options.imperial && maxMeters) {
 			this._updateImperial(maxMeters);
 		}
-	},
+	}
 
-	_updateMetric(maxMeters) {
-		const meters = this._getRoundNum(maxMeters),
+	_updateMetric(maxMeters: number): void {
+		const
+			meters = this._getRoundNum(maxMeters),
 		    label = meters < 1000 ? `${meters} m` : `${meters / 1000} km`;
 
-		this._updateScale(this._mScale, label, meters / maxMeters);
-	},
+		// TODO: null safety
+		this._updateScale(this._mScale!, label, meters / maxMeters);
+	}
 
-	_updateImperial(maxMeters) {
-		const maxFeet = maxMeters * 3.2808399;
+	_updateImperial(maxMeters: number): void {
+		const
+			maxFeet = maxMeters * 3.2808399,
+			iScale = this._iScale!; // TODO: null safety
+
 		let maxMiles, miles, feet;
 
 		if (maxFeet > 5280) {
 			maxMiles = maxFeet / 5280;
 			miles = this._getRoundNum(maxMiles);
-			this._updateScale(this._iScale, `${miles} mi`, miles / maxMiles);
 
+			this._updateScale(iScale, `${miles} mi`, miles / maxMiles);
 		} else {
 			feet = this._getRoundNum(maxFeet);
-			this._updateScale(this._iScale, `${feet} ft`, feet / maxFeet);
-		}
-	},
 
-	_updateScale(scale, text, ratio) {
+			this._updateScale(iScale, `${feet} ft`, feet / maxFeet);
+		}
+	}
+
+	_updateScale(scale: HTMLElement, text: string, ratio: number): void {
 		scale.style.width = `${Math.round(this.options.maxWidth * ratio)}px`;
 		scale.innerHTML = text;
-	},
+	}
 
-	_getRoundNum(num) {
+	_getRoundNum(num: number): number {
 		const pow10 = Math.pow(10, (`${Math.floor(num)}`).length - 1);
 		let d = num / pow10;
 
@@ -125,4 +128,5 @@ export const Scale = Control.extend({
 
 		return pow10 * d;
 	}
-});
+
+}

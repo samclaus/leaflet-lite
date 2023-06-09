@@ -1,17 +1,3 @@
-/*
- * @namespace Browser
- * @aka L.Browser
- *
- * A namespace with static properties for browser/feature detection used by Leaflet internally.
- *
- * @example
- *
- * ```js
- * if (L.Browser.chrome) {
- *   alert('You are running Chrome!');
- * }
- * ```
- */
 
 // @property chrome: Boolean; `true` for the Chrome browser.
 const chrome = userAgentContains('chrome');
@@ -40,7 +26,10 @@ const touch = touchNative || pointer;
 
 // @property retina: Boolean
 // `true` for browsers on a high-resolution "retina" screen or on any screen when browser's display zoom is more than 100%.
-const retina = (window.devicePixelRatio || (window.screen.deviceXDPI / window.screen.logicalXDPI)) > 1;
+const retina = (
+	window.devicePixelRatio ||
+	((window.screen as any).deviceXDPI / (window.screen as any).logicalXDPI)
+) > 1;
 
 // @property mac: Boolean; `true` when the browser is running in a Mac platform
 const mac = navigator.platform.startsWith('Mac');
@@ -48,11 +37,19 @@ const mac = navigator.platform.startsWith('Mac');
 // @property mac: Boolean; `true` when the browser is running in a Linux platform
 const linux = navigator.platform.startsWith('Linux');
 
-function userAgentContains(str) {
+function userAgentContains(str: string): boolean {
 	return navigator.userAgent.toLowerCase().includes(str);
 }
 
-
+/**
+ * A namespace with static properties for browser/feature detection used by Leaflet internally.
+ *
+ * ```js
+ * if (L.Browser.chrome) {
+ *   alert('You are running Chrome!');
+ * }
+ * ```
+ */
 export default {
 	chrome,
 	safari,

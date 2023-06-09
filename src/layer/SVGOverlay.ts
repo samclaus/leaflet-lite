@@ -6,8 +6,6 @@ import { ImageOverlay } from './ImageOverlay.js';
  *
  * An SVG overlay uses the [`<svg>`](https://developer.mozilla.org/docs/Web/SVG/Element/svg) element.
  *
- * @example
- *
  * ```js
  * var svgElement = document.createElementNS("http://www.w3.org/2000/svg", "svg");
  * svgElement.setAttribute('xmlns', "http://www.w3.org/2000/svg");
@@ -17,9 +15,10 @@ import { ImageOverlay } from './ImageOverlay.js';
  * L.svgOverlay(svgElement, svgElementBounds).addTo(map);
  * ```
  */
-export const SVGOverlay = ImageOverlay.extend({
-	_initImage() {
-		const el = this._image = this._url;
+export class SVGOverlay extends ImageOverlay {
+
+	_initImage(): void {
+		const el = this._image = this._url as HTMLImageElement; // TODO: actually an SVG element
 
 		el.classList.add('leaflet-image-layer');
 		if (this._zoomAnimated) { el.classList.add('leaflet-zoom-animated'); }
@@ -29,7 +28,4 @@ export const SVGOverlay = ImageOverlay.extend({
 		el.onmousemove = Util.falseFn;
 	}
 
-	// @method getElement(): SVGElement
-	// Returns the instance of [`SVGElement`](https://developer.mozilla.org/docs/Web/API/SVGElement)
-	// used by this overlay.
-});
+}

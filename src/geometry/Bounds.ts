@@ -3,8 +3,6 @@ import { Point } from './Point.js';
 /**
  * Represents a rectangular area in pixel coordinates.
  *
- * @example
- *
  * ```js
  * var p1 = L.point(10, 10),
  * p2 = L.point(40, 60),

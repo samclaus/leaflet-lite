@@ -1,5 +1,4 @@
 
-import { Class } from '../core/Class.js';
 import { Map } from '../map/Map.js';
 
 export type ControlPosition = 'topleft' | 'topright' | 'bottomleft' | 'bottomright';
@@ -8,16 +7,14 @@ export type ControlPosition = 'topleft' | 'topright' | 'bottomleft' | 'bottomrig
  * L.Control is a base class for implementing map controls. Handles positioning.
  * All other controls extend from this class.
  */
-export abstract class Control extends Class {
+export abstract class Control {
 
 	_map: Map | undefined;
 	_container: HTMLElement | undefined;
 
 	constructor(
 		public position: ControlPosition = 'topright',
-	) {
-		super();
-	}
+	) {}
 
 	/**
 	 * Should return the container DOM element for the control and add listeners on relevant

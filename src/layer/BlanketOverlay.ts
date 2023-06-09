@@ -11,12 +11,13 @@ import { Layer } from './Layer.js';
  * of the map.
  *
  * Do not use this class directly. It's meant for `Renderer`, and for plugins
- * that rely on one single HTML element
+ * that rely on one single HTML element.
+ *
+ * Subclass implementations shall reset container parameters and data
+ * structures as needed.
  */
 export abstract class BlanketOverlay extends Layer {
 
-	// @section
-	// @aka BlanketOverlay options
 	options = {
 		// @option padding: Number = 0.1
 		// How much to extend the clip area around the map view (relative to its size)
@@ -41,8 +42,20 @@ export abstract class BlanketOverlay extends Layer {
 		Util.setOptions(this, options);
 	}
 
-	abstract _onZoomEnd(ev?: MouseEvent): void;
-	abstract _onViewReset(ev?: MouseEvent): void;
+	/**
+	 * (Optional) Runs on the map's `zoomend` event.
+	 */
+	_onZoomEnd?(ev?: MouseEvent): void;
+
+	/**
+	 * (Optional) Runs on the map's `viewreset` event.
+	 */
+	_onViewReset?(ev?: MouseEvent): void;
+
+	/**
+	 * Runs whenever the map state settles after changing (at the end of pan/zoom
+	 * animations, etc). This should trigger the bulk of any rendering logic.
+	 */
 	abstract _onSettled(): void;
 
 	onAdd(_map: Map): this {
@@ -50,10 +63,12 @@ export abstract class BlanketOverlay extends Layer {
 			this._initContainer(); // defined by renderer implementations
 
 			// always keep transform-origin as 0 0, #8794
-			this._container.classList.add('leaflet-zoom-animated');
+			// TODO: null safety
+			this._container!.classList.add('leaflet-zoom-animated');
 		}
 
-		this.getPane().appendChild(this._container);
+		// TODO: null safety
+		this.getPane()!.appendChild(this._container!);
 		this._resizeContainer();
 		this._onMoveEnd();
 
@@ -70,7 +85,7 @@ export abstract class BlanketOverlay extends Layer {
 			viewreset: this._reset,
 			zoom: this._onZoom,
 			moveend: this._onMoveEnd,
-			zoomend: this._onZoomEnd,
+			zoomend: this._onZoomEnd || Util.falseFn,
 			resize: this._resizeContainer,
 		};
 		if (this._zoomAnimated) {
@@ -82,7 +97,7 @@ export abstract class BlanketOverlay extends Layer {
 		return events;
 	}
 
-	_onAnimZoom(ev): void {
+	_onAnimZoom(ev: any): void {
 		this._updateTransform(ev.center, ev.zoom);
 	}
 
@@ -91,19 +106,25 @@ export abstract class BlanketOverlay extends Layer {
 		this._updateTransform(this._map!.getCenter(), this._map!._zoom);
 	}
 
-	_updateTransform(center: LatLng, zoom): void {
+	_updateTransform(center: LatLng, zoom: number): void {
 		const
 			map = this._map!, // TODO: null safety
 			scale = map.getZoomScale(zoom, this._zoom),
 		    viewHalf = map.getSize().multiplyBy(0.5 + this.options.padding),
-		    currentCenterPoint = map.project(this._center, zoom),
+		    currentCenterPoint = map.project(this._center!, zoom), // TODO: null safety
 		    topLeftOffset = viewHalf.multiplyBy(-scale).add(currentCenterPoint)
 		        .subtract(map._getNewPixelOrigin(center, zoom));
 
-		DomUtil.setTransform(this._container, topLeftOffset, scale);
+		// TODO: null safety
+		DomUtil.setTransform(this._container!, topLeftOffset, scale);
 	}
 
-	_onMoveEnd(ev): void {
+
+	/**
+	 * If the `continuous` option is set to `true`, then this also runs on
+	 * any map state change (including *during* pan/zoom animations).
+	 */
+	_onMoveEnd(): void {
 		// Update pixel bounds of renderer container (for positioning/sizing/clipping later)
 		const
 			map = this._map!, // TODO: null safety
@@ -115,59 +136,40 @@ export abstract class BlanketOverlay extends Layer {
 		this._center = map.getCenter();
 		this._zoom = map._zoom;
 		this._updateTransform(this._center, this._zoom);
-		this._onSettled(ev);
-	}
-
-	_reset() {
 		this._onSettled();
-		this._updateTransform(this._center, this._zoom);
-		this._onViewReset();
 	}
 
-	/*
-	 * @section Subclass interface
-	 * @uninheritable
-	 * Subclasses must define the following methods:
-	 *
-	 * @method _initContainer(): undefined
+	_reset(): void {
+		this._onSettled();
+		this._updateTransform(this._center!, this._zoom); // TODO: null safety
+		this._onViewReset?.();
+	}
+
+	/**
 	 * Must initialize the HTML element to use as blanket, and store it as
-	 * `this._container`. The base implementation creates a blank `<div>`
-	 *
-	 * @method _destroyContainer(): undefined
-	 * Must destroy the HTML element in `this._container` and free any other
-	 * resources. The base implementation destroys the element and removes
-	 * any event handlers attached to it.
-	 *
-	 * @method _resizeContainer(): Point
-	 * The base implementation resizes the container (based on the map's size
-	 * and taking into account the padding), returning the new size in CSS pixels.
-	 *
-	 * Subclass implementations shall reset container parameters and data
-	 * structures as needed.
-	 *
-	 * @method _onZoomEnd(ev?: MouseEvent): undefined
-	 * (Optional) Runs on the map's `zoomend` event.
-	 *
-	 * @method _onViewReset(ev?: MouseEvent): undefined
-	 * (Optional) Runs on the map's `viewreset` event.
-	 *
-	 * @method _onSettled(): undefined
-	 * Runs whenever the map state settles after changing (at the end of pan/zoom
-	 * animations, etc). This should trigger the bulk of any rendering logic.
-	 *
-	 * If the `continuous` option is set to `true`, then this also runs on
-	 * any map state change (including *during* pan/zoom animations).
+	 * `this._container`. The base implementation creates a blank `<div>`.
 	 */
 	_initContainer(): void {
 		this._container = DomUtil.create('div');
 	}
 
+	/**
+	 * Must destroy the HTML element in `this._container` and free any other
+	 * resources. The base implementation destroys the element and removes
+	 * any event handlers attached to it.
+	 */
 	_destroyContainer(): void {
-		DomEvent.off(this._container);
-		this._container.remove();
-		this._container = undefined;
+		if (this._container) {
+			DomEvent.off(this._container);
+			this._container.remove();
+			this._container = undefined;
+		}
 	}
 
+	/**
+	 * The base implementation resizes the container (based on the map's size
+	 * and taking into account the padding), returning the new size in CSS pixels.
+	 */
 	_resizeContainer(): Point {
 		const
 			p = this.options.padding,

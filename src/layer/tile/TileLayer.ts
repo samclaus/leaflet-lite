@@ -11,9 +11,6 @@ import { GridLayer } from './GridLayer.js';
  * L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png?{foo}', {foo: 'bar', attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
  * ```
  *
- * @section URL template
- * @example
- *
  * A string of the following form:
  *
  * ```
@@ -80,10 +77,11 @@ export class TileLayer extends GridLayer {
 		referrerPolicy: false
 	};
 
-	constructor(url: string, options) {
+	constructor(
+		public _url: string,
+		options?: any, // TODO: type for these
+	) {
 		super(options);
-
-		this._url = url;
 
 		options = Util.setOptions(this, options);
 
@@ -116,11 +114,10 @@ export class TileLayer extends GridLayer {
 		this.on('tileunload', this._onTileRemove);
 	}
 
-	// @method setUrl(url: String, noRedraw?: Boolean): this
 	// Updates the layer's URL template and redraws it (unless `noRedraw` is set to `true`).
 	// If the URL does not change, the layer will not be redrawn unless
 	// the noRedraw parameter is set to false.
-	setUrl(url, noRedraw) {
+	setUrl(url: string, noRedraw?: boolean): this {
 		if (this._url === url && noRedraw === undefined) {
 			noRedraw = true;
 		}
@@ -133,11 +130,10 @@ export class TileLayer extends GridLayer {
 		return this;
 	}
 
-	// @method createTile(coords: Object, done?: Function): HTMLElement
 	// Called only internally, overrides GridLayer's [`createTile()`](#gridlayer-createtile)
 	// to return an `<img>` HTML element with the appropriate image URL given `coords`. The `done`
 	// callback is called when the tile has been loaded.
-	createTile(coords, done) {
+	createTile(coords: Point, done?: Function): HTMLElement {
 		const tile = document.createElement('img');
 
 		DomEvent.on(tile, 'load', this._tileOnLoad.bind(this, done, tile));
@@ -158,16 +154,12 @@ export class TileLayer extends GridLayer {
 		// https://www.w3.org/WAI/tutorials/images/decorative/
 		// https://www.w3.org/TR/html-aria/#el-img-empty-alt
 		tile.alt = '';
-
 		tile.src = this.getTileUrl(coords);
 
 		return tile;
 	}
 
-	// @section Extension methods
-	// @uninheritable
 	// Layers extending `TileLayer` might reimplement the following method.
-	// @method getTileUrl(coords: Object): String
 	// Called only internally, returns the URL for a tile given its coordinates.
 	// Classes extending `TileLayer` can override this function to provide custom tile URL naming schemes.
 	getTileUrl(coords: Point): string {

@@ -1,4 +1,3 @@
-import { Class } from './Class.js';
 import * as Util from './Util.js';
 
 export interface HandlerFn {
@@ -30,7 +29,7 @@ export interface HandlerMap {
  * map.off('click', onClick);
  * ```
  */
-export class Evented extends Class {
+export class Evented {
 
 	_events: { [key: string]: [HandlerFn, any, boolean][] } = Object.create(null);
 	_parents: Evented[] | undefined; // lazy allocate map since uncommon

@@ -9,8 +9,6 @@ import { svgCreate as create, pointsToPath } from './SVG.Util.js';
  * Allows vector layers to be displayed with [SVG](https://developer.mozilla.org/docs/Web/SVG).
  * Inherits `Renderer`.
  *
- * @example
- *
  * Use SVG by default for all paths in the map:
  *
  * ```js
@@ -155,7 +153,8 @@ export class SVG extends Renderer {
 	}
 
 	_updateCircle(layer: CircleMarker): void {
-		const p = layer._point,
+		const
+			p = layer._point!, // TODO: null safety
 		    r = Math.max(Math.round(layer._radius), 1),
 		    r2 = Math.max(Math.round(layer._radiusY), 1) || r,
 		    arc = `a${r},${r2} 0 1,0 `;
@@ -169,7 +168,7 @@ export class SVG extends Renderer {
 		this._setPath(layer, d);
 	}
 
-	_setPath(layer, path): void {
+	_setPath(layer: Path, path: string): void {
 		layer._path.setAttribute('d', path);
 	}
 

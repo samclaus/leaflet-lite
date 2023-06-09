@@ -13,8 +13,6 @@ import { Renderer } from './Renderer.js';
  * available in all web browsers, notably IE8, and overlapping geometries might
  * not display properly in some edge cases.
  *
- * @example
- *
  * Use Canvas by default for all paths in the map:
  *
  * ```js

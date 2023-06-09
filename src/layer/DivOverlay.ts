@@ -1,3 +1,4 @@
+import type { HandlerMap } from '../core/Events.js';
 import * as Util from '../core/Util.js';
 import * as DomUtil from '../dom/DomUtil.js';
 import { LatLng } from '../geo/LatLng.js';
@@ -64,15 +65,14 @@ export class DivOverlay extends Layer {
 		return this;
 	}
 
-	// @method toggle(layer?: Layer): this
 	// Opens or closes the overlay bound to layer depending on its current state.
 	// Argument may be omitted only for overlay bound to layer.
 	// Alternative to `.toggleTooltip()`.
-	toggle(layer): this {
+	toggle(layer?: Layer): this {
 		if (this._map) {
 			this.close();
 		} else {
-			if (arguments.length) {
+			if (layer) {
 				this._source = layer;
 			} else {
 				layer = this._source;
@@ -85,7 +85,7 @@ export class DivOverlay extends Layer {
 		return this;
 	}
 
-	onAdd(map: Map): void {
+	onAdd(map: Map): this {
 		this._zoomAnimated = map._zoomAnimated;
 
 		if (!this._container) {
@@ -110,9 +110,11 @@ export class DivOverlay extends Layer {
 			this._container.classList.add('leaflet-interactive');
 			this.addInteractiveTarget(this._container);
 		}
+
+		return this;
 	}
 
-	onRemove(map): void {
+	onRemove(map: Map): this {
 		if (map._fadeAnimated) {
 			this._container.style.opacity = 0;
 			this._removeTimeout = setTimeout(() => this._container.remove(), 200);
@@ -124,6 +126,8 @@ export class DivOverlay extends Layer {
 			this._container.classList.remove('leaflet-interactive');
 			this.removeInteractiveTarget(this._container);
 		}
+
+		return this;
 	}
 
 	// Returns the geographical point of the overlay.
@@ -131,41 +135,38 @@ export class DivOverlay extends Layer {
 		return this._latlng;
 	}
 
-	// @method setLatLng(latlng: LatLng): this
 	// Sets the geographical point where the overlay will open.
-	setLatLng(latlng) {
+	setLatLng(latlng: LatLng): this {
 		this._latlng = latlng;
+
 		if (this._map) {
 			this._updatePosition();
 			this._adjustPan();
 		}
+
 		return this;
 	}
 
-	// @method getContent: String|HTMLElement
 	// Returns the content of the overlay.
-	getContent() {
+	getContent(): string | HTMLElement | Function {
 		return this._content;
 	}
 
-	// @method setContent(htmlContent: String|HTMLElement|Function): this
 	// Sets the HTML content of the overlay. If a function is passed the source layer will be passed to the function.
 	// The function should return a `String` or `HTMLElement` to be used in the overlay.
-	setContent(content) {
+	setContent(content: string | HTMLElement | Function): this {
 		this._content = content;
 		this.update();
 		return this;
 	}
 
-	// @method getElement: String|HTMLElement
 	// Returns the HTML container of the overlay.
-	getElement() {
+	getElement(): string | HTMLElement {
 		return this._container;
 	}
 
-	// @method update: null
 	// Updates the overlay content, layout and position. Useful for updating the overlay after something inside changed, e.g. image loaded.
-	update() {
+	update(): void {
 		if (!this._map) { return; }
 
 		this._container.style.visibility = 'hidden';
@@ -179,8 +180,8 @@ export class DivOverlay extends Layer {
 		this._adjustPan();
 	}
 
-	getEvents() {
-		const events = {
+	getEvents(): HandlerMap {
+		const events: HandlerMap = {
 			zoom: this._updatePosition,
 			viewreset: this._updatePosition
 		};
@@ -213,7 +214,7 @@ export class DivOverlay extends Layer {
 	}
 
 	// prepare bound overlay to open: update latlng pos / content source (for FeatureGroup)
-	_prepareOpen(latlng): boolean {
+	_prepareOpen(latlng?: LatLng): boolean {
 		let source = this._source;
 		if (!source._map) { return false; }
 
@@ -243,7 +244,7 @@ export class DivOverlay extends Layer {
 				throw new Error('Unable to get source layer LatLng.');
 			}
 		}
-		this.setLatLng(latlng);
+		this.setLatLng(latlng!); // TODO: null safety
 
 		if (this._map) {
 			// update the overlay (content, layout, etc...)
@@ -304,30 +305,3 @@ export class DivOverlay extends Layer {
 	}
 
 }
-
-Map.include({
-	_initOverlay(OverlayClass, content, latlng, options) {
-		let overlay = content;
-		if (!(overlay instanceof OverlayClass)) {
-			overlay = new OverlayClass(options).setContent(content);
-		}
-		if (latlng) {
-			overlay.setLatLng(latlng);
-		}
-		return overlay;
-	}
-});
-
-Layer.include({
-	_initOverlay(OverlayClass, old, content, options) {
-		let overlay = content;
-		if (overlay instanceof OverlayClass) {
-			Util.setOptions(overlay, options);
-			overlay._source = this;
-		} else {
-			overlay = (old && !options) ? old : new OverlayClass(options, this);
-			overlay.setContent(content);
-		}
-		return overlay;
-	}
-});

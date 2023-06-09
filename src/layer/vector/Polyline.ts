@@ -19,8 +19,6 @@ export interface PolylineOptions extends PathOptions {
 /**
  * A class for drawing polyline overlays on a map. Extends `Path`.
  *
- * @example
- *
  * ```js
  * // create a red polyline from an array of LatLng points
  * var latlngs = [
@@ -128,9 +126,8 @@ export class Polyline extends Path {
 		return minPoint;
 	}
 
-	// @method getCenter(): LatLng
 	// Returns the center ([centroid](https://en.wikipedia.org/wiki/Centroid)) of the polyline.
-	getCenter() {
+	getCenter(): LatLng {
 		// throws error when not yet added to map as this center calculation requires projected coordinates
 		if (!this._map) {
 			throw new Error('Must add layer to map before using getCenter()');
@@ -147,13 +144,10 @@ export class Polyline extends Path {
 		return LineUtil.polylineCenter(latlngs, this._map.options.crs);
 	}
 
-	// @method addLatLng(latlng: LatLng, latlngs?: LatLng[]): this
 	// Adds a given point to the polyline. By default, adds to the first ring of
 	// the polyline in case of a multi-polyline, but can be overridden by passing
 	// a specific ring as a LatLng array (that you can earlier access with [`getLatLngs`](#polyline-getlatlngs)).
-	addLatLng(latlng, latlngs) {
-		latlngs = latlngs || this._defaultShape();
-		latlng = toLatLng(latlng);
+	addLatLng(latlng: LatLng, latlngs = this._defaultShape()): this {
 		latlngs.push(latlng);
 		this._bounds.extend(latlng);
 		return this.redraw();

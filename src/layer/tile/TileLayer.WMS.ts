@@ -1,16 +1,12 @@
-import {TileLayer} from './TileLayer.js';
-import {extend, setOptions, getParamString} from '../../core/Util.js';
+import type { Map, Point } from '../../Leaflet.js';
 import Browser from '../../core/Browser.js';
-import {EPSG4326} from '../../geo/crs/CRS.EPSG4326.js';
-import {toBounds} from '../../geometry/Bounds.js';
+import { extend, getParamString, setOptions } from '../../core/Util.js';
+import { EPSG4326 } from '../../geo/crs/CRS.EPSG4326.js';
+import { TileLayer } from './TileLayer.js';
 
-/*
- * @class TileLayer.WMS
- * @inherits TileLayer
- * @aka L.TileLayer.WMS
- * Used to display [WMS](https://en.wikipedia.org/wiki/Web_Map_Service) services as tile layers on the map. Extends `TileLayer`.
- *
- * @example
+/**
+ * Used to display [WMS](https://en.wikipedia.org/wiki/Web_Map_Service) services as
+ * tile layers on the map. Extends `TileLayer`.
  *
  * ```js
  * var nexrad = L.tileLayer.wms("http://mesonet.agron.iastate.edu/cgi-bin/wms/nexrad/n0r.cgi", {
@@ -21,15 +17,14 @@ import {toBounds} from '../../geometry/Bounds.js';
  * });
  * ```
  */
-
-export const TileLayerWMS = TileLayer.extend({
+export class TileLayerWMS extends TileLayer {
 
 	// @section
 	// @aka TileLayer.WMS options
 	// If any custom options not documented here are used, they will be sent to the
 	// WMS server as extra parameters in each request URL. This can be useful for
 	// [non-standard vendor WMS parameters](https://docs.geoserver.org/stable/en/user/services/wms/vendor.html).
-	defaultWmsParams: {
+	defaultWmsParams = {
 		service: 'WMS',
 		request: 'GetMap',
 
@@ -52,9 +47,9 @@ export const TileLayerWMS = TileLayer.extend({
 		// @option version: String = '1.1.1'
 		// Version of the WMS service to use
 		version: '1.1.1'
-	},
+	};
 
-	options: {
+	options = {
 		// @option crs: CRS = null
 		// Coordinate Reference System to use for the WMS requests, defaults to
 		// map CRS. Don't change this if you're not sure what it means.
@@ -63,11 +58,11 @@ export const TileLayerWMS = TileLayer.extend({
 		// @option uppercase: Boolean = false
 		// If `true`, WMS request parameter keys will be uppercase.
 		uppercase: false
-	},
+	};
 
-	initialize(url, options) {
-
-		this._url = url;
+	// TODO: type for the options
+	constructor(url: string, options?: any) {
+		super(url, options);
 
 		const wmsParams = extend({}, this.defaultWmsParams);
 
@@ -86,9 +81,9 @@ export const TileLayerWMS = TileLayer.extend({
 		wmsParams.height = tileSize.y * realRetina;
 
 		this.wmsParams = wmsParams;
-	},
+	}
 
-	onAdd(map) {
+	onAdd(map: Map): this {
 
 		this._crs = this.options.crs || map.options.crs;
 		this._wmsVersion = parseFloat(this.wmsParams.version);
@@ -97,11 +92,13 @@ export const TileLayerWMS = TileLayer.extend({
 		this.wmsParams[projectionKey] = this._crs.code;
 
 		TileLayer.prototype.onAdd.call(this, map);
-	},
 
-	getTileUrl(coords) {
+		return this;
+	}
 
-		const tileBounds = this._tileCoordsToNwSe(coords),
+	getTileUrl(coords: Point): string {
+		const
+			tileBounds = this._tileCoordsToNwSe(coords),
 		    crs = this._crs,
 		    bounds = toBounds(crs.project(tileBounds[0]), crs.project(tileBounds[1])),
 		    min = bounds.min,
@@ -110,15 +107,14 @@ export const TileLayerWMS = TileLayer.extend({
 		    [min.y, min.x, max.y, max.x] :
 		    [min.x, min.y, max.x, max.y]).join(','),
 		    url = TileLayer.prototype.getTileUrl.call(this, coords);
+
 		return url +
 			getParamString(this.wmsParams, url, this.options.uppercase) +
 			(this.options.uppercase ? '&BBOX=' : '&bbox=') + bbox;
-	},
+	}
 
-	// @method setParams(params: Object, noRedraw?: Boolean): this
 	// Merges an object with the new parameters and re-requests tiles on the current screen (unless `noRedraw` was set to true).
-	setParams(params, noRedraw) {
-
+	setParams(params: any /* TODO */, noRedraw?: boolean): this {
 		extend(this.wmsParams, params);
 
 		if (!noRedraw) {
@@ -127,11 +123,5 @@ export const TileLayerWMS = TileLayer.extend({
 
 		return this;
 	}
-});
 
-
-// @factory L.tileLayer.wms(baseUrl: String, options: TileLayer.WMS options)
-// Instantiates a WMS tile layer object given a base URL of the WMS service and a WMS parameters/options object.
-export function tileLayerWMS(url, options) {
-	return new TileLayerWMS(url, options);
 }

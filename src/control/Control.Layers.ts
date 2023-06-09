@@ -55,6 +55,7 @@ interface LayerModel {
  * ```
  */
 export class Layers extends Control {
+
 	// @section
 	// @aka Control.Layers options
 	options = {
@@ -93,7 +94,7 @@ export class Layers extends Control {
 	_preventClick = false;
 	_handlingClick = false;
 
-	initialize(baseLayers, overlays, options) {
+	constructor(baseLayers, overlays, options) {
 		Util.setOptions(this, options);
 
 		for (const [i, layer] of Object.entries(baseLayers)) {

@@ -1,18 +1,12 @@
-import {ImageOverlay} from './ImageOverlay.js';
-import * as DomUtil from '../dom/DomUtil.js';
 import * as Util from '../core/Util.js';
+import * as DomUtil from '../dom/DomUtil.js';
+import { ImageOverlay } from './ImageOverlay.js';
 
-/*
- * @class VideoOverlay
- * @aka L.VideoOverlay
- * @inherits ImageOverlay
- *
+/**
  * Used to load and display a video player over specific bounds of the map. Extends `ImageOverlay`.
  *
  * A video overlay uses the [`<video>`](https://developer.mozilla.org/docs/Web/HTML/Element/video)
  * HTML element.
- *
- * @example
  *
  * ```js
  * var videoUrl = 'https://www.mapbox.com/bites/00188/patricia_nasa.webm',
@@ -20,12 +14,9 @@ import * as Util from '../core/Util.js';
  * L.videoOverlay(videoUrl, videoBounds ).addTo(map);
  * ```
  */
+export class VideoOverlay extends ImageOverlay {
 
-export const VideoOverlay = ImageOverlay.extend({
-
-	// @section
-	// @aka VideoOverlay options
-	options: {
+	options = {
 		// @option autoplay: Boolean = true
 		// Whether the video starts playing automatically when loaded.
 		// On some browsers autoplay will only work with `muted: true`
@@ -47,9 +38,9 @@ export const VideoOverlay = ImageOverlay.extend({
 		// @option playsInline: Boolean = true
 		// Mobile browsers will play the video right where it is instead of open it up in fullscreen mode.
 		playsInline: true
-	},
+	};
 
-	_initImage() {
+	_initImage(): void {
 		const wasElementSupplied = this._url.tagName === 'VIDEO';
 		const vid = this._image = wasElementSupplied ? this._url : DomUtil.create('video');
 
@@ -80,10 +71,12 @@ export const VideoOverlay = ImageOverlay.extend({
 		if (!this.options.keepAspectRatio && Object.hasOwn(vid.style, 'objectFit')) {
 			vid.style['objectFit'] = 'fill';
 		}
+
 		vid.autoplay = !!this.options.autoplay;
 		vid.loop = !!this.options.loop;
 		vid.muted = !!this.options.muted;
 		vid.playsInline = !!this.options.playsInline;
+
 		for (let i = 0; i < this._url.length; i++) {
 			const source = DomUtil.create('source');
 			source.src = this._url[i];
@@ -91,16 +84,4 @@ export const VideoOverlay = ImageOverlay.extend({
 		}
 	}
 
-	// @method getElement(): HTMLVideoElement
-	// Returns the instance of [`HTMLVideoElement`](https://developer.mozilla.org/docs/Web/API/HTMLVideoElement)
-	// used by this overlay.
-});
-
-
-// @factory L.videoOverlay(video: String|Array|HTMLVideoElement, bounds: LatLngBounds, options?: VideoOverlay options)
-// Instantiates an image overlay object given the URL of the video (or array of URLs, or even a video element) and the
-// geographical bounds it is tied to.
-
-export function videoOverlay(video, bounds, options) {
-	return new VideoOverlay(video, bounds, options);
 }

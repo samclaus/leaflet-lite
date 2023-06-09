@@ -1,14 +1,9 @@
-import {Point} from './Point.js';
+import { Point } from './Point.js';
 
-/*
- * @class Transformation
- * @aka L.Transformation
- *
+/**
  * Represents an affine transformation: a set of coefficients `a`, `b`, `c`, `d`
  * for transforming a point of a form `(x, y)` into `(a*x + b, c*y + d)` and doing
  * the reverse. Used by Leaflet in its projections code.
- *
- * @example
  *
  * ```js
  * var transformation = L.transformation(2, 5, -1, 10),
@@ -17,10 +12,6 @@ import {Point} from './Point.js';
  * 	p3 = transformation.untransform(p2); //  L.point(1, 2)
  * ```
  */
-
-
-// factory new L.Transformation(a: Number, b: Number, c: Number, d: Number)
-// Creates a `Transformation` object with the given coefficients.
 export class Transformation {
 
 	constructor(
@@ -30,7 +21,6 @@ export class Transformation {
 		public _d: number,
 	) { }
 
-	// @method transform(point: Point, scale?: Number): Point
 	// Returns a transformed point, optionally multiplied by the given scale.
 	// Only accepts actual `L.Point` instances, not arrays.
 	transform(point: Point, scale: number): Point {
@@ -39,13 +29,13 @@ export class Transformation {
 
 	// destructive transform (faster)
 	_transform(point: Point, scale: number): Point {
+		// TODO: remove this? was in the original code as a default mechanism, but maybe 0 is valid scale to pass?
 		scale ||= 1;
 		point.x = scale * (this._a * point.x + this._b);
 		point.y = scale * (this._c * point.y + this._d);
 		return point;
 	}
 
-	// @method untransform(point: Point, scale?: Number): Point
 	// Returns the reverse transformation of the given point, optionally divided
 	// by the given scale. Only accepts actual `L.Point` instances, not arrays.
 	untransform(point: Point, scale: number): Point {

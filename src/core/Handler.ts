@@ -1,19 +1,16 @@
 import type { Map } from '../map/Map.js';
-import { Class } from './Class.js';
 
 /**
  * L.Handler is a base class for handler classes that are used internally to inject
  * interaction features like dragging to classes like Map and Marker.
  */
-export abstract class Handler extends Class {
+export abstract class Handler {
 
 	_enabled = false;
 
 	constructor(
 		public _map: Map,
-	) {
-		super();
-	}
+	) {}
 
 	abstract addHooks(): void;
 	abstract removeHooks(): void;

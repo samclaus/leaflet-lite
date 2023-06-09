@@ -5,7 +5,6 @@ export { Scale } from './control/Control.Scale.js';
 export { Zoom } from './control/Control.Zoom.js';
 export { Control } from './control/Control.js';
 export { default as Browser } from './core/Browser';
-export { Class } from './core/Class';
 export { Evented } from './core/Events';
 export { Handler } from './core/Handler';
 export * as Util from './core/Util';

@@ -172,7 +172,7 @@ export abstract class GridLayer extends Layer {
 	// is specified, it must be called when the tile has finished loading and drawing.
 	abstract createTile(_coords: Point, done?: Function): HTMLElement;
 
-	onAdd(): this {
+	onAdd(_map: Map): this {
 		this._initContainer();
 		this._levels = {};
 		this._tiles = {};
@@ -465,7 +465,8 @@ export abstract class GridLayer extends Layer {
 		    coords2 = new Point(+x2, +y2);
 		coords2.z = +z2;
 
-		const key = this._tileCoordsToKey(coords2),
+		const
+			key = this._tileCoordsToKey(coords2),
 		    tile = this._tiles[key];
 
 		if (tile && tile.active) {

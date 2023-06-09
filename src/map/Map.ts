@@ -1,4 +1,4 @@
-import { Canvas, SVG, type Control, type Handler, type Layer, Renderer } from '../Leaflet.js';
+import { Canvas, SVG, type Control, type Handler, type Layer, Renderer, Path } from '../Leaflet.js';
 import type { ControlPosition } from '../control/Control.js';
 import Browser from '../core/Browser.js';
 import { Evented, type HandlerFn } from '../core/Events.js';
@@ -484,10 +484,9 @@ export class Map extends Evented {
 		return this;
 	}
 
-	// @method flyTo(latlng: LatLng, zoom?: Number, options?: Zoom/pan options): this
 	// Sets the view of the map (geographical center and zoom) performing a smooth
 	// pan-zoom animation.
-	flyTo(targetCenter: LatLng, targetZoom?: number, options: any = {}): this {
+	flyTo(targetCenter: LatLng, targetZoom?: number, options: any = {} /* TODO: zoom/pan options */): this {
 		if (options.animate === false) {
 			return this.setView(targetCenter, targetZoom, options);
 		}
@@ -663,19 +662,12 @@ export class Map extends Evented {
 		return this;
 	}
 
-	// @method invalidateSize(options: Zoom/pan options): this
 	// Checks if the map container size changed and updates the map if so —
 	// call it after you've changed the map size dynamically, also animating
 	// pan by default. If `options.pan` is `false`, panning will not occur.
 	// If `options.debounceMoveend` is `true`, it will delay `moveend` event so
 	// that it doesn't happen often even if the method is called many
 	// times in a row.
-
-	// @alternative
-	// @method invalidateSize(animate: Boolean): this
-	// Checks if the map container size changed and updates the map if so —
-	// call it after you've changed the map size dynamically, also animating
-	// pan by default.
 	invalidateSize(options: ZoomPanOptions | boolean): this {
 		if (!this._loaded) { return this; }
 
@@ -734,8 +726,6 @@ export class Map extends Evented {
 		return this._stop();
 	}
 
-	// @section Geolocation methods
-	// @method locate(options?: Locate options): this
 	// Tries to locate the user using the Geolocation API, firing a [`locationfound`](#map-locationfound)
 	// event with location data on success or a [`locationerror`](#map-locationerror) event on failure,
 	// and optionally sets the map view to the user's location with respect to
@@ -778,11 +768,10 @@ export class Map extends Evented {
 		return this;
 	}
 
-	// @method stopLocate(): this
 	// Stops watching location previously initiated by `map.locate({watch: true})`
 	// and aborts resetting the map view if map.locate was called with
 	// `{setView: true}`.
-	stopLocate() {
+	stopLocate(): this {
 		if (navigator.geolocation && navigator.geolocation.clearWatch) {
 			navigator.geolocation.clearWatch(this._locationWatchId);
 		}
@@ -1024,16 +1013,14 @@ export class Map extends Evented {
 		return typeof pane === 'string' ? this._panes[pane] : pane;
 	}
 
-	// @method getPanes(): Object
 	// Returns a plain object containing the names of all [panes](#map-pane) as keys and
 	// the panes as values.
-	getPanes() {
+	getPanes(): Dict<HTMLElement> {
 		return this._panes;
 	}
 
-	// @method getContainer: HTMLElement
 	// Returns the HTML element that contains the map.
-	getContainer() {
+	getContainer(): HTMLElement {
 		return this._container;
 	}
 
@@ -1972,11 +1959,10 @@ export class Map extends Evented {
 		}
 	}
 
-	// @namespace Map; @method getRenderer(layer: Path): Renderer
 	// Returns the instance of `Renderer` that should be used to render the given
 	// `Path`. It will ensure that the `renderer` options of the map and paths
 	// are respected, and that the renderers do exist on the map.
-	getRenderer(layer): Renderer {
+	getRenderer(layer: Path): Renderer {
 		// @namespace Path; @option renderer: Renderer
 		// Use this specific instance of `Renderer` for this path. Takes
 		// precedence over the map's [default renderer](#map-renderer).
@@ -2006,6 +1992,48 @@ export class Map extends Evented {
 		// Whether `Path`s should be rendered on a `Canvas` renderer.
 		// By default, all `Path`s are rendered in a `SVG` renderer.
 		return this.options.preferCanvas ? new Canvas(options) : new SVG(options);
+	}
+
+	// From DivOverlay
+	
+	_initOverlay(OverlayClass: any, content: any, latlng: any, options?: any): any {
+		let overlay = content;
+		if (!(overlay instanceof OverlayClass)) {
+			overlay = new OverlayClass(options).setContent(content);
+		}
+		if (latlng) {
+			overlay.setLatLng(latlng);
+		}
+		return overlay;
+	}
+
+	// From Tooltip
+
+	// @method openTooltip(tooltip: Tooltip): this
+	// Opens the specified tooltip.
+	// @alternative
+	// @method openTooltip(content: String|HTMLElement, latlng: LatLng, options?: Tooltip options): this
+	// Creates a tooltip with the specified content and options and open it.
+	openTooltip(tooltip: Tooltip): this;
+	openTooltip(
+		content: string | HTMLElement,
+		latlng: LatLng,
+		options?: any, /* TODO: tooltip options */
+	): this
+	openTooltip(
+		tooltip: Tooltip | string | HTMLElement,
+		latlng?: LatLng,
+		options?: any, /* TODO: tooltip options */
+	): this {
+		this._initOverlay(Tooltip, tooltip, latlng, options).openOn(this);
+		return this;
+	}
+
+	// Closes the tooltip given as parameter.
+	/** @deprecated Another example of way too many ways to do the same thing. */
+	closeTooltip(tooltip: Tooltip): this {
+		tooltip.close();
+		return this;
 	}
 
 }

@@ -36,13 +36,11 @@ export class Point {
 		this.y = round ? Math.round(y) : y;
 	}
 
-	// @method clone(): Point
 	// Returns a copy of the current point.
 	clone(): Point {
 		return new Point(this.x, this.y);
 	}
 
-	// @method add(otherPoint: Point): Point
 	// Returns the result of addition of the current and the given points.
 	add(point: Point): Point {
 		// non-destructive, returns a new point
@@ -56,7 +54,6 @@ export class Point {
 		return this;
 	}
 
-	// @method subtract(otherPoint: Point): Point
 	// Returns the result of subtraction of the given point from the current.
 	subtract(point: Point): Point {
 		return this.clone()._subtract(point);
@@ -68,7 +65,6 @@ export class Point {
 		return this;
 	}
 
-	// @method divideBy(num: Number): Point
 	// Returns the result of division of the current point by the given number.
 	divideBy(num: number): Point {
 		return this.clone()._divideBy(num);
@@ -80,7 +76,6 @@ export class Point {
 		return this;
 	}
 
-	// @method multiplyBy(num: Number): Point
 	// Returns the result of multiplication of the current point by the given number.
 	multiplyBy(num: number): Point {
 		return this.clone()._multiplyBy(num);
@@ -92,7 +87,6 @@ export class Point {
 		return this;
 	}
 
-	// @method scaleBy(scale: Point): Point
 	// Multiply each coordinate of the current point by each coordinate of
 	// `scale`. In linear algebra terms, multiply the point by the
 	// [scaling matrix](https://en.wikipedia.org/wiki/Scaling_%28geometry%29#Matrix_representation)
@@ -101,14 +95,12 @@ export class Point {
 		return new Point(this.x * point.x, this.y * point.y);
 	}
 
-	// @method unscaleBy(scale: Point): Point
 	// Inverse of `scaleBy`. Divide each coordinate of the current point by
 	// each coordinate of `scale`.
 	unscaleBy(point: Point): Point {
 		return new Point(this.x / point.x, this.y / point.y);
 	}
 
-	// @method round(): Point
 	// Returns a copy of the current point with rounded coordinates.
 	round(): Point {
 		return this.clone()._round();
@@ -120,7 +112,6 @@ export class Point {
 		return this;
 	}
 
-	// @method floor(): Point
 	// Returns a copy of the current point with floored coordinates (rounded down).
 	floor(): Point {
 		return this.clone()._floor();
@@ -132,7 +123,6 @@ export class Point {
 		return this;
 	}
 
-	// @method ceil(): Point
 	// Returns a copy of the current point with ceiled coordinates (rounded up).
 	ceil(): Point {
 		return this.clone()._ceil();
@@ -144,7 +134,6 @@ export class Point {
 		return this;
 	}
 
-	// @method trunc(): Point
 	// Returns a copy of the current point with truncated coordinates (rounded towards zero).
 	trunc(): Point {
 		return this.clone()._trunc();
@@ -156,7 +145,6 @@ export class Point {
 		return this;
 	}
 
-	// @method distanceTo(otherPoint: Point): Number
 	// Returns the cartesian distance between the current and the given points.
 	distanceTo(point: Point): number {
 		const dx = point.x - this.x;
@@ -164,20 +152,17 @@ export class Point {
 		return Math.sqrt(dx*dx + dy*dy);
 	}
 
-	// @method equals(otherPoint: Point): Boolean
 	// Returns `true` if the given point has the same coordinates.
 	equals(point: Point): boolean {
 		return point.x === this.x && point.y === this.y;
 	}
 
-	// @method contains(otherPoint: Point): Boolean
 	// Returns `true` if both coordinates of the given point are less than the corresponding current point coordinates (in absolute values).
 	contains(point: Point): boolean {
 		return Math.abs(point.x) <= Math.abs(this.x) &&
 		       Math.abs(point.y) <= Math.abs(this.y);
 	}
 
-	// @method toString(): String
 	// Returns a string representation of the point for debugging purposes.
 	toString(): string {
 		return `Point(${formatNum(this.x)}, ${formatNum(this.y)})`;
