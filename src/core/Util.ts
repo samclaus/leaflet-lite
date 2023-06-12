@@ -22,7 +22,7 @@ export function stamp(obj: any): number {
  * function, followed by any arguments passed when invoking the bound function.
  * Has an `L.throttle` shortcut.
  */
-export function throttle(fn: Function, time: number, context?: any): Function {
+export function throttle<T extends Function>(fn: T, time: number, context?: any): T {
 	let
 		lock = false,
 		queuedArgs: any[] | undefined;
@@ -49,7 +49,7 @@ export function throttle(fn: Function, time: number, context?: any): Function {
 		}
 	}
 
-	return wrapperFn;
+	return wrapperFn as any;
 }
 
 /**

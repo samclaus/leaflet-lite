@@ -1,4 +1,4 @@
-import type { LatLng, Map } from '../../Leaflet.js';
+import { LatLng, type Map } from '../../Leaflet.js';
 import Browser from '../../core/Browser.js';
 import type { HandlerMap } from '../../core/Events.js';
 import * as Util from '../../core/Util.js';
@@ -16,6 +16,8 @@ export interface TileModel {
 	coords: Point;
 	current: boolean;
 	loaded: number; // UNIX millis timestamp, 0 if not loaded yet
+	active: boolean;
+	retain: boolean;
 }
 
 export interface LevelModel {
@@ -165,8 +167,13 @@ export abstract class GridLayer extends Layer {
 	_noPrune = false;
 	_loading = false;
 	_onMove: (() => void) | undefined;
+	_fadeFrame = 0; // from requestAnimationFrame()
+	_globalTileRange: Bounds | undefined;
+	_level: any; // TODO
+	_wrapX: any; // TODO
+	_wrapY: any; // TODO
 
-	constructor(options) {
+	constructor(options: any /* TODO */) {
 		super();
 		Util.setOptions(this, options);
 	}
@@ -174,6 +181,8 @@ export abstract class GridLayer extends Layer {
 	// Returns the `HTMLElement` corresponding to the given `coords`. If the `done` callback
 	// is specified, it must be called when the tile has finished loading and drawing.
 	abstract createTile(_coords: Point, done?: DoneFn): HTMLElement;
+
+	_abortLoading?(): void;
 
 	onAdd(_map: Map): this {
 		this._initContainer();
@@ -201,7 +210,7 @@ export abstract class GridLayer extends Layer {
 	// Brings the tile layer to the top of all tile layers.
 	bringToFront(): this {
 		if (this._map) {
-			DomUtil.toFront(this._container);
+			DomUtil.toFront(this._container!); // TODO: null safety
 			this._setAutoZIndex(Math.max);
 		}
 		return this;
@@ -210,7 +219,7 @@ export abstract class GridLayer extends Layer {
 	// Brings the tile layer to the bottom of all tile layers.
 	bringToBack(): this {
 		if (this._map) {
-			DomUtil.toBack(this._container);
+			DomUtil.toBack(this._container!); // TODO: null safety
 			this._setAutoZIndex(Math.min);
 		}
 		return this;
@@ -284,19 +293,19 @@ export abstract class GridLayer extends Layer {
 
 	_updateZIndex(): void {
 		if (this._container && this.options.zIndex !== undefined && this.options.zIndex !== null) {
-			this._container.style.zIndex = this.options.zIndex;
+			this._container.style.zIndex = this.options.zIndex as any; // automatically coerced to string
 		}
 	}
 
-	_setAutoZIndex(compare): void {
+	_setAutoZIndex(compare: (a: number, b: number) => number): void {
 		// go through all other layers of the same pane, set zIndex to max + 1 (front) or min - 1 (back)
-		const layers = this.getPane().children;
+		const layers = this.getPane()!.children; // TODO: null safety
 
 		let edgeZIndex = -compare(-Infinity, Infinity); // -Infinity for max, Infinity for min
 
 		for (let i = 0, len = layers.length, zIndex; i < len; i++) {
 
-			zIndex = layers[i].style.zIndex;
+			zIndex = (layers[i] as HTMLElement).style.zIndex;
 
 			if (layers[i] !== this._container && zIndex) {
 				edgeZIndex = compare(edgeZIndex, +zIndex);
@@ -312,7 +321,8 @@ export abstract class GridLayer extends Layer {
 	_updateOpacity(): void {
 		if (!this._map) { return; }
 
-		this._container.style.opacity = this.options.opacity;
+		// TODO: null safety
+		this._container!.style.opacity = this.options.opacity as any; // automatically coerced to string
 
 		const now = Date.now();
 		let nextFrame = false,
@@ -323,7 +333,8 @@ export abstract class GridLayer extends Layer {
 
 			const fade = Math.min(1, (now - tile.loaded) / 200);
 
-			tile.el.style.opacity = fade;
+			tile.el.style.opacity = fade as any; // automatically coerced to string
+
 			if (fade < 1) {
 				nextFrame = true;
 			} else {
@@ -354,7 +365,8 @@ export abstract class GridLayer extends Layer {
 			this._updateOpacity();
 		}
 
-		this.getPane().appendChild(this._container);
+		// TODO: null safety
+		this.getPane()!.appendChild(this._container);
 	}
 
 	_updateLevels() { // TODO: return type?
@@ -409,7 +421,7 @@ export abstract class GridLayer extends Layer {
 		}
 
 		const zoom = this._map._zoom;
-		if (zoom > this.options.maxZoom ||
+		if (zoom > this.options.maxZoom! || // TODO: null safety
 			zoom < this.options.minZoom) {
 			this._removeAllTiles();
 			return;
@@ -422,8 +434,8 @@ export abstract class GridLayer extends Layer {
 		for (const tile of Object.values(this._tiles)) {
 			if (tile.current && !tile.active) {
 				const coords = tile.coords;
-				if (!this._retainParent(coords.x, coords.y, coords.z, coords.z - 5)) {
-					this._retainChildren(coords.x, coords.y, coords.z, coords.z + 2);
+				if (!this._retainParent(coords.x, coords.y, coords.z!, coords.z! - 5)) { // TODO: null safety
+					this._retainChildren(coords.x, coords.y, coords.z!, coords.z! + 2); // TODO: null safety
 				}
 			}
 		}
@@ -518,7 +530,7 @@ export abstract class GridLayer extends Layer {
 		this._setView(this._map!.getCenter(), this._map!._zoom, animating, animating);
 	}
 
-	_animateZoom(e): void {
+	_animateZoom(e: any): void {
 		this._setView(e.center, e.zoom, true, e.noUpdate);
 	}
 
@@ -537,7 +549,7 @@ export abstract class GridLayer extends Layer {
 	}
 
 	_setView(center: LatLng, zoom: number, noPrune?: boolean, noUpdate?: boolean): void {
-		let tileZoom = Math.round(zoom);
+		let tileZoom: number | undefined = Math.round(zoom);
 		if ((this.options.maxZoom !== undefined && tileZoom > this.options.maxZoom) ||
 		    (this.options.minZoom !== undefined && tileZoom < this.options.minZoom)) {
 			tileZoom = undefined;
@@ -580,36 +592,37 @@ export abstract class GridLayer extends Layer {
 		}
 	}
 
-	_setZoomTransform(level, center: LatLng, zoom: number): void {
+	_setZoomTransform(level: LevelModel, center: LatLng, zoom: number): void {
 		const
-			scale = this._map.getZoomScale(zoom, level.zoom),
+			scale = this._map!.getZoomScale(zoom, level.zoom), // TODO: null safety
 		    translate = level.origin.multiplyBy(scale).subtract(
-				this._map._getNewPixelOrigin(center, zoom)
+				this._map!._getNewPixelOrigin(center, zoom) // TODO: null safety
 			).round();
 
 		DomUtil.setTransform(level.el, translate, scale);
 	}
 
 	_resetGrid() {
-		const map = this._map,
+		const
+			map = this._map!, // TODO: null safety
 		    crs = map.options.crs,
-		    tileSize = this._tileSize = this.getTileSize(),
-		    tileZoom = this._tileZoom;
+		    tileSize = this.getTileSize(),
+		    tileZoom = this._tileZoom,
+			bounds = map.getPixelWorldBounds(this._tileZoom);
 
-		const bounds = this._map.getPixelWorldBounds(this._tileZoom);
 		if (bounds) {
 			this._globalTileRange = this._pxBoundsToTileRange(bounds);
 		}
 
 		this._wrapX = crs.wrapLng && !this.options.noWrap && [
-			Math.floor(map.project([0, crs.wrapLng[0]], tileZoom).x / tileSize.x),
-			Math.ceil(map.project([0, crs.wrapLng[1]], tileZoom).x / tileSize.y)
+			Math.floor(map.project(new LatLng(0, crs.wrapLng[0]), tileZoom).x / tileSize.x),
+			Math.ceil(map.project(new LatLng(0, crs.wrapLng[1]), tileZoom).x / tileSize.y)
 		];
 		this._wrapY = crs.wrapLat && !this.options.noWrap && [
-			Math.floor(map.project([crs.wrapLat[0], 0], tileZoom).y / tileSize.x),
-			Math.ceil(map.project([crs.wrapLat[1], 0], tileZoom).y / tileSize.y)
+			Math.floor(map.project(new LatLng(crs.wrapLat[0], 0), tileZoom).y / tileSize.x),
+			Math.ceil(map.project(new LatLng(crs.wrapLat[1], 0), tileZoom).y / tileSize.y)
 		];
-	},
+	}
 
 	_onMoveEnd(): void {
 		if (!this._map || this._map._animatingZoom) { return; }
@@ -629,12 +642,12 @@ export abstract class GridLayer extends Layer {
 	}
 
 	// Private method to load tiles in the grid's active zoom level according to map bounds
-	_update(center) {
+	_update(center?: LatLng): void {
 		const map = this._map;
 		if (!map) { return; }
 		const zoom = this._clampZoom(map._zoom);
 
-		if (center === undefined) { center = map.getCenter(); }
+		center ||= map.getCenter();
 		if (this._tileZoom === undefined) { return; }	// if out of minzoom/maxzoom
 
 		const
@@ -707,11 +720,11 @@ export abstract class GridLayer extends Layer {
 	}
 
 	_isValidTile(coords: Point): boolean {
-		const crs = this._map.options.crs;
+		const crs = this._map!.options.crs; // TODO: null safety
 
 		if (!crs.infinite) {
 			// don't load tile if it's out of bounds and not wrapped
-			const bounds = this._globalTileRange;
+			const bounds = this._globalTileRange!; // TODO: null safety
 			if ((!crs.wrapLng && (coords.x < bounds.min.x || coords.x > bounds.max.x)) ||
 			    (!crs.wrapLat && (coords.y < bounds.min.y || coords.y > bounds.max.y))) { return false; }
 		}
@@ -815,6 +828,8 @@ export abstract class GridLayer extends Layer {
 			coords,
 			current: true,
 			loaded: 0,
+			active: false,
+			retain: false,
 		};
 
 		container.appendChild(tile);
@@ -827,25 +842,27 @@ export abstract class GridLayer extends Layer {
 		});
 	}
 
-	_tileReady(coords: Point, err: unknown /* TODO */, tile?: HTMLImageElement): void {
+	_tileReady(coords: Point, err: unknown /* TODO */, _tile?: HTMLImageElement): void {
 		if (err) {
 			// @event tileerror: TileErrorEvent
 			// Fired when there is an error loading a tile.
 			this.fire('tileerror', {
 				error: err,
-				tile,
+				tile: _tile,
 				coords
 			});
 		}
 
 		const key = this._tileCoordsToKey(coords);
+		const tile = this._tiles[key];
 
-		tile = this._tiles[key];
 		if (!tile) { return; }
 
 		tile.loaded = Date.now();
-		if (this._map._fadeAnimated) {
-			tile.el.style.opacity = 0;
+
+		// TODO: null safety
+		if (this._map!._fadeAnimated) {
+			tile.el.style.opacity = 0 as any; // automatically coerced to string
 			cancelAnimationFrame(this._fadeFrame);
 			this._fadeFrame = requestAnimationFrame(() => this._updateOpacity());
 		} else {
@@ -870,7 +887,7 @@ export abstract class GridLayer extends Layer {
 			// Fired when the grid layer loaded all visible tiles.
 			this.fire('load');
 
-			if (!this._map._fadeAnimated) {
+			if (!this._map!._fadeAnimated) { // TODO: null safety
 				requestAnimationFrame(() => this._pruneTiles());
 			} else {
 				// Wait a bit more than 0.2 secs (the duration of the tile fade-in)

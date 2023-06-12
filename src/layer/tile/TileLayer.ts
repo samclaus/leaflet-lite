@@ -169,7 +169,8 @@ export class TileLayer extends GridLayer {
 			z: this._getZoomForUrl()
 		};
 		if (this._map && !this._map.options.crs.infinite) {
-			const invertedY = this._globalTileRange.max.y - coords.y;
+			// TODO: null safety
+			const invertedY = this._globalTileRange!.max.y - coords.y;
 			if (this.options.tms) {
 				data.y = invertedY;
 			}
