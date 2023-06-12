@@ -124,7 +124,8 @@ export class Marker extends Layer {
 			this.options.draggable = true;
 			this.dragging.removeHooks();
 		}
-		delete this.dragging;
+		
+		this.dragging = undefined;
 
 		if (this._zoomAnimated) {
 			map.off('zoomanim', this._animateZoom, this);

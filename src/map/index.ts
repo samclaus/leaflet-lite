@@ -6,4 +6,3 @@ export * from './handler/Map.Keyboard';
 export * from './handler/Map.ScrollWheelZoom';
 export * from './handler/Map.TapHold';
 export * from './handler/Map.TouchZoom';
-

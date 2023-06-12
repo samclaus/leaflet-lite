@@ -1711,7 +1711,7 @@ export class Map extends Evented {
 	_destroyAnimProxy(): void {
 		this._proxy?.remove(); // TODO: safe to wrap all of these in if-statement?
 		this.off('load moveend', this._animMoveEnd, this);
-		delete this._proxy;
+		this._proxy = undefined;
 	}
 
 	_animMoveEnd(): void {

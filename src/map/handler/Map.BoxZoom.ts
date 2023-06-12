@@ -38,7 +38,7 @@ export class BoxZoom extends Handler {
 
 	_destroy(): void {
 		this._pane.remove();
-		delete this._pane;
+		this._pane = undefined;
 	}
 
 	_resetState(): void {
