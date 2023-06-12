@@ -1,4 +1,4 @@
-import { Canvas, SVG, type Control, type Handler, type Layer, Renderer, Path } from '../Leaflet.js';
+import { Canvas, SVG, type Control, type Handler, type Layer, Renderer, Path, Drag } from '../Leaflet.js';
 import type { ControlPosition } from '../control/Control.js';
 import Browser from '../core/Browser.js';
 import { Evented, type HandlerFn } from '../core/Events.js';
@@ -236,6 +236,11 @@ export class Map extends Evented {
 	_controlContainer: HTMLElement | undefined;
 	_controlCorners: { readonly [Pos in ControlPosition]: HTMLElement } | undefined;
 
+	dragging?: Drag;
+
+	/** @deprecated This seems to be just looked up from options at the necessary times, but keeping it in sync is risky compared with just reading from options every time. Of course that will incur performance penalty--need to disallow changing options at arbitrary times */
+	_fadeAnimated = false;
+
 	constructor(
 		id: string | HTMLElement,
 		options: any, // TODO
@@ -276,7 +281,8 @@ export class Map extends Evented {
 		//	}
 		//
 		for (const [name, HandlerClass] of options.handlers) {
-			const handler = this[name] = new HandlerClass(this);
+			// TODO: remove this dynamic property setting
+			const handler = (this as any)[name] = new HandlerClass(this);
 			this._handlers.push(handler);
 			handler.enable();
 		}
@@ -674,7 +680,7 @@ export class Map extends Evented {
 		options = Object.assign<ZoomPanOptions, ZoomPanOptions>({
 			animate: false,
 			pan: true
-		}, typeof options === "boolean" ? { animate: options } : options);
+		}, typeof options === 'boolean' ? { animate: options } : options);
 
 		const oldSize = this.getSize();
 
@@ -2009,12 +2015,9 @@ export class Map extends Evented {
 
 	// From Tooltip
 
-	// @method openTooltip(tooltip: Tooltip): this
-	// Opens the specified tooltip.
-	// @alternative
-	// @method openTooltip(content: String|HTMLElement, latlng: LatLng, options?: Tooltip options): this
-	// Creates a tooltip with the specified content and options and open it.
+	/** Opens the specified tooltip. */
 	openTooltip(tooltip: Tooltip): this;
+	/** Creates a tooltip with the specified content and options and open it. */
 	openTooltip(
 		content: string | HTMLElement,
 		latlng: LatLng,

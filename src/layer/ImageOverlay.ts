@@ -1,4 +1,5 @@
 import type { LatLng, LatLngBounds } from '../Leaflet.js';
+import type { HandlerMap } from '../core/Events.js';
 import * as Util from '../core/Util.js';
 import * as DomUtil from '../dom/DomUtil.js';
 import { Bounds } from '../geometry/Bounds.js';
@@ -149,8 +150,8 @@ export class ImageOverlay extends Layer {
 		return this;
 	}
 
-	getEvents() {
-		const events = {
+	getEvents(): HandlerMap {
+		const events: HandlerMap = {
 			zoom: this._reset,
 			viewreset: this._reset
 		};

@@ -47,7 +47,7 @@ export class Tooltip extends DivOverlay {
 
 		// @option offset: Point = Point(0, 0)
 		// Optional offset of the tooltip position.
-		offset: [0, 0],
+		offset: new Point(0, 0),
 
 		// @option direction: String = 'auto'
 		// Direction where to open the tooltip. Possible values are: `right`, `left`,
@@ -125,11 +125,11 @@ export class Tooltip extends DivOverlay {
 	}
 
 	_initLayout(): void {
-		const prefix = 'leaflet-tooltip',
-		    className = `${prefix} ${this.options.className || ''} leaflet-zoom-${this._zoomAnimated ? 'animated' : 'hide'}`;
+		const
+			prefix = 'leaflet-tooltip',
+		    className = `${prefix} ${(this.options as any /* TODO */).className || ''} leaflet-zoom-${this._zoomAnimated ? 'animated' : 'hide'}`;
 
 		this._contentNode = this._container = DomUtil.create('div', className);
-
 		this._container.setAttribute('role', 'tooltip');
 		this._container.setAttribute('id', `leaflet-tooltip-${Util.stamp(this)}`);
 	}
@@ -138,16 +138,17 @@ export class Tooltip extends DivOverlay {
 
 	_adjustPan(): void {}
 
-	_setPosition(pos) {
+	_setPosition(pos: Point): void {
 		let subX, subY, direction = this.options.direction;
-		const map = this._map,
-		      container = this._container,
-		      centerPoint = map.latLngToContainerPoint(map.getCenter()),
-		      tooltipPoint = map.layerPointToContainerPoint(pos),
-		      tooltipWidth = container.offsetWidth,
-		      tooltipHeight = container.offsetHeight,
-		      offset = toPoint(this.options.offset),
-		      anchor = this._getAnchor();
+		const
+			map = this._map!, // TODO: null safety
+			container = this._container,
+			centerPoint = map.latLngToContainerPoint(map.getCenter()),
+			tooltipPoint = map.layerPointToContainerPoint(pos),
+			tooltipWidth = container.offsetWidth,
+			tooltipHeight = container.offsetHeight,
+			offset = this.options.offset,
+			anchor = this._getAnchor();
 
 		if (direction === 'top') {
 			subX = tooltipWidth / 2;
@@ -174,7 +175,9 @@ export class Tooltip extends DivOverlay {
 			subY = tooltipHeight / 2;
 		}
 
-		pos = pos.subtract(toPoint(subX, subY, true)).add(offset).add(anchor);
+		pos = pos.subtract(
+			new Point(Math.round(subX), Math.round(subY)),
+		).add(offset).add(anchor);
 
 		container.classList.remove(
 			'leaflet-tooltip-right',
@@ -186,12 +189,13 @@ export class Tooltip extends DivOverlay {
 		DomUtil.setPosition(container, pos);
 	}
 
-	_updatePosition() {
-		const pos = this._map.latLngToLayerPoint(this._latlng);
+	_updatePosition(): void {
+		// TODO: null safety
+		const pos = this._map!.latLngToLayerPoint(this._latlng!);
 		this._setPosition(pos);
 	}
 
-	setOpacity(opacity) {
+	setOpacity(opacity: number): void {
 		this.options.opacity = opacity;
 
 		if (this._container) {
@@ -199,8 +203,9 @@ export class Tooltip extends DivOverlay {
 		}
 	}
 
-	_animateZoom(e) {
-		const pos = this._map._latLngToNewLayerPoint(this._latlng, e.zoom, e.center);
+	_animateZoom(ev: any): void {
+		// TODO: null safety
+		const pos = this._map!._latLngToNewLayerPoint(this._latlng!, ev.zoom, ev.center);
 		this._setPosition(pos);
 	}
 

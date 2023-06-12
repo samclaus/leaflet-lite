@@ -1,3 +1,4 @@
+import { LatLng, Point, type LatLngBounds } from '../../Leaflet.js';
 import { Handler } from '../../core/Handler.js';
 import { Draggable } from '../../dom/Draggable.js';
 import { Bounds } from '../../geometry/Bounds.js';
@@ -50,9 +51,15 @@ export class Drag extends Handler {
 
 	_draggable: Draggable | undefined;
 	_viscosity: number | undefined;
-	_positions = [];
-	_times = [];
+	_positions: Point[] = [];
+	_times: number[] = [];
 	_offsetLimit: Bounds | undefined;
+	_absPos: Point | undefined;
+	_lastTime: number | undefined;
+	_lastPos: Point | undefined;
+	_initialWorldOffset = 0;
+	_worldWidth = 0;
+
 	options: DragOptions;
 
 	constructor(
@@ -77,7 +84,8 @@ export class Drag extends Handler {
 		if (!this._draggable) {
 			const map = this._map;
 
-			this._draggable = new Draggable(map._mapPane, map._container);
+			// TODO: null safety
+			this._draggable = new Draggable(map._mapPane!, map._container);
 			this._draggable.on({
 				dragstart: this._onDragStart,
 				drag: this._onDrag,
@@ -117,7 +125,7 @@ export class Drag extends Handler {
 		map._stop();
 
 		if (this._map.options.maxBounds && this.options.maxBoundsViscosity) {
-			const bounds = this._map.options.maxBounds;
+			const bounds = this._map.options.maxBounds as LatLngBounds; // TODO: fix option types
 
 			this._offsetLimit = new Bounds(
 				this._map.latLngToContainerPoint(bounds.getNorthWest()).multiplyBy(-1),
@@ -142,7 +150,7 @@ export class Drag extends Handler {
 		if (this.options.inertia) {
 			const
 				time = this._lastTime = Date.now(),
-			    pos = this._lastPos = this._draggable._absPos || this._draggable._newPos;
+			    pos = this._lastPos = this._absPos || this._draggable!._newPos!; // TODO: null safety
 
 			this._positions.push(pos);
 			this._times.push(time);
@@ -165,43 +173,46 @@ export class Drag extends Handler {
 	_onZoomEnd(): void {
 		const
 			pxCenter = this._map.getSize().divideBy(2),
-		    pxWorldCenter = this._map.latLngToLayerPoint([0, 0]);
+		    pxWorldCenter = this._map.latLngToLayerPoint(new LatLng(0, 0));
 
 		this._initialWorldOffset = pxWorldCenter.subtract(pxCenter).x;
-		this._worldWidth = this._map.getPixelWorldBounds().getSize().x;
+		this._worldWidth = this._map.getPixelWorldBounds()!.getSize().x; // TODO: null safety
 	}
 
 	_viscousLimit(value: number, threshold: number): number {
-		return value - (value - threshold) * this._viscosity;
+		return value - (value - threshold) * this._viscosity!; // TODO: null safety
 	}
 
 	_onPreDragLimit(): void {
 		if (!this._viscosity || !this._offsetLimit) { return; }
 
-		const offset = this._draggable._newPos.subtract(this._draggable._startPos);
-		const limit = this._offsetLimit;
+		const
+			draggable = this._draggable!, // TODO: null safety
+			offset = draggable._newPos!.subtract(draggable._startPos!),
+			limit = this._offsetLimit;
 
 		if (offset.x < limit.min.x) { offset.x = this._viscousLimit(offset.x, limit.min.x); }
 		if (offset.y < limit.min.y) { offset.y = this._viscousLimit(offset.y, limit.min.y); }
 		if (offset.x > limit.max.x) { offset.x = this._viscousLimit(offset.x, limit.max.x); }
 		if (offset.y > limit.max.y) { offset.y = this._viscousLimit(offset.y, limit.max.y); }
 
-		this._draggable._newPos = this._draggable._startPos.add(offset);
+		draggable._newPos = draggable._startPos!.add(offset);
 	}
 
 	_onPreDragWrap(): void {
 		// TODO refactor to be able to adjust map pane position after zoom
 		const
+			draggable = this._draggable!, // TODO: null safety
 			worldWidth = this._worldWidth,
 		    halfWidth = Math.round(worldWidth / 2),
 		    dx = this._initialWorldOffset,
-		    x = this._draggable._newPos.x,
+		    x = draggable._newPos!.x, // TODO: null safety
 		    newX1 = (x - halfWidth + dx) % worldWidth + halfWidth - dx,
 		    newX2 = (x + halfWidth + dx) % worldWidth - halfWidth - dx,
 		    newX = Math.abs(newX1 + dx) < Math.abs(newX2 + dx) ? newX1 : newX2;
 
-		this._draggable._absPos = this._draggable._newPos.clone();
-		this._draggable._newPos.x = newX;
+		this._absPos = draggable._newPos!.clone(); // TODO: null safety
+		draggable._newPos!.x = newX; // TODO: null safety
 	}
 
 	_onDragEnd(e: any /* TODO: type; the event comes from Draggable class */) {
@@ -218,11 +229,11 @@ export class Drag extends Handler {
 			this._prunePositions(Date.now());
 
 			const
-				direction = this._lastPos.subtract(this._positions[0]),
-				duration = (this._lastTime - this._times[0]) / 1000,
+				direction = this._lastPos!.subtract(this._positions[0]), // TODO: null safety
+				duration = (this._lastTime! - this._times[0]) / 1000, // TODO: null safety
 				ease = options.easeLinearity,
 				speedVector = direction.multiplyBy(ease / duration),
-				speed = speedVector.distanceTo([0, 0]),
+				speed = speedVector.distanceTo(new Point(0, 0)),
 				limitedSpeed = Math.min(options.inertiaMaxSpeed, speed),
 				limitedSpeedVector = speedVector.multiplyBy(limitedSpeed / speed),
 				decelerationDuration = limitedSpeed / (options.inertiaDeceleration * ease);

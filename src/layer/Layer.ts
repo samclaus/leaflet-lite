@@ -1,4 +1,4 @@
-import type { LatLng, LatLngBounds } from '../Leaflet.js';
+import { DomEvent, FeatureGroup, Tooltip, type LatLng, type LatLngBounds } from '../Leaflet.js';
 import { Evented, type HandlerMap } from '../core/Events.js';
 import * as Util from '../core/Util.js';
 import { Map } from '../map/Map.js';
@@ -82,6 +82,10 @@ export abstract class Layer extends Evented {
 
 	getBounds?(): LatLngBounds;
 	getLatLng?(): LatLng;
+	getElement?(): HTMLElement;
+	
+	eachLayer?(method: (l: Layer) => void): this;
+	eachLayer?<This>(method: (this: This, l: Layer) => void, context: This): this;
 
 	/**
 	 * Adds the layer to the given map or layer group.
@@ -106,7 +110,7 @@ export abstract class Layer extends Evented {
 
 	// Returns the `HTMLElement` representing the named pane on the map. If `name` is omitted, returns the pane for this layer.
 	getPane(name?: string): HTMLElement | undefined {
-		return this._map?.getPane(name ? ((this.options as any)[name] || name) : this.options.pane);
+		return this._map?.getPane(name ? ((this as any).options[name] || name) : (this as any).options.pane);
 	}
 
 	addInteractiveTarget(targetEl: HTMLElement): this {
@@ -125,7 +129,7 @@ export abstract class Layer extends Evented {
 
 	// Used by the `attribution control`, returns the [attribution option](#gridlayer-attribution).
 	getAttribution(): string | undefined {
-		return this.options.attribution;
+		return (this as any).options.attribution;
 	}
 
 	_layerAdd(e: { readonly target: Map; }): void {
@@ -165,48 +169,53 @@ export abstract class Layer extends Evented {
 		return overlay;
 	}
 
-// From Tooltip
+	// From Tooltip
 
+	_tooltip: Tooltip | undefined;
+	_tooltipHandlersAdded = false;
+	_openOnceFlag = false;
 
-	// @method bindTooltip(content: String|HTMLElement|Function|Tooltip, options?: Tooltip options): this
 	// Binds a tooltip to the layer with the passed `content` and sets up the
 	// necessary event listeners. If a `Function` is passed it will receive
 	// the layer as the first argument and should return a `String` or `HTMLElement`.
-	bindTooltip(content, options): this {
-
-		if (this._tooltip && this.isTooltipOpen()) {
+	bindTooltip(content: string | HTMLElement | Function | Tooltip, options?: any /* TODO: tooltip options */): this {
+		if (this.isTooltipOpen()) {
 			this.unbindTooltip();
 		}
 
 		this._tooltip = this._initOverlay(Tooltip, this._tooltip, content, options);
 		this._initTooltipInteractions();
 
-		if (this._tooltip.options.permanent && this._map && this._map.hasLayer(this)) {
+		// TODO: null safety
+		if (this._tooltip!.options.permanent && this._map && this._map.hasLayer(this)) {
 			this.openTooltip();
 		}
 
 		return this;
 	}
 
-	// @method unbindTooltip(): this
 	// Removes the tooltip previously bound with `bindTooltip`.
 	unbindTooltip(): this {
 		if (this._tooltip) {
 			this._initTooltipInteractions(true);
 			this.closeTooltip();
-			this._tooltip = null;
+			this._tooltip = undefined;
 		}
 		return this;
 	}
 
-	_initTooltipInteractions(remove): void {
+	_initTooltipInteractions(remove?: boolean): void {
 		if (!remove && this._tooltipHandlersAdded) { return; }
-		const onOff = remove ? 'off' : 'on',
-		    events = {
-			remove: this.closeTooltip,
-			move: this._moveTooltip
-		  };
-		if (!this._tooltip.options.permanent) {
+
+		const
+			tooltip = this._tooltip!, // TODO: null safety
+			onOff = remove ? 'off' : 'on',
+			events: HandlerMap = {
+				remove: this.closeTooltip,
+				move: this._moveTooltip
+			};
+
+		if (!tooltip.options.permanent) {
 			events.mouseover = this._openTooltip;
 			events.mouseout = this.closeTooltip;
 			events.click = this._openTooltip;
@@ -218,7 +227,7 @@ export abstract class Layer extends Evented {
 		} else {
 			events.add = this._openTooltip;
 		}
-		if (this._tooltip.options.sticky) {
+		if (tooltip.options.sticky) {
 			events.mousemove = this._moveTooltip;
 		}
 		this[onOff](events);
@@ -266,9 +275,8 @@ export abstract class Layer extends Evented {
 		return !!this._tooltip && this._tooltip.isOpen();
 	}
 
-	// @method setTooltipContent(content: String|HTMLElement|Tooltip): this
 	// Sets the content of the tooltip bound to this layer.
-	setTooltipContent(content): this {
+	setTooltipContent(content: string | HTMLElement | Function): this {
 		if (this._tooltip) {
 			this._tooltip.setContent(content);
 		}
@@ -288,25 +296,29 @@ export abstract class Layer extends Evented {
 		}
 	}
 
-	_addFocusListenersOnLayer(layer): void {
+	_addFocusListenersOnLayer(layer: Layer): void {
 		const el = typeof layer.getElement === 'function' && layer.getElement();
+
 		if (el) {
-			DomEvent.on(el, 'focus', function () {
-				this._tooltip._source = layer;
+			DomEvent.on(el, 'focus', function (this: Layer) {
+				// TODO: null safety
+				this._tooltip!._source = layer;
 				this.openTooltip();
 			}, this);
 			DomEvent.on(el, 'blur', this.closeTooltip, this);
 		}
 	}
 
-	_setAriaDescribedByOnLayer(layer): void {
-		const el = typeof layer.getElement === 'function' && layer.getElement();
+	_setAriaDescribedByOnLayer(layer: Layer): void {
+		const el = layer.getElement?.();
+
 		if (el) {
-			el.setAttribute('aria-describedby', this._tooltip._container.id);
+			// TODO: null safety
+			el.setAttribute('aria-describedby', this._tooltip!._container.id);
 		}
 	}
 
-	_openTooltip(e): void {
+	_openTooltip(e: any): void {
 		if (!this._tooltip || !this._map) {
 			return;
 		}
@@ -326,14 +338,20 @@ export abstract class Layer extends Evented {
 		this.openTooltip(this._tooltip.options.sticky ? e.latlng : undefined);
 	}
 
-	_moveTooltip(e): void {
-		let latlng = e.latlng, containerPoint, layerPoint;
-		if (this._tooltip.options.sticky && e.originalEvent) {
-			containerPoint = this._map.mouseEventToContainerPoint(e.originalEvent);
-			layerPoint = this._map.containerPointToLayerPoint(containerPoint);
-			latlng = this._map.layerPointToLatLng(layerPoint);
+	_moveTooltip(e: any): void {
+		const
+			map = this._map!, // TODO: null safety
+			tooltip = this._tooltip!; // TODO: null safety
+
+		let latlng = e.latlng;
+
+		if (tooltip.options.sticky && e.originalEvent) {
+			const containerPoint = map.mouseEventToContainerPoint(e.originalEvent);
+			const layerPoint = map.containerPointToLayerPoint(containerPoint);
+			latlng = map.layerPointToLatLng(layerPoint);
 		}
-		this._tooltip.setLatLng(latlng);
+
+		tooltip.setLatLng(latlng);
 	}
 
 }

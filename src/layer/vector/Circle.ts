@@ -1,8 +1,8 @@
-import { Point, LatLng } from '../../Leaflet.js';
+import { LatLng, Point } from '../../Leaflet.js';
 import { LatLngBounds } from '../../geo/LatLngBounds.js';
 import { Earth } from '../../geo/crs/CRS.Earth.js';
 import { CircleMarker, type CircleMarkerOptions } from './CircleMarker.js';
-import { Path } from './Path.js';
+import { Path, type PathOptions } from './Path.js';
 
 /**
  * A class for drawing circle overlays on a map. Extends `CircleMarker`.
@@ -53,7 +53,10 @@ export class Circle extends CircleMarker {
 		);
 	}
 
-	setStyle = Path.prototype.setStyle;
+	setStyle(options: Partial<PathOptions>): this {
+		Path.prototype.setStyle.call(this, options);
+		return this;
+	}
 
 	_project(): void {
 		const
@@ -70,6 +73,7 @@ export class Circle extends CircleMarker {
 				bottom = map.project(new LatLng(lat - latR, lng)),
 				p = top.add(bottom).divideBy(2),
 				lat2 = map.unproject(p).lat;
+
 			let lngR = Math.acos((Math.cos(latR * d) - Math.sin(lat * d) * Math.sin(lat2 * d)) /
 			            (Math.cos(lat * d) * Math.cos(lat2 * d))) / d;
 
@@ -77,12 +81,12 @@ export class Circle extends CircleMarker {
 				lngR = latR / Math.cos(Math.PI / 180 * lat); // Fallback for edge case, #2425
 			}
 
-			this._point = p.subtract(map.getPixelOrigin());
-			this._radius = isNaN(lngR) ? 0 : p.x - map.project([lat2, lng - lngR]).x;
+			this._point = p.subtract(map.getPixelOrigin()!); // TODO: null safety
+			this._radius = isNaN(lngR) ? 0 : p.x - map.project(new LatLng(lat2, lng - lngR)).x;
 			this._radiusY = p.y - top.y;
 
 		} else {
-			const latlng2 = crs.unproject(crs.project(this._latlng).subtract([this._mRadius, 0]));
+			const latlng2 = crs.unproject(crs.project(this._latlng).subtract(new Point(this._mRadius, 0)));
 
 			this._point = map.latLngToLayerPoint(this._latlng);
 			this._radius = this._point.x - map.latLngToLayerPoint(latlng2).x;

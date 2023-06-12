@@ -10,7 +10,7 @@ import { Layer } from './Layer.js';
 /**
  * Base model for L.Tooltip. Inherit from it for custom overlays like plugins.
  */
-export class DivOverlay extends Layer {
+export abstract class DivOverlay extends Layer {
 
 	options = {
 		// @option interactive: Boolean = false
@@ -34,20 +34,35 @@ export class DivOverlay extends Layer {
 		content: ''
 	};
 
-	constructor(options, source) {
+	_latlng: LatLng | undefined;
+	_source: any; // TODO
+	_content: any; // TODO
+	_container: any; // TODO
+	_contentNode: HTMLElement | undefined;
+	_removeTimeout: number | undefined;
+
+	constructor(latlng: LatLng, options?: any /* TODO */)
+	constructor(options: any /* TODO */, source: any /* TODO */)
+	constructor(latlngOrOptions: any, optionsOrSource: any) {
 		super();
 
-		if (options && (options instanceof LatLng || Array.isArray(options))) {
-			this._latlng = toLatLng(options);
-			Util.setOptions(this, source);
+		if (latlngOrOptions instanceof LatLng) {
+			this._latlng = latlngOrOptions;
+			Util.setOptions(this, optionsOrSource);
 		} else {
-			Util.setOptions(this, options);
-			this._source = source;
+			Util.setOptions(this, latlngOrOptions);
+			this._source = optionsOrSource;
 		}
 		if (this.options.content) {
 			this._content = this.options.content;
 		}
 	}
+
+	abstract _initLayout(): void;
+	abstract _updateLayout(): void;
+	abstract _updatePosition(): void;
+	abstract _adjustPan(): void;
+	abstract _animateZoom(ev: any): void;
 
 	// Adds the overlay to the map. Alternative to `map.openTooltip(tooltip)`.
 	openOn(map: Map = this._source._map): this {
@@ -80,7 +95,7 @@ export class DivOverlay extends Layer {
 			this._prepareOpen();
 
 			// open the overlay on the map
-			this.openOn(layer._map);
+			this.openOn(layer!._map); // TODO: null safety
 		}
 		return this;
 	}
@@ -97,7 +112,7 @@ export class DivOverlay extends Layer {
 		}
 
 		clearTimeout(this._removeTimeout);
-		this.getPane().appendChild(this._container);
+		this.getPane()!.appendChild(this._container); // TODO: null safety
 		this.update();
 
 		if (map._fadeAnimated) {
@@ -132,7 +147,7 @@ export class DivOverlay extends Layer {
 
 	// Returns the geographical point of the overlay.
 	getLatLng(): LatLng {
-		return this._latlng;
+		return this._latlng!; // TODO: null safety
 	}
 
 	// Sets the geographical point where the overlay will open.
@@ -257,14 +272,15 @@ export class DivOverlay extends Layer {
 	_updateContent() {
 		if (!this._content) { return; }
 
-		const node = this._contentNode;
+		const node = this._contentNode!; // TODO: null safety
 		const content = (typeof this._content === 'function') ? this._content(this._source || this) : this._content;
 
 		if (typeof content === 'string') {
 			node.innerHTML = content;
 		} else {
 			while (node.hasChildNodes()) {
-				node.removeChild(node.firstChild);
+				// TODO: just check firstChild as loop condition and remove non-null assertion?
+				node.removeChild(node.firstChild!);
 			}
 			node.appendChild(content);
 		}
@@ -274,30 +290,6 @@ export class DivOverlay extends Layer {
 		// @event contentupdate: Event
 		// Fired when the content of the overlay is updated
 		this.fire('contentupdate');
-	}
-
-	_updatePosition() {
-		if (!this._map) { return; }
-
-		const
-			pos = this._map.latLngToLayerPoint(this._latlng),
-			anchor = this._getAnchor();
-
-		let offset = this.options.offset;
-
-		if (this._zoomAnimated) {
-			DomUtil.setPosition(this._container, pos.add(anchor));
-		} else {
-			offset = offset.add(pos).add(anchor);
-		}
-
-		const
-			bottom = this._containerBottom = -offset.y,
-		    left = this._containerLeft = -Math.round(this._containerWidth / 2) + offset.x;
-
-		// bottom position the overlay in case the height of the overlay changes (images loading etc)
-		this._container.style.bottom = `${bottom}px`;
-		this._container.style.left = `${left}px`;
 	}
 
 	_getAnchor(): Point {

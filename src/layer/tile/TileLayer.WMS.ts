@@ -9,11 +9,11 @@ import { TileLayer } from './TileLayer.js';
  * tile layers on the map. Extends `TileLayer`.
  *
  * ```js
- * var nexrad = L.tileLayer.wms("http://mesonet.agron.iastate.edu/cgi-bin/wms/nexrad/n0r.cgi", {
+ * var nexrad = L.tileLayer.wms('http://mesonet.agron.iastate.edu/cgi-bin/wms/nexrad/n0r.cgi', {
  * 	layers: 'nexrad-n0r-900913',
  * 	format: 'image/png',
  * 	transparent: true,
- * 	attribution: "Weather data © 2012 IEM Nexrad"
+ * 	attribution: 'Weather data © 2012 IEM Nexrad'
  * });
  * ```
  */

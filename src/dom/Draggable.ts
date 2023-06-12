@@ -40,7 +40,7 @@ export class Draggable extends Evented {
 	// TODO
 	_parentScale: any;
 	_lastEvent: any;
-	_newPos: any;
+	_newPos: Point | undefined;
 
 	// @constructor L.Draggable(el: HTMLElement, dragHandle?: HTMLElement, preventOutline?: Boolean, options?: Draggable options)
 	// Creates a `Draggable` object for moving `el` when you start dragging the `dragHandle` element (equals `el` itself by default).
@@ -202,7 +202,7 @@ export class Draggable extends Evented {
 		// Fired continuously during dragging *before* each corresponding
 		// update of the element's position.
 		this.fire('predrag', e);
-		DomUtil.setPosition(this._element, this._newPos);
+		DomUtil.setPosition(this._element, this._newPos!); // TODO: null safety
 
 		// @event drag: Event
 		// Fired continuously during dragging.
@@ -240,7 +240,7 @@ export class Draggable extends Evented {
 			// Fired when the drag ends.
 			this.fire('dragend', {
 				noInertia,
-				distance: this._newPos.distanceTo(this._startPos)
+				distance: this._newPos!.distanceTo(this._startPos!), // TODO: null safety
 			});
 		}
 	}
