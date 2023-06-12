@@ -1,37 +1,50 @@
-import {Point} from '../geometry/Point.js';
-import * as Util from '../core/Util.js';
 import Browser from '../core/Browser.js';
-import {addPointerListener, removePointerListener} from './DomEvent.Pointer.js';
-import {addDoubleTapListener, removeDoubleTapListener} from './DomEvent.DoubleTap.js';
-import {getScale} from './DomUtil.js';
+import type { HandlerFn, HandlerMap } from '../core/Events.js';
+import * as Util from '../core/Util.js';
+import { Point } from '../geometry/Point.js';
+import { addDoubleTapListener, removeDoubleTapListener, type DoubleTapHandlers } from './DomEvent.DoubleTap.js';
+import { addPointerListener, removePointerListener } from './DomEvent.Pointer.js';
+import { getScale } from './DomUtil.js';
 
-/*
- * @namespace DomEvent
- * Utility functions to work with the [DOM events](https://developer.mozilla.org/docs/Web/API/Event), used by Leaflet internally.
+// This file contains utility functions to work with native DOM events, used by Leaflet internally.
+
+/**
+ * Adds a listener function (`fn`) to a particular DOM event type of the
+ * element `el`. You can optionally specify the context of the listener
+ * (object the `this` keyword will point to). You can also pass several
+ * space-separated types (e.g. `'click dblclick'`).
  */
-
-// Inspired by John Resig, Dean Edwards and YUI addEvent implementations.
-
-// @function on(el: HTMLElement, types: String, fn: Function, context?: Object): this
-// Adds a listener function (`fn`) to a particular DOM event type of the
-// element `el`. You can optionally specify the context of the listener
-// (object the `this` keyword will point to). You can also pass several
-// space-separated types (e.g. `'click dblclick'`).
-
-// @alternative
-// @function on(el: HTMLElement, eventMap: Object, context?: Object): this
-// Adds a set of type/listener pairs, e.g. `{click: onClick, mousemove: onMouseMove}`
-export function on(obj, types, fn, context?) {
-
-	if (types && typeof types === 'object') {
-		for (const [type, listener] of Object.entries(types)) {
-			addOne(obj, type, listener, fn);
+export function on<This>(
+	this: This,
+	el: HTMLElement,
+	types: string,
+	handler: HandlerFn,
+	context?: any,
+): This;
+/**
+ * Adds a set of type/listener pairs, e.g. `{click: onClick, mousemove: onMouseMove}`.
+ */
+export function on<This>(
+	this: This,
+	el: HTMLElement,
+	handlers: HandlerMap,
+	context?: any,
+): This;
+export function on<This>(
+	this: This,
+	el: HTMLElement,
+	typesOrHandlers: string | HandlerMap,
+	handlerOrCtx?: any,
+	context?: any,
+): This {
+	// Inspired by John Resig, Dean Edwards and YUI addEvent implementations.
+	if (typeof typesOrHandlers === 'object') {
+		for (const [type, listener] of Object.entries(typesOrHandlers)) {
+			addOne(el, type, listener, handlerOrCtx);
 		}
 	} else {
-		types = Util.splitWords(types);
-
-		for (let i = 0, len = types.length; i < len; i++) {
-			addOne(obj, types[i], fn, context);
+		for (const type of Util.splitWords(typesOrHandlers)) {
+			addOne(el, type, handlerOrCtx, context);
 		}
 	}
 
@@ -40,41 +53,66 @@ export function on(obj, types, fn, context?) {
 
 const eventsKey = '_leaflet_events';
 
-// @function off(el: HTMLElement, types: String, fn: Function, context?: Object): this
-// Removes a previously added listener function.
-// Note that if you passed a custom context to on, you must pass the same
-// context to `off` in order to remove the listener.
-
-// @alternative
-// @function off(el: HTMLElement, eventMap: Object, context?: Object): this
-// Removes a set of type/listener pairs, e.g. `{click: onClick, mousemove: onMouseMove}`
-
-// @alternative
-// @function off(el: HTMLElement, types: String): this
-// Removes all previously added listeners of given types.
-
-// @alternative
-// @function off(el: HTMLElement): this
-// Removes all previously added listeners from given HTMLElement
-export function off(obj, types?, fn?, context?) {
-
-	if (arguments.length === 1) {
-		batchRemove(obj);
-		delete obj[eventsKey];
-
-	} else if (types && typeof types === 'object') {
-		for (const [type, listener] of Object.entries(types)) {
-			removeOne(obj, type, listener, fn);
+/**
+ * Removes a previously added listener function for the given space-separated event types.
+ * 
+ * NOTE: if you passed a custom context to `on(...)`, you must pass the same
+ * context to `off(...)` in order to remove the listener.
+ */
+export function off<This>(
+	this: This,
+	el: HTMLElement,
+	types: string,
+	handler: HandlerFn,
+	context?: any,
+): This;
+/**
+ * Removes the previously added type/handler pairs.
+ * 
+ * NOTE: if you passed a custom context to `on(...)`, you must pass the same
+ * context to `off(...)` in order to remove the listener.
+ */
+export function off<This>(
+	this: This,
+	el: HTMLElement,
+	handlers: HandlerMap,
+	context?: any,
+): This;
+/** Removes all previously added listeners of given types. */
+export function off<This>(
+	this: This,
+	el: HTMLElement,
+	types: string,
+): This;
+/** Removes all previously added listeners from given HTMLElement. */
+export function off<This>(
+	this: This,
+	el: HTMLElement,
+): This;
+export function off(
+	this: any,
+	el: HTMLElement,
+	typesOrHandlers?: string | HandlerMap,
+	handlerOrCtx?: any,
+	context?: any,
+): any {
+	if (!typesOrHandlers) {
+		// Remove all known listeners for any type of event from the element
+		batchRemove(el);
+		delete el[eventsKey];
+	} else if (typeof typesOrHandlers === 'object') {
+		// Remove the given type/listener pairs
+		for (const [type, listener] of Object.entries(typesOrHandlers)) {
+			removeOne(el, type, listener, handlerOrCtx);
 		}
-
 	} else {
-		types = Util.splitWords(types);
-
+		// Remove the single given handler for space-separated list of types
 		if (arguments.length === 2) {
-			batchRemove(obj, type => types.includes(type));
+			const types = new Set(Util.splitWords(typesOrHandlers));
+			batchRemove(el, type => types.has(type));
 		} else {
-			for (let i = 0, len = types.length; i < len; i++) {
-				removeOne(obj, types[i], fn, context);
+			for (const type of Util.splitWords(typesOrHandlers)) {
+				removeOne(el, type, handlerOrCtx, context);
 			}
 		}
 	}
@@ -82,96 +120,109 @@ export function off(obj, types?, fn?, context?) {
 	return this;
 }
 
-function batchRemove(obj, filterFn) {
-	for (const id of Object.keys(obj[eventsKey])) {
+function batchRemove(el: HTMLElement, filterFn?: (type: string) => any): void {
+	const events = el[eventsKey];
+
+	if (!events) return;
+
+	for (const id of Object.keys(events)) {
 		const type = id.split(/\d/)[0];
 		
 		if (!filterFn || filterFn(type)) {
-			removeOne(obj, type, null, null, id);
+			removeOne(el, type, Util.falseFn, null, id);
 		}
 	}
 }
 
-const mouseSubst = {
+const mouseSubst: Dict<string | false> = {
 	mouseenter: 'mouseover',
 	mouseleave: 'mouseout',
-	wheel: !('onwheel' in window) && 'mousewheel'
+	wheel: !('onwheel' in window) && 'mousewheel',
 };
 
-function addOne(obj, type, fn, context) {
-	const id = type + Util.stamp(fn) + (context ? `_${Util.stamp(context)}` : '');
+function makeHandlerID(type: string, handler: HandlerFn, context: any): string {
+	return type + Util.stamp(handler) + (context ? `_${Util.stamp(context)}` : '');
+}
 
-	if (obj[eventsKey] && obj[eventsKey][id]) { return this; }
+function addOne(
+	el: HTMLElement,
+	type: string,
+	fn: HandlerFn,
+	context?: any,
+): void {
+	const id = makeHandlerID(type, fn, context);
 
-	let handler = function (e) {
-		return fn.call(context || obj, e || window.event);
+	if (el[eventsKey]?.[id]) { return; }
+
+	let handler: HandlerFn | DoubleTapHandlers = function (e) {
+		return fn.call(context || el, e || window.event);
 	};
 
 	const originalHandler = handler;
 
 	if (!Browser.touchNative && Browser.pointer && type.startsWith('touch')) {
 		// Needs DomEvent.Pointer.js
-		handler = addPointerListener(obj, type, handler);
+		handler = addPointerListener(el, type, handler);
 
 	} else if (Browser.touch && (type === 'dblclick')) {
-		handler = addDoubleTapListener(obj, handler);
+		handler = addDoubleTapListener(el, handler);
 
-	} else if ('addEventListener' in obj) {
+	} else {
 
 		if (type === 'touchstart' || type === 'touchmove' || type === 'wheel' ||  type === 'mousewheel') {
-			obj.addEventListener(mouseSubst[type] || type, handler, {passive: false});
+			el.addEventListener(mouseSubst[type] || type, handler, { passive: false });
 
 		} else if (type === 'mouseenter' || type === 'mouseleave') {
 			handler = function (e) {
 				e = e || window.event;
-				if (isExternalTarget(obj, e)) {
+				if (isExternalTarget(el, e)) {
 					originalHandler(e);
 				}
 			};
-			obj.addEventListener(mouseSubst[type], handler, false);
+			el.addEventListener(mouseSubst[type] as string /* TODO */, handler, false);
 
 		} else {
-			obj.addEventListener(type, originalHandler, false);
+			el.addEventListener(type, originalHandler, false);
 		}
 
-	} else {
-		obj.attachEvent(`on${type}`, handler);
 	}
 
-	obj[eventsKey] = obj[eventsKey] || {};
-	obj[eventsKey][id] = handler;
+	el[eventsKey] ||= {};
+	el[eventsKey][id] = handler;
 }
 
-function removeOne(obj, type, fn, context, id) {
-	id = id || type + Util.stamp(fn) + (context ? `_${Util.stamp(context)}` : '');
-	const handler = obj[eventsKey] && obj[eventsKey][id];
+function removeOne(
+	el: HTMLElement,
+	type: string,
+	fn: HandlerFn,
+	context?: any,
+	id = makeHandlerID(type, fn, context),
+): void {
+	const handler = el[eventsKey] && el[eventsKey][id];
 
-	if (!handler) { return this; }
+	if (!handler) { return; }
 
 	if (!Browser.touchNative && Browser.pointer && type.startsWith('touch')) {
-		removePointerListener(obj, type, handler);
-
+		removePointerListener(el, type, handler);
 	} else if (Browser.touch && (type === 'dblclick')) {
-		removeDoubleTapListener(obj, handler);
-
-	} else if ('removeEventListener' in obj) {
-
-		obj.removeEventListener(mouseSubst[type] || type, handler, false);
-
+		removeDoubleTapListener(el, handler);
 	} else {
-		obj.detachEvent(`on${type}`, handler);
+		el.removeEventListener(mouseSubst[type] || type, handler, false);
 	}
 
-	obj[eventsKey][id] = null;
+	// el[eventsKey] is guaranteed from null check for handler at top of function
+	delete el[eventsKey]![id];
 }
 
-// @function stopPropagation(ev: DOMEvent): this
-// Stop the given event from propagation to parent elements. Used inside the listener functions:
-// ```js
-// L.DomEvent.on(div, 'click', function (ev) {
-// 	L.DomEvent.stopPropagation(ev);
-// });
-// ```
+/**
+ * Stop the given event from propagation to parent elements. Used inside the listener functions:
+ *
+ * ```js
+ * L.DomEvent.on(div, 'click', function (ev) {
+ * 	L.DomEvent.stopPropagation(ev);
+ * });
+ * ```
+ */
 export function stopPropagation<This>(this: This, e: Event & { originalEvent?: any; }): This {
 	if (e.stopPropagation) {
 		e.stopPropagation();
@@ -184,26 +235,30 @@ export function stopPropagation<This>(this: This, e: Event & { originalEvent?: a
 	return this;
 }
 
-// @function disableScrollPropagation(el: HTMLElement): this
-// Adds `stopPropagation` to the element's `'wheel'` events (plus browser variants).
-export function disableScrollPropagation(el) {
+/**
+ * Adds `stopPropagation` to the element's `'wheel'` events (plus browser variants).
+ */
+export function disableScrollPropagation<This>(this: This, el: HTMLElement): This {
 	addOne(el, 'wheel', stopPropagation);
 	return this;
 }
 
-// Adds `stopPropagation` to the element's `'click'`, `'dblclick'`, `'contextmenu'`,
-// `'mousedown'` and `'touchstart'` events (plus browser variants).
+/**
+ * Adds `stopPropagation` to the element's `'click'`, `'dblclick'`, `'contextmenu'`,
+ * `'mousedown'` and `'touchstart'` events (plus browser variants).
+ */
 export function disableClickPropagation(el: HTMLElement): void {
 	on(el, 'mousedown touchstart dblclick contextmenu', stopPropagation);
 	el._leaflet_disable_click = true;
 }
 
-// @function preventDefault(ev: DOMEvent): this
-// Prevents the default action of the DOM Event `ev` from happening (such as
-// following a link in the href of the a element, or doing a POST request
-// with page reload when a `<form>` is submitted).
-// Use it inside listener functions.
-export function preventDefault(e) {
+/**
+ * Prevents the default action of the DOM Event `ev` from happening (such as
+ * following a link in the href of the a element, or doing a POST request
+ * with page reload when a `<form>` is submitted).
+ * Use it inside listener functions.
+ */
+export function preventDefault<This>(this: This, e: Event): This {
 	if (e.preventDefault) {
 		e.preventDefault();
 	} else {
@@ -212,30 +267,32 @@ export function preventDefault(e) {
 	return this;
 }
 
-// @function stop(ev: DOMEvent): this
-// Does `stopPropagation` and `preventDefault` at the same time.
-export function stop(e) {
+/** Does `stopPropagation` and `preventDefault` at the same time. */
+export function stop<This>(this: This, e: Event): This {
 	preventDefault(e);
 	stopPropagation(e);
 	return this;
 }
 
-// @function getPropagationPath(ev: DOMEvent): Array
-// Compatibility polyfill for [`Event.composedPath()`](https://developer.mozilla.org/en-US/docs/Web/API/Event/composedPath).
-// Returns an array containing the `HTMLElement`s that the given DOM event
-// should propagate to (if not stopped).
-export function getPropagationPath(ev) {
+/**
+ * Compatibility polyfill for [`Event.composedPath()`](https://developer.mozilla.org/en-US/docs/Web/API/Event/composedPath).
+ * Returns an array containing the `HTMLElement`s that the given DOM event
+ * should propagate to (if not stopped).
+ */
+export function getPropagationPath(ev: Event): HTMLElement[] {
 	if (ev.composedPath) {
-		return ev.composedPath();
+		return ev.composedPath() as HTMLElement[];
 	}
 
 	const path = [];
-	let el = ev.target;
+
+	let el = ev.target as HTMLElement | null;
 
 	while (el) {
 		path.push(el);
-		el = el.parentNode;
+		el = el.parentNode as HTMLElement | null;
 	}
+
 	return path;
 }
 
@@ -244,8 +301,10 @@ export interface MouseEventLike {
 	readonly clientY: number;
 }
 
-// Gets normalized mouse position from a DOM event relative to the
-// `container` (border excluded) or to the whole page if not specified.
+/**
+ * Gets normalized mouse position from a DOM event relative to the
+ * `container` (border excluded) or to the whole page if not specified.
+ */
 export function getMousePosition(e: MouseEventLike, container?: HTMLElement): Point {
 	if (!container) {
 		return new Point(e.clientX, e.clientY);
@@ -263,9 +322,10 @@ export function getMousePosition(e: MouseEventLike, container?: HTMLElement): Po
 	);
 }
 
-// @function getWheelPxFactor(): Number
-// Gets the wheel pixel factor based on the devicePixelRatio
-export function getWheelPxFactor() {
+/**
+ * Gets the wheel pixel factor based on the devicePixelRatio.
+ */
+export function getWheelPxFactor(): number {
 	// We need double the scroll pixels (see #7403 and #4538) for all Browsers
 	// except OSX (Mac) -> 3x, Chrome running on Linux 1x
 	const ratio = window.devicePixelRatio;
@@ -274,11 +334,12 @@ export function getWheelPxFactor() {
 		ratio > 0 ? 2 * ratio : 1;
 }
 
-// @function getWheelDelta(ev: DOMEvent): Number
-// Gets normalized wheel delta from a wheel DOM event, in vertical
-// pixels scrolled (negative if scrolling down).
-// Events from pointing devices without precise scrolling are mapped to
-// a best guess of 60 pixels.
+/**
+ * Gets normalized wheel delta from a wheel DOM event, in vertical
+ * pixels scrolled (negative if scrolling down).
+ * Events from pointing devices without precise scrolling are mapped to
+ * a best guess of 60 pixels.
+ */
 export function getWheelDelta(e: WheelEvent): number {
 	return (e.deltaY && e.deltaMode === 0) ? -e.deltaY / getWheelPxFactor() : // Pixels
 	       (e.deltaY && e.deltaMode === 1) ? -e.deltaY * 20 : // Lines
@@ -289,9 +350,13 @@ export function getWheelDelta(e: WheelEvent): number {
 	       0;
 }
 
-// check if element really left/entered the event target (for mouseenter/mouseleave)
-export function isExternalTarget(el, e) {
-
+/**
+ * Check if element really left/entered the event target (for mouseenter/mouseleave).
+ */
+export function isExternalTarget(
+	el: HTMLElement,
+	e: Event & { relatedTarget?: any },
+): boolean {
 	let related = e.relatedTarget;
 
 	if (!related) { return true; }
@@ -303,5 +368,6 @@ export function isExternalTarget(el, e) {
 	} catch (err) {
 		return false;
 	}
+
 	return (related !== el);
 }

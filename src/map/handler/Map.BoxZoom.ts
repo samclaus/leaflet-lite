@@ -52,7 +52,7 @@ export class BoxZoom extends Handler {
 	}
 
 	_onMouseDown(e: MouseEvent): void {
-		if (!e.shiftKey || (e.button !== 0)) { return false; }
+		if (!e.shiftKey || (e.button !== 0)) { return; }
 
 		// Clear the deferred resetState if it hasn't executed yet, otherwise it
 		// will interrupt the interaction and orphan a box element in the container.

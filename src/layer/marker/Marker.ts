@@ -1,4 +1,5 @@
 import type { Icon, Map, ZoomAnimationEvent } from '../../Leaflet.js';
+import type { HandlerMap } from '../../core/Events.js';
 import * as Util from '../../core/Util.js';
 import * as DomEvent from '../../dom/DomEvent.js';
 import * as DomUtil from '../../dom/DomUtil.js';
@@ -136,7 +137,7 @@ export class Marker extends Layer {
 		return this;
 	}
 
-	getEvents() {
+	getEvents(): HandlerMap {
 		return {
 			zoom: this.update,
 			viewreset: this.update
@@ -183,8 +184,8 @@ export class Marker extends Layer {
 		return this;
 	}
 
-	getElement(): HTMLElement | undefined {
-		return this._icon;
+	getElement(): HTMLElement {
+		return this._icon!; // TODO: null safety
 	}
 
 	update(): this {
@@ -261,7 +262,8 @@ export class Marker extends Layer {
 		}
 
 		if (this.options.autoPanOnFocus) {
-			DomEvent.off(this._icon, 'focus', this._panOnFocus, this);
+			// TODO: null safety
+			DomEvent.off(this._icon!, 'focus', this._panOnFocus, this);
 		}
 
 		if (this._icon) {

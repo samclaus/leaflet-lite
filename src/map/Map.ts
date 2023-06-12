@@ -1429,6 +1429,7 @@ export class Map extends Evented {
 				dragging = true;
 				break;
 			}
+
 			if (target && target.listens(type, true)) {
 				if (isHover && !DomEvent.isExternalTarget(src, e)) { break; }
 				targets.push(target);

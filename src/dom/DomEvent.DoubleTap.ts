@@ -1,3 +1,4 @@
+import type { HandlerFn } from '../core/Events.js';
 import * as DomEvent from './DomEvent.js';
 
 /*
@@ -7,8 +8,8 @@ import * as DomEvent from './DomEvent.js';
  * (see https://github.com/Leaflet/Leaflet/issues/7012#issuecomment-595087386)
  */
 
-function makeDblclick(ev) {
-	let init = {
+function makeDblclick(ev: any): any {
+	let init: any = {
 		// EventInit
 		bubbles: ev.bubbles,
 		cancelable: ev.cancelable,
@@ -57,17 +58,24 @@ function makeDblclick(ev) {
 	return newEvent;
 }
 
+export interface DoubleTapHandlers {
+	dblclick: HandlerFn;
+	simDblclick: HandlerFn;
+}
+
 const delay = 200;
-export function addDoubleTapListener(obj, handler) {
+export function addDoubleTapListener(el: HTMLElement, handler: HandlerFn): DoubleTapHandlers {
 	// Most browsers handle double tap natively
-	obj.addEventListener('dblclick', handler);
+	el.addEventListener('dblclick', handler);
 
 	// On some platforms the browser doesn't fire native dblclicks for touch events.
 	// It seems that in all such cases `detail` property of `click` event is always `1`.
 	// So here we rely on that fact to avoid excessive 'dblclick' simulation when not needed.
-	let last = 0,
-	    detail;
-	function simDblclick(ev) {
+	let
+		last = 0,
+	    detail: any;
+
+	function simDblclick(ev: any): void {
 		if (ev.detail !== 1) {
 			detail = ev.detail; // keep in sync to avoid false dblclick in some cases
 			return;
@@ -85,7 +93,7 @@ export function addDoubleTapListener(obj, handler) {
 		// attribute (or children of such a label), but not children of
 		// a <input>.
 		const path = DomEvent.getPropagationPath(ev);
-		if (path.some(el => el instanceof HTMLLabelElement && el.attributes.for) &&
+		if (path.some(el => el instanceof HTMLLabelElement && (el.attributes as any).for) &&
 			!path.some(el => (
 				el instanceof HTMLInputElement ||
 					el instanceof HTMLSelectElement
@@ -106,7 +114,7 @@ export function addDoubleTapListener(obj, handler) {
 		last = now;
 	}
 
-	obj.addEventListener('click', simDblclick);
+	el.addEventListener('click', simDblclick);
 
 	return {
 		dblclick: handler,
@@ -114,7 +122,7 @@ export function addDoubleTapListener(obj, handler) {
 	};
 }
 
-export function removeDoubleTapListener(obj, handlers) {
-	obj.removeEventListener('dblclick', handlers.dblclick);
-	obj.removeEventListener('click', handlers.simDblclick);
+export function removeDoubleTapListener(el: EventTarget, handlers: DoubleTapHandlers): void {
+	el.removeEventListener('dblclick', handlers.dblclick);
+	el.removeEventListener('click', handlers.simDblclick);
 }
