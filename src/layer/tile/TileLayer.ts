@@ -2,7 +2,7 @@ import type { Point } from '../../Leaflet.js';
 import Browser from '../../core/Browser.js';
 import * as Util from '../../core/Util.js';
 import * as DomEvent from '../../dom/DomEvent.js';
-import { GridLayer } from './GridLayer.js';
+import { GridLayer, type DoneFn } from './GridLayer.js';
 
 /**
  * Used to load and display tile layers on the map. Note that most tile servers require attribution, which you can set under `Layer`. Extends `GridLayer`.
@@ -27,8 +27,6 @@ import { GridLayer } from './GridLayer.js';
  */
 export class TileLayer extends GridLayer {
 
-	// @section
-	// @aka TileLayer options
 	options = {
 		// @option minZoom: Number = 0
 		// The minimum zoom level down to which this layer will be displayed (inclusive).
@@ -133,7 +131,7 @@ export class TileLayer extends GridLayer {
 	// Called only internally, overrides GridLayer's [`createTile()`](#gridlayer-createtile)
 	// to return an `<img>` HTML element with the appropriate image URL given `coords`. The `done`
 	// callback is called when the tile has been loaded.
-	createTile(coords: Point, done?: Function): HTMLElement {
+	createTile(coords: Point, done?: DoneFn): HTMLElement {
 		const tile = document.createElement('img');
 
 		DomEvent.on(tile, 'load', this._tileOnLoad.bind(this, done, tile));
@@ -163,7 +161,7 @@ export class TileLayer extends GridLayer {
 	// Called only internally, returns the URL for a tile given its coordinates.
 	// Classes extending `TileLayer` can override this function to provide custom tile URL naming schemes.
 	getTileUrl(coords: Point): string {
-		const data = {
+		const data: Dict<any> = {
 			r: Browser.retina ? '@2x' : '',
 			s: this._getSubdomain(coords),
 			x: coords.x,
@@ -173,32 +171,32 @@ export class TileLayer extends GridLayer {
 		if (this._map && !this._map.options.crs.infinite) {
 			const invertedY = this._globalTileRange.max.y - coords.y;
 			if (this.options.tms) {
-				data['y'] = invertedY;
+				data.y = invertedY;
 			}
 			data['-y'] = invertedY;
 		}
 
-		return Util.template(this._url, Util.extend(data, this.options));
+		return Util.template(this._url, Object.assign(data, this.options));
 	}
 
-	_tileOnLoad(done, tile) {
+	_tileOnLoad(done: DoneFn, tile: HTMLImageElement): void {
 		done(null, tile);
 	}
 
-	_tileOnError(done, tile, e) {
+	_tileOnError(done: DoneFn, tile: HTMLImageElement, e: any): void {
 		const errorUrl = this.options.errorTileUrl;
-		if (errorUrl && tile.getAttribute('src') !== errorUrl) {
+		if (errorUrl && tile.src !== errorUrl) {
 			tile.src = errorUrl;
 		}
 		done(e, tile);
 	}
 
-	_onTileRemove(e) {
+	_onTileRemove(e: any): void {
 		e.tile.onload = null;
 	}
 
 	_getZoomForUrl(): number {
-		let zoom = this._tileZoom;
+		let zoom = this._tileZoom!; // TODO: null safety
 
 		const {maxZoom, zoomReverse, zoomOffset} = this.options;
 
@@ -209,17 +207,17 @@ export class TileLayer extends GridLayer {
 		return zoom + zoomOffset;
 	}
 
-	_getSubdomain(tilePoint) {
+	_getSubdomain(tilePoint: Point): string {
 		const index = Math.abs(tilePoint.x + tilePoint.y) % this.options.subdomains.length;
 		return this.options.subdomains[index];
 	}
 
 	// stops loading all tiles in the background layer
-	_abortLoading() {
+	_abortLoading(): void {
 		let i, tile;
 		for (i in this._tiles) {
 			if (this._tiles[i].coords.z !== this._tileZoom) {
-				tile = this._tiles[i].el;
+				tile = this._tiles[i].el as HTMLImageElement;
 
 				tile.onload = Util.falseFn;
 				tile.onerror = Util.falseFn;
@@ -240,7 +238,7 @@ export class TileLayer extends GridLayer {
 		}
 	}
 
-	_removeTile(key) {
+	_removeTile(key: string): void {
 		const tile = this._tiles[key];
 		if (!tile) { return; }
 
@@ -250,8 +248,8 @@ export class TileLayer extends GridLayer {
 		return GridLayer.prototype._removeTile.call(this, key);
 	}
 
-	_tileReady(coords: Point, err: unknown /* TODO */, tile): void {
-		if (!this._map || (tile && tile.getAttribute('src') === Util.emptyImageUrl)) {
+	_tileReady(coords: Point, err: unknown /* TODO */, tile?: HTMLImageElement): void {
+		if (!this._map || (tile && tile.src === Util.emptyImageUrl)) {
 			return;
 		}
 

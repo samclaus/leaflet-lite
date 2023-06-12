@@ -1,6 +1,6 @@
-import type { Map, Point } from '../../Leaflet.js';
+import { Bounds, type Map, type Point } from '../../Leaflet.js';
 import Browser from '../../core/Browser.js';
-import { extend, getParamString, setOptions } from '../../core/Util.js';
+import { getParamString, setOptions } from '../../core/Util.js';
 import { EPSG4326 } from '../../geo/crs/CRS.EPSG4326.js';
 import { TileLayer } from './TileLayer.js';
 
@@ -60,11 +60,15 @@ export class TileLayerWMS extends TileLayer {
 		uppercase: false
 	};
 
+	_crs: any; // TODO
+	wmsParams: any; // TODO
+	_wmsVersion: any; // TODO
+
 	// TODO: type for the options
 	constructor(url: string, options?: any) {
 		super(url, options);
 
-		const wmsParams = extend({}, this.defaultWmsParams);
+		const wmsParams: any = { ...this.defaultWmsParams };
 
 		// all keys that are not TileLayer options go to WMS params
 		for (const i in options) {
@@ -84,7 +88,6 @@ export class TileLayerWMS extends TileLayer {
 	}
 
 	onAdd(map: Map): this {
-
 		this._crs = this.options.crs || map.options.crs;
 		this._wmsVersion = parseFloat(this.wmsParams.version);
 
@@ -100,7 +103,7 @@ export class TileLayerWMS extends TileLayer {
 		const
 			tileBounds = this._tileCoordsToNwSe(coords),
 		    crs = this._crs,
-		    bounds = toBounds(crs.project(tileBounds[0]), crs.project(tileBounds[1])),
+		    bounds = new Bounds(crs.project(tileBounds[0]), crs.project(tileBounds[1])),
 		    min = bounds.min,
 		    max = bounds.max,
 		    bbox = (this._wmsVersion >= 1.3 && this._crs === EPSG4326 ?
@@ -115,7 +118,7 @@ export class TileLayerWMS extends TileLayer {
 
 	// Merges an object with the new parameters and re-requests tiles on the current screen (unless `noRedraw` was set to true).
 	setParams(params: any /* TODO */, noRedraw?: boolean): this {
-		extend(this.wmsParams, params);
+		Object.assign(this.wmsParams, params);
 
 		if (!noRedraw) {
 			this.redraw();

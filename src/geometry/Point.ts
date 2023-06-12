@@ -23,6 +23,14 @@ export class Point {
 	x: number;
 	y: number;
 
+	/**
+	 * @deprecated This is only here for the dumb GridLayer class which tacks zoom information
+	 * onto existing Points via a 'z' property. That is terrible for JS optimization and also
+	 * makes the code harder to understand. Ideally, the information will be moved onto the
+	 * tile models themselves, not their coordinate points.
+	 */
+	z?: number;
+
 	constructor(
 		x: number,
 		y: number,

@@ -1,10 +1,10 @@
-import {Map} from '../Map.js';
-import {Handler} from '../../core/Handler.js';
-import * as DomUtil from '../../dom/DomUtil.js';
-import * as DomEvent from '../../dom/DomEvent.js';
-import {LatLngBounds} from '../../geo/LatLngBounds.js';
-import {Bounds} from '../../geometry/Bounds.js';
 import type { Point } from '../../Leaflet.js';
+import { Handler } from '../../core/Handler.js';
+import * as DomEvent from '../../dom/DomEvent.js';
+import * as DomUtil from '../../dom/DomUtil.js';
+import { LatLngBounds } from '../../geo/LatLngBounds.js';
+import { Bounds } from '../../geometry/Bounds.js';
+import { Map } from '../Map.js';
 
 /**
  * L.Handler.BoxZoom is used to add shift-drag zoom interaction to the map
@@ -17,6 +17,7 @@ export class BoxZoom extends Handler {
 	_resetStateTimeout = 0;
 	_moved = false;
 	_startPoint: Point | undefined;
+	_point: Point | undefined;
 	_box: HTMLElement | undefined;
 
 	constructor(map: Map) {
@@ -64,7 +65,8 @@ export class BoxZoom extends Handler {
 
 		this._startPoint = this._map.mouseEventToContainerPoint(e);
 
-		DomEvent.on(document, {
+		// TODO: refactor/remove DOM event code and make things more kosher
+		DomEvent.on(document as unknown as HTMLElement, {
 			contextmenu: DomEvent.stop,
 			mousemove: this._onMouseMove,
 			mouseup: this._onMouseUp,
@@ -72,7 +74,7 @@ export class BoxZoom extends Handler {
 		}, this);
 	}
 
-	_onMouseMove(e) {
+	_onMouseMove(e: any): void {
 		if (!this._moved) {
 			this._moved = true;
 			this._box = DomUtil.create('div', 'leaflet-zoom-box', this._container);
@@ -83,24 +85,26 @@ export class BoxZoom extends Handler {
 		this._point = this._map.mouseEventToContainerPoint(e);
 
 		const
-			bounds = new Bounds(this._point, this._startPoint),
+			box = this._box!, // TODO: null safety
+			bounds = new Bounds(this._point, this._startPoint!), // TODO: null safety
 		    size = bounds.getSize();
 
-		DomUtil.setPosition(this._box, bounds.min);
+		DomUtil.setPosition(box, bounds.min);
 
-		this._box.style.width  = `${size.x}px`;
-		this._box.style.height = `${size.y}px`;
+		box.style.width  = `${size.x}px`;
+		box.style.height = `${size.y}px`;
 	}
 
 	_finish(): void {
 		if (this._moved) {
-			this._box.remove();
+			this._box!.remove(); // TODO: null safety
 			this._container.classList.remove('leaflet-crosshair');
 		}
 
 		DomUtil.enableTextSelection();
 		DomUtil.enableImageDrag();
-		DomEvent.off(document, {
+		// TODO: refactor/remove DOM event code and make things more kosher
+		DomEvent.off(document as unknown as HTMLElement, {
 			contextmenu: DomEvent.stop,
 			mousemove: this._onMouseMove,
 			mouseup: this._onMouseUp,
@@ -120,8 +124,8 @@ export class BoxZoom extends Handler {
 		this._resetStateTimeout = setTimeout(this._resetState.bind(this), 0);
 
 		const bounds = new LatLngBounds(
-			this._map.containerPointToLatLng(this._startPoint),
-			this._map.containerPointToLatLng(this._point),
+			this._map.containerPointToLatLng(this._startPoint!), // TODO: null safety
+			this._map.containerPointToLatLng(this._point!), // TODO: null safety
 		);
 
 		this._map

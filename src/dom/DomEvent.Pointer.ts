@@ -1,24 +1,25 @@
-import {falseFn} from '../core/Util.js';
+import type { HandlerFn } from '../core/Events.js';
+import { falseFn } from '../core/Util.js';
 
-const pEvent = {
+const pEvent: Dict<string> = {
 	touchstart  : 'pointerdown',
 	touchmove   : 'pointermove',
 	touchend    : 'pointerup',
 	touchcancel : 'pointercancel'
 };
-const handle = {
-	touchstart  : _onPointerStart,
+const handle: Dict<(handler: HandlerFn, ev: any) => void> = {
+	touchstart  : _handlePointer,
 	touchmove   : _handlePointer,
 	touchend    : _handlePointer,
 	touchcancel : _handlePointer
 };
-const _pointers = {};
+const _pointers: { [pointerID: number]: PointerEvent } = {};
 let _pointerDocListener = false;
 
 // Provides a touch events wrapper for pointer events.
 // ref https://www.w3.org/TR/pointerevents/
 
-export function addPointerListener(obj, type, handler) {
+export function addPointerListener(this: any, obj: EventTarget, type: string, handler: HandlerFn): HandlerFn {
 	if (type === 'touchstart') {
 		_addPointerDocListener();
 	}
@@ -31,7 +32,7 @@ export function addPointerListener(obj, type, handler) {
 	return handler;
 }
 
-export function removePointerListener(obj, type, handler) {
+export function removePointerListener(obj: EventTarget, type: string, handler: HandlerFn): void {
 	if (!pEvent[type]) {
 		console.warn('wrong event specified:', type);
 		return;
@@ -39,21 +40,21 @@ export function removePointerListener(obj, type, handler) {
 	obj.removeEventListener(pEvent[type], handler, false);
 }
 
-function _globalPointerDown(e) {
+function _globalPointerDown(e: PointerEvent): void {
 	_pointers[e.pointerId] = e;
 }
 
-function _globalPointerMove(e) {
+function _globalPointerMove(e: PointerEvent): void {
 	if (_pointers[e.pointerId]) {
 		_pointers[e.pointerId] = e;
 	}
 }
 
-function _globalPointerUp(e) {
+function _globalPointerUp(e: PointerEvent): void {
 	delete _pointers[e.pointerId];
 }
 
-function _addPointerDocListener() {
+function _addPointerDocListener(): void {
 	// need to keep track of what pointers and how many are active to provide e.touches emulation
 	if (!_pointerDocListener) {
 		// we listen document as any drags that end by moving the touch off the screen get fired there
@@ -66,7 +67,7 @@ function _addPointerDocListener() {
 	}
 }
 
-function _handlePointer(handler, e) {
+function _handlePointer(handler: HandlerFn, e: any): void {
 	if (e.pointerType === 'mouse') { return; }
 
 	e.touches = [];
@@ -76,8 +77,4 @@ function _handlePointer(handler, e) {
 	e.changedTouches = [e];
 
 	handler(e);
-}
-
-function _onPointerStart(handler, e) {
-	_handlePointer(handler, e);
 }

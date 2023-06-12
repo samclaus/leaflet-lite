@@ -85,11 +85,10 @@ const userSelectProp = ['userSelect', 'WebkitUserSelect'].find(prop => prop in d
 
 let prevUserSelect: any;
 
-// @function disableTextSelection()
 // Prevents the user from selecting text in the document. Used internally
 // by Leaflet to override the behaviour of any click-and-drag interaction on
 // the map. Affects drag interactions on the whole document.
-export function disableTextSelection() {
+export function disableTextSelection(): void {
 	const value = documentStyle[userSelectProp];
 
 	if (value === 'none') {
@@ -100,9 +99,8 @@ export function disableTextSelection() {
 	documentStyle[userSelectProp] = 'none';
 }
 
-// @function enableTextSelection()
 // Cancels the effects of a previous [`L.DomUtil.disableTextSelection`](#domutil-disabletextselection).
-export function enableTextSelection() {
+export function enableTextSelection(): void {
 	if (typeof prevUserSelect === 'undefined') {
 		return;
 	}
@@ -111,16 +109,16 @@ export function enableTextSelection() {
 	prevUserSelect = undefined;
 }
 
-// @function disableImageDrag()
 // Prevents the user from generating `dragstart` DOM events, usually generated when the user drags an image.
-export function disableImageDrag() {
-	DomEvent.on(window, 'dragstart', DomEvent.preventDefault);
+export function disableImageDrag(): void {
+	// TODO: refactor/remove DOM event code and make this less janky
+	DomEvent.on(window as unknown as HTMLElement, 'dragstart', DomEvent.preventDefault);
 }
 
-// @function enableImageDrag()
 // Cancels the effects of a previous [`L.DomUtil.disableImageDrag`](#domutil-disableimagedrag).
-export function enableImageDrag() {
-	DomEvent.off(window, 'dragstart', DomEvent.preventDefault);
+export function enableImageDrag(): void {
+	// TODO: refactor/remove DOM event code and make this less janky
+	DomEvent.off(window as unknown as HTMLElement, 'dragstart', DomEvent.preventDefault);
 }
 
 let
@@ -140,7 +138,8 @@ export function preventOutline(element: HTMLElement): void {
 	_outlineElement = element;
 	_outlineStyle = element.style.outlineStyle;
 	element.style.outlineStyle = 'none';
-	DomEvent.on(window, 'keydown', restoreOutline);
+	// TODO: refactor/remove DOM event code and make this less janky
+	DomEvent.on(window as unknown as HTMLElement, 'keydown', restoreOutline);
 }
 
 // @function restoreOutline()
@@ -150,7 +149,8 @@ export function restoreOutline(): void {
 	_outlineElement.style.outlineStyle = _outlineStyle!;
 	_outlineElement = undefined;
 	_outlineStyle = undefined;
-	DomEvent.off(window, 'keydown', restoreOutline);
+	// TODO: refactor/remove DOM event code and make this less janky
+	DomEvent.off(window as unknown as HTMLElement, 'keydown', restoreOutline);
 }
 
 // Finds the closest parent node which size (width and height) is not null.

@@ -1,4 +1,4 @@
-import { Canvas, SVG, type Control, type Handler, type Layer, Renderer, Path, Drag } from '../Leaflet.js';
+import { Canvas, Drag, Path, Renderer, SVG, type Control, type Handler, type Layer } from '../Leaflet.js';
 import type { ControlPosition } from '../control/Control.js';
 import Browser from '../core/Browser.js';
 import { Evented, type HandlerFn } from '../core/Events.js';
@@ -330,8 +330,8 @@ export class Map extends Evented {
 		if (this._loaded && !options.reset && options !== true) {
 
 			if (options.animate !== undefined) {
-				options.zoom = Util.extend({animate: options.animate}, options.zoom);
-				options.pan = Util.extend({animate: options.animate, duration: options.duration}, options.pan);
+				options.zoom = { animate: options.animate, ...options.zoom };
+				options.pan = { animate: options.animate, duration: options.duration, ...options.pan };
 			}
 
 			// try animating pan or zoom
@@ -1485,7 +1485,7 @@ export class Map extends Evented {
 			// Fired before mouse click on the map (sometimes useful when you
 			// want something to happen on click before any existing click
 			// handlers start running).
-			const synth = Util.extend({}, e);
+			const synth = { ...e };
 			synth.type = 'preclick';
 			this._fireDOMEvent(synth, synth.type, canvasTargets);
 		}

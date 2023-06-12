@@ -8,6 +8,9 @@ import { Bounds } from '../../geometry/Bounds.js';
 import { Point } from '../../geometry/Point.js';
 import { Layer } from '../Layer.js';
 
+/** @deprecated TODO: figure out the types for the various 'done' callback parameters throughout codebase */
+export type DoneFn = any;
+
 export interface TileModel {
 	el: HTMLElement;
 	coords: Point;
@@ -170,7 +173,7 @@ export abstract class GridLayer extends Layer {
 
 	// Returns the `HTMLElement` corresponding to the given `coords`. If the `done` callback
 	// is specified, it must be called when the tile has finished loading and drawing.
-	abstract createTile(_coords: Point, done?: Function): HTMLElement;
+	abstract createTile(_coords: Point, done?: DoneFn): HTMLElement;
 
 	onAdd(_map: Map): this {
 		this._initContainer();
@@ -509,7 +512,7 @@ export abstract class GridLayer extends Layer {
 		}
 	}
 
-	_resetView(e): void {
+	_resetView(e?: any): void {
 		const animating = e && (e.pinch || e.flyTo);
 		// TODO: null safety
 		this._setView(this._map!.getCenter(), this._map!._zoom, animating, animating);
@@ -824,7 +827,7 @@ export abstract class GridLayer extends Layer {
 		});
 	}
 
-	_tileReady(coords: Point, err: unknown /* TODO */, tile) {
+	_tileReady(coords: Point, err: unknown /* TODO */, tile?: HTMLImageElement): void {
 		if (err) {
 			// @event tileerror: TileErrorEvent
 			// Fired when there is an error loading a tile.
