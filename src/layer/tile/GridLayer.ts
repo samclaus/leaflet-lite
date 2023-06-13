@@ -1,7 +1,7 @@
 import { Layer } from '..';
 import { Browser, Util, type HandlerMap } from '../../core';
 import { DomUtil } from '../../dom';
-import { LatLng, LatLngBounds } from '../../geo';
+import { LatLng, LatLngBounds } from '../../geog';
 import { Bounds, Point } from '../../geometry';
 import type { Map } from '../../map';
 

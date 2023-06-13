@@ -1,8 +1,8 @@
 import type { Control, ControlPosition } from '../control';
 import { Browser, Evented, Util, type HandlerFn } from '../core';
 import { DomEvent, DomUtil, PosAnimation } from '../dom';
-import { LatLng, LatLngBounds } from '../geo';
-import { EPSG3857 } from '../geo/crs';
+import { LatLng, LatLngBounds } from '../geog';
+import { EPSG3857 } from '../geog/crs';
 import { Bounds, Point } from '../geometry';
 import type { Layer } from '../layer';
 import { Canvas, Path, Renderer, SVG } from '../layer';

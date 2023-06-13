@@ -1,7 +1,7 @@
 import { Layer } from '..';
 import { Util, type HandlerMap } from '../../core';
 import { DomEvent, DomUtil } from '../../dom';
-import { LatLng } from '../../geo';
+import { LatLng } from '../../geog';
 import { Point } from '../../geometry';
 import type { Map, ZoomAnimationEvent } from '../../map';
 import type { Icon } from './Icon.js';

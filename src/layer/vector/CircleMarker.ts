@@ -1,4 +1,4 @@
-import type { LatLng } from '../../geo';
+import type { LatLng } from '../../geog';
 import { Bounds, Point } from '../../geometry';
 import { DEFAULT_PATH_OPTIONS, Path, type PathOptions } from './Path.js';
 

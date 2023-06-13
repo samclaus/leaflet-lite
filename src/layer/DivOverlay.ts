@@ -1,6 +1,6 @@
 import { Util, type HandlerMap } from '../core';
 import { DomUtil } from '../dom';
-import { LatLng } from '../geo';
+import { LatLng } from '../geog';
 import { Point } from '../geometry';
 import { Map } from '../map';
 import { FeatureGroup } from './FeatureGroup.js';

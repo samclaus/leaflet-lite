@@ -1,5 +1,5 @@
-import { LatLng, LatLngBounds } from '../geo';
-import { type CRS } from '../geo/crs';
+import { LatLng, LatLngBounds } from '../geog';
+import { type CRS } from '../geog/crs';
 import type { Bounds } from './Bounds.js';
 import { Point } from './Point.js';
 import { centroid } from './PolyUtil.js';

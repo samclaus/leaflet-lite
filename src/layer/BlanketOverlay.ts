@@ -1,6 +1,6 @@
 import { Util, type HandlerMap } from '../core';
 import { DomEvent, DomUtil } from '../dom';
-import type { LatLng } from '../geo';
+import type { LatLng } from '../geog';
 import { Bounds, type Point } from '../geometry';
 import type { Map } from '../map';
 import { Layer } from './Layer.js';

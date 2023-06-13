@@ -1,5 +1,5 @@
 import { Browser, Util } from '../../core';
-import { EPSG4326 } from '../../geo/crs';
+import { EPSG4326 } from '../../geog/crs';
 import { Bounds, type Point } from '../../geometry';
 import type { Map } from '../../map';
 import { TileLayer } from './TileLayer.js';

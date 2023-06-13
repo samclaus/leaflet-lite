@@ -1,6 +1,6 @@
 import { Handler, Map } from '..';
 import { DomEvent, DomUtil } from '../../dom';
-import { LatLngBounds } from '../../geo';
+import { LatLngBounds } from '../../geog';
 import { Bounds, type Point } from '../../geometry';
 
 /**

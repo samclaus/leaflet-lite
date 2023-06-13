@@ -1,4 +1,4 @@
-import type { LatLng, LatLngBounds } from '../../geo';
+import type { LatLng, LatLngBounds } from '../../geog';
 import { Polygon } from './Polygon.js';
 
 function boundsToLatLngs(latLngBounds: LatLngBounds): LatLng[] {

@@ -1,4 +1,4 @@
-import { LatLngBounds } from '../geo';
+import { LatLngBounds } from '../geog';
 import type { Layer } from './Layer.js';
 import { LayerGroup } from './LayerGroup.js';
 import type { PathOptions } from './vector';

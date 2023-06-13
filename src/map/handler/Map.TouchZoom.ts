@@ -1,6 +1,6 @@
 import { Handler, type Map } from '..';
 import { DomEvent } from '../../dom';
-import type { LatLng } from '../../geo';
+import type { LatLng } from '../../geog';
 import type { Point } from '../../geometry';
 
 export interface TouchZoomOptions {

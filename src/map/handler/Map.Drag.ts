@@ -1,6 +1,6 @@
 import { Handler, type Map } from '..';
 import { Draggable } from '../../dom';
-import { LatLng, type LatLngBounds } from '../../geo';
+import { LatLng, type LatLngBounds } from '../../geog';
 import { Bounds, Point } from '../../geometry';
 
 export interface DragOptions {
