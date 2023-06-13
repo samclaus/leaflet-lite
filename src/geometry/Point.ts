@@ -1,4 +1,4 @@
-import { formatNum } from '../core/Util.js';
+import { Util } from '../core';
 
 /**
  * Represents a point with `x` and `y` coordinates in pixels.
@@ -173,7 +173,7 @@ export class Point {
 
 	// Returns a string representation of the point for debugging purposes.
 	toString(): string {
-		return `Point(${formatNum(this.x)}, ${formatNum(this.y)})`;
+		return `Point(${Util.formatNum(this.x)}, ${Util.formatNum(this.y)})`;
 	}
 
 }

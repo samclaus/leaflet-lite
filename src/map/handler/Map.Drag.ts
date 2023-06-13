@@ -1,8 +1,7 @@
-import { LatLng, Point, type LatLngBounds } from '../../Leaflet.js';
-import { Handler } from '../Handler.js';
-import { Draggable } from '../../dom/Draggable.js';
-import { Bounds } from '../../geometry/Bounds.js';
-import { Map } from '../Map.js';
+import { Handler, type Map } from '..';
+import { Draggable } from '../../dom';
+import { LatLng, type LatLngBounds } from '../../geo';
+import { Bounds, Point } from '../../geometry';
 
 export interface DragOptions {
 	// @option dragging: Boolean = true

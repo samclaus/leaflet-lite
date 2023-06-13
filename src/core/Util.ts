@@ -59,7 +59,11 @@ export function throttle<T extends Function>(fn: T, time: number, context?: any)
  *
  * TODO: just pass min/max as separate args
  */
-export function wrapNum(x: number, range: [number, number], includeMax?: boolean): number {
+export function wrapNum(
+	x: number,
+	range: readonly [number, number],
+	includeMax?: boolean,
+): number {
 	const
 		max = range[1],
 	    min = range[0],

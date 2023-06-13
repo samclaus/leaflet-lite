@@ -1,9 +1,9 @@
 
-import {Control} from './Control.js';
-import * as Util from '../core/Util.js';
-import * as DomEvent from '../dom/DomEvent.js';
-import * as DomUtil from '../dom/DomUtil.js';
-import type { Layer, Map } from '../Leaflet.js';
+import { Util } from '../core';
+import { DomEvent, DomUtil } from '../dom';
+import type { Layer } from '../layer';
+import type { Map } from '../map';
+import { Control } from './Control.js';
 
 function createRadioElement(name: string, checked: boolean): HTMLInputElement {
 	const inputEl = document.createElement("input");

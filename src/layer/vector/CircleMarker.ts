@@ -1,5 +1,5 @@
-import { Point, type LatLng } from '../../Leaflet.js';
-import { Bounds } from '../../geometry/Bounds.js';
+import type { LatLng } from '../../geo';
+import { Bounds, Point } from '../../geometry';
 import { DEFAULT_PATH_OPTIONS, Path, type PathOptions } from './Path.js';
 
 export interface CircleMarkerOptions extends PathOptions {

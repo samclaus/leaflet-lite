@@ -1,5 +1,5 @@
-import type { Map, Renderer } from '../../Leaflet.js';
-import { DEFAULT_LAYER_OPTIONS, Layer, type LayerOptions } from '../Layer.js';
+import { DEFAULT_LAYER_OPTIONS, Layer, type LayerOptions, type Renderer } from '..';
+import type { Map } from '../../map';
 
 export interface PathOptions extends LayerOptions {
 	// @option stroke: Boolean = true

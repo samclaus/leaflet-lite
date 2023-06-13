@@ -1,7 +1,7 @@
-import { Bounds, type Map, type Point } from '../../Leaflet.js';
-import Browser from '../../core/Browser.js';
-import { getParamString, setOptions } from '../../core/Util.js';
-import { EPSG4326 } from '../../geo/crs/CRS.EPSG4326.js';
+import { Browser, Util } from '../../core';
+import { EPSG4326 } from '../../geo/crs';
+import { Bounds, type Point } from '../../geometry';
+import type { Map } from '../../map';
 import { TileLayer } from './TileLayer.js';
 
 /**
@@ -77,7 +77,7 @@ export class TileLayerWMS extends TileLayer {
 			}
 		}
 
-		options = setOptions(this, options);
+		options = Util.setOptions(this, options);
 
 		const realRetina = options.detectRetina && Browser.retina ? 2 : 1;
 		const tileSize = this.getTileSize();
@@ -112,7 +112,7 @@ export class TileLayerWMS extends TileLayer {
 		    url = TileLayer.prototype.getTileUrl.call(this, coords);
 
 		return url +
-			getParamString(this.wmsParams, url, this.options.uppercase) +
+			Util.getParamString(this.wmsParams, url, this.options.uppercase) +
 			(this.options.uppercase ? '&BBOX=' : '&bbox=') + bbox;
 	}
 

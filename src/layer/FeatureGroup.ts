@@ -1,7 +1,7 @@
-import { LatLngBounds } from '../geo/LatLngBounds.js';
+import { LatLngBounds } from '../geo';
 import type { Layer } from './Layer.js';
 import { LayerGroup } from './LayerGroup.js';
-import type { PathOptions } from './vector/Path.js';
+import type { PathOptions } from './vector';
 
 /**
  * Extended `LayerGroup` that makes it easier to do the same thing to all its member layers:

@@ -1,7 +1,9 @@
-import type { CircleMarker, Point, Polyline } from '../../Leaflet.js';
-import { splitWords, stamp } from '../../core/Util.js';
-import * as DomUtil from '../../dom/DomUtil.js';
+import { Util } from '../../core';
+import { DomUtil } from '../../dom';
+import type { Point } from '../../geometry';
+import type { CircleMarker } from './CircleMarker.js';
 import type { Path } from './Path.js';
+import type { Polyline } from './Polyline.js';
 import { Renderer } from './Renderer.js';
 import { svgCreate as create, pointsToPath } from './SVG.Util.js';
 
@@ -47,7 +49,7 @@ export class SVG extends Renderer {
 		this._rootGroup = undefined;
 	}
 
-	_resizeContainer(): void {
+	_resizeContainer(): Point {
 		const size = Renderer.prototype._resizeContainer.call(this);
 
 		// set size of svg-container if changed
@@ -58,6 +60,8 @@ export class SVG extends Renderer {
 			this._container!.setAttribute('width', size.x as any); // gets coerced to string
 			this._container!.setAttribute('height', size.y as any); // gets coerced to string
 		}
+
+		return size;
 	}
 
 	_update(): void {
@@ -83,7 +87,7 @@ export class SVG extends Renderer {
 		// @option className: String = null
 		// Custom class name set on an element. Only for SVG renderer.
 		if (layer.options.className) {
-			path.classList.add(...splitWords(layer.options.className));
+			path.classList.add(...Util.splitWords(layer.options.className));
 		}
 
 		if (layer.options.interactive) {
@@ -91,7 +95,7 @@ export class SVG extends Renderer {
 		}
 
 		this._updateStyle(layer);
-		this._layers[stamp(layer)] = layer;
+		this._layers[Util.stamp(layer)] = layer;
 	}
 
 	_addPath(layer: Path): void {
@@ -103,7 +107,7 @@ export class SVG extends Renderer {
 	_removePath(layer: Path): void {
 		layer._path.remove();
 		layer.removeInteractiveTarget(layer._path);
-		delete this._layers[stamp(layer)];
+		delete this._layers[Util.stamp(layer)];
 	}
 
 	_updatePath(layer: Path): void {

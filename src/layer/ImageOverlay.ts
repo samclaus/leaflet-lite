@@ -1,8 +1,7 @@
-import type { LatLng, LatLngBounds } from '../Leaflet.js';
-import type { HandlerMap } from '../core/Events.js';
-import * as Util from '../core/Util.js';
-import * as DomUtil from '../dom/DomUtil.js';
-import { Bounds } from '../geometry/Bounds.js';
+import { Util, type HandlerMap } from '../core';
+import { DomUtil } from '../dom';
+import type { LatLng, LatLngBounds } from '../geo';
+import { Bounds } from '../geometry';
 import { Layer } from './Layer.js';
 
 /**
@@ -59,9 +58,12 @@ export class ImageOverlay extends Layer {
 
 	_image: HTMLImageElement | undefined;
 
-	constructor(url, bounds, options) { // (String, LatLngBounds, Object)
-		this._url = url;
-		this._bounds = toLatLngBounds(bounds);
+	constructor(
+		public _url: any, // TODO
+		public _bounds: any, // TODO
+		options: any, // TODO
+	) {
+		super();
 
 		Util.setOptions(this, options);
 	}
@@ -76,21 +78,21 @@ export class ImageOverlay extends Layer {
 		}
 
 		if (this.options.interactive) {
-			this._image.classList.add('leaflet-interactive');
-			this.addInteractiveTarget(this._image);
+			this._image!.classList.add('leaflet-interactive'); // TODO: null safety
+			this.addInteractiveTarget(this._image!); // TODO: null safety
 		}
 
-		this.getPane().appendChild(this._image);
+		this.getPane()!.appendChild(this._image!); // TODO: null safety
 		this._reset();
 
 		return this;
 	}
 
 	onRemove(): this {
-		this._image.remove();
+		this._image!.remove(); // TODO: null safety
 
 		if (this.options.interactive) {
-			this.removeInteractiveTarget(this._image);
+			this.removeInteractiveTarget(this._image!);
 		}
 
 		return this;
@@ -106,7 +108,7 @@ export class ImageOverlay extends Layer {
 		return this;
 	}
 
-	setStyle(styleOpts) {
+	setStyle(styleOpts: any): this {
 		if (styleOpts.opacity) {
 			this.setOpacity(styleOpts.opacity);
 		}
@@ -116,7 +118,7 @@ export class ImageOverlay extends Layer {
 	// Brings the layer to the top of all overlays.
 	bringToFront(): this {
 		if (this._map) {
-			DomUtil.toFront(this._image);
+			DomUtil.toFront(this._image!); // TODO: null safety
 		}
 		return this;
 	}
@@ -124,7 +126,7 @@ export class ImageOverlay extends Layer {
 	// Brings the layer to the bottom of all overlays.
 	bringToBack(): this {
 		if (this._map) {
-			DomUtil.toBack(this._image);
+			DomUtil.toBack(this._image!); // TODO: null safety
 		}
 		return this;
 	}
@@ -178,7 +180,7 @@ export class ImageOverlay extends Layer {
 	// Returns the instance of [`HTMLImageElement`](https://developer.mozilla.org/docs/Web/API/HTMLImageElement)
 	// used by this overlay.
 	getElement(): HTMLElement {
-		return this._image;
+		return this._image!; // TODO: null safety
 	}
 
 	_initImage(): void {
@@ -216,19 +218,22 @@ export class ImageOverlay extends Layer {
 		img.alt = this.options.alt;
 	}
 
-	_animateZoom(e): void {
-		const scale = this._map.getZoomScale(e.zoom),
-		    offset = this._map._latLngBoundsToNewLayerBounds(this._bounds, e.zoom, e.center).min;
+	_animateZoom(e: any): void {
+		const
+			scale = this._map!.getZoomScale(e.zoom), // TODO: null safety
+		    offset = this._map!._latLngBoundsToNewLayerBounds(this._bounds, e.zoom, e.center).min; // TODO: null safety
 
-		DomUtil.setTransform(this._image, offset, scale);
+		DomUtil.setTransform(this._image!, offset, scale); // TODO: null safety
 	}
 
 	_reset(): void {
 		const
-			image = this._image,
+			image = this._image!, // TODO: null safety
 		    bounds = new Bounds(
-		        this._map.latLngToLayerPoint(this._bounds.getNorthWest()),
-		        this._map.latLngToLayerPoint(this._bounds.getSouthEast()),
+				// TODO: null safety
+		        this._map!.latLngToLayerPoint(this._bounds.getNorthWest()),
+				// TODO: null safety
+		        this._map!.latLngToLayerPoint(this._bounds.getSouthEast()),
 			),
 		    size = bounds.getSize();
 
@@ -239,12 +244,14 @@ export class ImageOverlay extends Layer {
 	}
 
 	_updateOpacity(): void {
-		this._image.style.opacity = this.options.opacity;
+		// TODO: null safety
+		this._image!.style.opacity = this.options.opacity as any; // automatically coerced to string
 	}
 
 	_updateZIndex(): void {
 		if (this._image && this.options.zIndex !== undefined && this.options.zIndex !== null) {
-			this._image.style.zIndex = this.options.zIndex;
+			// TODO: null safety
+			this._image!.style.zIndex = this.options.zIndex as any; // automatically coerced to string
 		}
 	}
 

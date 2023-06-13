@@ -1,15 +1,15 @@
 
-import * as DomEvent from '../dom/DomEvent.js';
-import * as DomUtil from '../dom/DomUtil.js';
+import type { HandlerFn } from '../core';
+import { DomEvent, DomUtil } from '../dom';
+import type { Map } from '../map';
 import { Control } from './Control.js';
 
 /**
  * A basic zoom control with two buttons (zoom in and zoom out). Extends `Control`.
  */
-export const Zoom = Control.extend({
-	// @section
-	// @aka Control.Zoom options
-	options: {
+export class Zoom extends Control {
+
+	options = {
 		// @option position: String = 'topleft'
 		// The position of the control (one of the map corners). Possible values are `'topleft'`,
 		// `'topright'`, `'bottomleft'` or `'bottomright'`
@@ -30,10 +30,15 @@ export const Zoom = Control.extend({
 		// @option zoomOutTitle: String = 'Zoom out'
 		// The title set on the 'zoom out' button.
 		zoomOutTitle: 'Zoom out'
-	},
+	};
 
-	onAdd(map) {
-		const zoomName = 'leaflet-control-zoom',
+	_disabled = false;
+	_zoomInButton: HTMLElement | undefined;
+	_zoomOutButton: HTMLElement | undefined;
+
+	onAdd(map: Map): HTMLElement {
+		const
+			zoomName = 'leaflet-control-zoom',
 		    container = DomUtil.create('div', `${zoomName} leaflet-bar`),
 		    options = this.options;
 
@@ -46,38 +51,49 @@ export const Zoom = Control.extend({
 		map.on('zoomend zoomlevelschange', this._updateDisabled, this);
 
 		return container;
-	},
+	}
 
-	onRemove(map) {
+	onRemove(map: Map): void {
 		map.off('zoomend zoomlevelschange', this._updateDisabled, this);
-	},
+	}
 
-	disable() {
+	disable(): this {
 		this._disabled = true;
 		this._updateDisabled();
 		return this;
-	},
+	}
 
-	enable() {
+	enable(): this {
 		this._disabled = false;
 		this._updateDisabled();
 		return this;
-	},
+	}
 
-	_zoomIn(e) {
-		if (!this._disabled && this._map._zoom < this._map.getMaxZoom()) {
-			this._map.zoomIn(this._map.options.zoomDelta * (e.shiftKey ? 3 : 1));
+	_zoomIn(e: KeyboardEvent): void {
+		const map = this._map!; // TODO: null safety
+
+		if (!this._disabled && map._zoom < map.getMaxZoom()) {
+			map.zoomIn(map.options.zoomDelta * (e.shiftKey ? 3 : 1));
 		}
-	},
+	}
 
-	_zoomOut(e) {
-		if (!this._disabled && this._map._zoom > this._map.getMinZoom()) {
-			this._map.zoomOut(this._map.options.zoomDelta * (e.shiftKey ? 3 : 1));
+	_zoomOut(e: KeyboardEvent): void {
+		const map = this._map!; // TODO: null safety
+
+		if (!this._disabled && map._zoom > map.getMinZoom()) {
+			map.zoomOut(map.options.zoomDelta * (e.shiftKey ? 3 : 1));
 		}
-	},
+	}
 
-	_createButton(html, title, className, container, fn) {
-		const link = DomUtil.create('a', className, container);
+	_createButton(
+		html: string,
+		title: string,
+		className: string,
+		container: HTMLElement,
+		onClick: HandlerFn,
+	): HTMLAnchorElement {
+		const link = DomUtil.create('a', className, container) as HTMLAnchorElement;
+
 		link.innerHTML = html;
 		link.href = '#';
 		link.title = title;
@@ -90,28 +106,32 @@ export const Zoom = Control.extend({
 
 		DomEvent.disableClickPropagation(link);
 		DomEvent.on(link, 'click', DomEvent.stop);
-		DomEvent.on(link, 'click', fn, this);
+		DomEvent.on(link, 'click', onClick, this);
 		DomEvent.on(link, 'click', this._refocusOnMap, this);
 
 		return link;
-	},
+	}
 
 	_updateDisabled() {
-		const map = this._map,
+		const
+			map = this._map!, // TODO: null safety
+			zoomInBtn = this._zoomInButton!, // TODO: null safety
+			zoomOutBtn = this._zoomOutButton!, // TODO: null safety
 		    className = 'leaflet-disabled';
 
-		this._zoomInButton.classList.remove(className);
-		this._zoomOutButton.classList.remove(className);
-		this._zoomInButton.setAttribute('aria-disabled', 'false');
-		this._zoomOutButton.setAttribute('aria-disabled', 'false');
+		zoomInBtn.classList.remove(className);
+		zoomOutBtn.classList.remove(className);
+		zoomInBtn.setAttribute('aria-disabled', 'false');
+		zoomOutBtn.setAttribute('aria-disabled', 'false');
 
 		if (this._disabled || map._zoom === map.getMinZoom()) {
-			this._zoomOutButton.classList.add(className);
-			this._zoomOutButton.setAttribute('aria-disabled', 'true');
+			zoomOutBtn.classList.add(className);
+			zoomOutBtn.setAttribute('aria-disabled', 'true');
 		}
 		if (this._disabled || map._zoom === map.getMaxZoom()) {
-			this._zoomInButton.classList.add(className);
-			this._zoomInButton.setAttribute('aria-disabled', 'true');
+			zoomInBtn.classList.add(className);
+			zoomInBtn.setAttribute('aria-disabled', 'true');
 		}
 	}
-});
+
+}

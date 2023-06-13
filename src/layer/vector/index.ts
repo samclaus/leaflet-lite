@@ -1,10 +1,9 @@
-export { Canvas } from './Canvas.js';
-export { Circle } from './Circle.js';
-export { CircleMarker } from './CircleMarker.js';
-export { Path } from './Path.js';
-export { Polygon } from './Polygon.js';
-export { Polyline } from './Polyline.js';
-export { Rectangle } from './Rectangle.js';
-export { Renderer } from './Renderer.js';
-export { SVG } from './SVG.js';
-
+export * from './Canvas.js';
+export * from './Circle.js';
+export * from './CircleMarker.js';
+export * from './Path.js';
+export * from './Polygon.js';
+export * from './Polyline.js';
+export * from './Rectangle.js';
+export * from './Renderer.js';
+export * from './SVG.js';

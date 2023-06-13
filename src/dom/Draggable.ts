@@ -1,7 +1,5 @@
-import Browser from '../core/Browser.js';
-import { Evented } from '../core/Events.js';
-import * as Util from '../core/Util.js';
-import { Point } from '../geometry/Point.js';
+import { Browser, Evented, Util } from '../core';
+import { Point } from '../geometry';
 import * as DomEvent from './DomEvent.js';
 import * as DomUtil from './DomUtil.js';
 

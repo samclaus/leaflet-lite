@@ -1,6 +1,6 @@
-import { Handler } from '../Handler.js';
-import * as DomEvent from '../../dom/DomEvent.js';
-import { Point } from '../../geometry/Point.js';
+import { Handler } from '..';
+import { DomEvent } from '../../dom';
+import { Point } from '../../geometry';
 
 const tapHoldDelay = 600;
 

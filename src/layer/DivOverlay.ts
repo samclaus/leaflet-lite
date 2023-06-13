@@ -1,9 +1,8 @@
-import type { HandlerMap } from '../core/Events.js';
-import * as Util from '../core/Util.js';
-import * as DomUtil from '../dom/DomUtil.js';
-import { LatLng } from '../geo/LatLng.js';
-import { Point } from '../geometry/Point.js';
-import { Map } from '../map/Map.js';
+import { Util, type HandlerMap } from '../core';
+import { DomUtil } from '../dom';
+import { LatLng } from '../geo';
+import { Point } from '../geometry';
+import { Map } from '../map';
 import { FeatureGroup } from './FeatureGroup.js';
 import { Layer } from './Layer.js';
 
@@ -176,7 +175,7 @@ export abstract class DivOverlay extends Layer {
 	}
 
 	// Returns the HTML container of the overlay.
-	getElement(): string | HTMLElement {
+	getElement(): HTMLElement { // TODO: was string | HTMLElement
 		return this._container;
 	}
 

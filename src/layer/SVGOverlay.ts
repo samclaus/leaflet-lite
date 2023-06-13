@@ -1,4 +1,4 @@
-import * as Util from '../core/Util.js';
+import { Util } from '../core';
 import { ImageOverlay } from './ImageOverlay.js';
 
 /**

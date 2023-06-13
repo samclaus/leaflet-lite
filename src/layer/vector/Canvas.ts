@@ -1,8 +1,10 @@
-import type { CircleMarker, Map, Path, Polyline } from '../../Leaflet.js';
-import type { HandlerMap } from '../../core/Events.js';
-import * as Util from '../../core/Util.js';
-import * as DomEvent from '../../dom/DomEvent.js';
-import { Bounds } from '../../geometry/Bounds.js';
+import { Util, type HandlerMap } from '../../core';
+import { DomEvent } from '../../dom';
+import { Bounds, type Point } from '../../geometry';
+import type { Map } from '../../map';
+import type { CircleMarker } from './CircleMarker';
+import type { Path } from './Path';
+import type { Polyline } from './Polyline';
 import { Renderer } from './Renderer.js';
 
 /**
@@ -82,7 +84,7 @@ export class Canvas extends Renderer {
 		Renderer.prototype._destroyContainer.call(this);
 	}
 
-	_resizeContainer(): void {
+	_resizeContainer(): Point {
 		const
 			size = Renderer.prototype._resizeContainer.call(this),
 			m = this._ctxScale;
@@ -90,6 +92,8 @@ export class Canvas extends Renderer {
 		// set canvas size (also clearing it); use double size on retina
 		this._container.width = m * size.x;
 		this._container.height = m * size.y;
+
+		return size;
 	}
 
 	_updatePaths() {

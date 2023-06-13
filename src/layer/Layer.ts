@@ -1,8 +1,10 @@
-import { DomEvent, FeatureGroup, Tooltip, type LatLng, type LatLngBounds } from '../Leaflet.js';
-import { Evented, type HandlerMap } from '../core/Events.js';
-import * as Util from '../core/Util.js';
-import { Map } from '../map/Map.js';
+import { Evented, Util, type HandlerMap } from '../core';
+import { DomEvent } from '../dom';
+import type { LatLng, LatLngBounds } from '../geo';
+import { Map } from '../map';
+import { FeatureGroup } from './FeatureGroup.js';
 import type { LayerGroup } from './LayerGroup.js';
+import { Tooltip } from './Tooltip.js';
 
 export interface LayerOptions {
 	// @option pane: String = 'overlayPane'

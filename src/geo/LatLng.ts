@@ -1,5 +1,5 @@
-import * as Util from '../core/Util.js';
-import { Earth } from './crs/CRS.Earth.js';
+import { Util } from '../core';
+import { Earth } from './crs';
 import { LatLngBounds } from './LatLngBounds.js';
 
 /**

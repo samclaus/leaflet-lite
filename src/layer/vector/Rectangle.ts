@@ -1,4 +1,4 @@
-import type { LatLng, LatLngBounds } from '../../Leaflet.js';
+import type { LatLng, LatLngBounds } from '../../geo';
 import { Polygon } from './Polygon.js';
 
 function boundsToLatLngs(latLngBounds: LatLngBounds): LatLng[] {
@@ -26,7 +26,7 @@ function boundsToLatLngs(latLngBounds: LatLngBounds): LatLng[] {
  */
 export class Rectangle extends Polygon {
 
-	constructor(latLngBounds: LatLngBounds, options) {
+	constructor(latLngBounds: LatLngBounds, options?: any) {
 		super(boundsToLatLngs(latLngBounds), options);
 	}
 

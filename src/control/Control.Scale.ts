@@ -1,6 +1,7 @@
 
-import { Point, type Map } from '../Leaflet.js';
-import * as DomUtil from '../dom/DomUtil.js';
+import { DomUtil } from '../dom';
+import { Point } from '../geometry';
+import type { Map } from '../map';
 import { Control } from './Control.js';
 
 /**
@@ -28,10 +29,11 @@ export class Scale extends Control {
 
 		// @option imperial: Boolean = True
 		// Whether to show the imperial scale line (mi/ft).
-		imperial: true
+		imperial: true,
 
 		// @option updateWhenIdle: Boolean = false
 		// If `true`, the control is updated on [`moveend`](#map-moveend), otherwise it's always up-to-date (updated on [`move`](#map-move)).
+		updateWhenIdle: false,
 	};
 
 	_mScale: HTMLElement | undefined;

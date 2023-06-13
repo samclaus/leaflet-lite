@@ -1,5 +1,6 @@
-import type { Bounds, Point } from '../../Leaflet.js';
-import type { LatLng } from '../LatLng.js';
+import type { LatLng } from '..';
+import type { Bounds, Point } from '../../geometry';
+
 export { LonLat } from './Projection.LonLat.js';
 export { Mercator } from './Projection.Mercator.js';
 export { SphericalMercator } from './Projection.SphericalMercator.js';
@@ -16,7 +17,7 @@ export interface Projection {
     /**
      * The bounds (specified in CRS units) where the projection is valid.
      */
-    bounds: Bounds;
+    readonly bounds: Bounds;
     /**
      * Projects geographical coordinates into a 2D point.
      */

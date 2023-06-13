@@ -1,5 +1,4 @@
-import type { HandlerFn } from '../core/Events.js';
-import { falseFn } from '../core/Util.js';
+import { Util, type HandlerFn } from '../core';
 
 const pEvent: Dict<string> = {
 	touchstart  : 'pointerdown',
@@ -25,7 +24,7 @@ export function addPointerListener(this: any, obj: EventTarget, type: string, ha
 	}
 	if (!handle[type]) {
 		console.warn('wrong event specified:', type);
-		return falseFn;
+		return Util.falseFn;
 	}
 	handler = handle[type].bind(this, handler);
 	obj.addEventListener(pEvent[type], handler, false);

@@ -21,11 +21,11 @@ interface HasWrappingProperties {
 	 * axis wraps around a given range and how. Defaults to `[-180, 180]` in most
 	 * geographical CRSs. If `undefined`, the longitude axis does not wrap around.
 	 */
-	wrapLng?: [number, number];
+	wrapLng?: readonly [number, number];
 	/**
 	 * Like `wrapLng`, but for the latitude (vertical) axis.
 	 */
-	wrapLat?: [number, number];
+	wrapLat?: readonly [number, number];
 }
 
 interface CanWrapLatLng {

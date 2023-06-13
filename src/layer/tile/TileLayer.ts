@@ -1,7 +1,6 @@
-import type { Point } from '../../Leaflet.js';
-import Browser from '../../core/Browser.js';
-import * as Util from '../../core/Util.js';
-import * as DomEvent from '../../dom/DomEvent.js';
+import { Browser, Util } from '../../core';
+import { DomEvent } from '../../dom';
+import type { Point } from '../../geometry';
 import { GridLayer, type DoneFn } from './GridLayer.js';
 
 /**

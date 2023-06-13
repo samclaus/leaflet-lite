@@ -1,25 +1,23 @@
-import { LatLng, LatLngBounds, type CRS } from '../Leaflet.js';
+import { LatLng, LatLngBounds } from '../geo';
+import { type CRS } from '../geo/crs';
 import type { Bounds } from './Bounds.js';
 import { Point } from './Point.js';
 import { centroid } from './PolyUtil.js';
 
+// This file contains utilities for manipulating polyline geometry.
 
-/*
- * @namespace LineUtil
+/**
+ * Simplify polyline with vertex reduction and Douglas-Peucker simplification.
+ * Improves rendering performance dramatically by lessening the number of points to draw.
  *
- * Various utility functions for polyline points processing, used by Leaflet internally to make polylines lightning-fast.
+ * Dramatically reduces the number of points in a polyline while retaining
+ * its shape and returns a new array of simplified points, using the
+ * [Ramer-Douglas-Peucker algorithm](https://en.wikipedia.org/wiki/Ramer-Douglas-Peucker_algorithm).
+ * Used for a huge performance boost when processing/displaying Leaflet polylines for
+ * each zoom level and also reducing visual noise. tolerance affects the amount of
+ * simplification (lesser value means higher quality but slower and with more points).
+ * Also released as a separated micro-library [Simplify.js](https://mourner.github.io/simplify-js/).
  */
-
-// Simplify polyline with vertex reduction and Douglas-Peucker simplification.
-// Improves rendering performance dramatically by lessening the number of points to draw.
-
-// Dramatically reduces the number of points in a polyline while retaining
-// its shape and returns a new array of simplified points, using the
-// [Ramer-Douglas-Peucker algorithm](https://en.wikipedia.org/wiki/Ramer-Douglas-Peucker_algorithm).
-// Used for a huge performance boost when processing/displaying Leaflet polylines for
-// each zoom level and also reducing visual noise. tolerance affects the amount of
-// simplification (lesser value means higher quality but slower and with more points).
-// Also released as a separated micro-library [Simplify.js](https://mourner.github.io/simplify-js/).
 export function simplify(points: Point[], tolerance: number): Point[] {
 	if (!tolerance || !points.length) {
 		return points.slice();
@@ -36,19 +34,25 @@ export function simplify(points: Point[], tolerance: number): Point[] {
 	return points;
 }
 
-// @function pointToSegmentDistance(p: Point, p1: Point, p2: Point): Number
-// Returns the distance between point `p` and segment `p1` to `p2`.
+/**
+ * Returns the distance between point `p` and segment `p1` to `p2`.
+ */
 export function pointToSegmentDistance(p: Point, p1: Point, p2: Point): number {
 	return Math.sqrt(_sqClosestPointOnSegment(p, p1, p2, true));
 }
 
-// @function closestPointOnSegment(p: Point, p1: Point, p2: Point): Number
-// Returns the closest point from a point `p` on a segment `p1` to `p2`.
+/**
+ * Returns the closest point from a point `p` on a segment `p1` to `p2`.
+ */
 export function closestPointOnSegment(p: Point, p1: Point, p2: Point): Point {
 	return _sqClosestPointOnSegment(p, p1, p2);
 }
 
-// Ramer-Douglas-Peucker simplification, see https://en.wikipedia.org/wiki/Ramer-Douglas-Peucker_algorithm
+/**
+ * Ramer-Douglas-Peucker simplification.
+ * 
+ * @see https://en.wikipedia.org/wiki/Ramer-Douglas-Peucker_algorithm
+ */
 function _simplifyDP(points: readonly Point[], sqTolerance: number): Point[] {
 	const
 		len = points.length,
@@ -120,14 +124,21 @@ function _reducePoints(
 	return reducedPoints;
 }
 
-let _lastCode;
+let _lastCode: number;
 
-// @function clipSegment(a: Point, b: Point, bounds: Bounds, useLastCode?: Boolean, round?: Boolean): Point[]|Boolean
-// Clips the segment a to b by rectangular bounds with the
-// [Cohen-Sutherland algorithm](https://en.wikipedia.org/wiki/Cohen%E2%80%93Sutherland_algorithm)
-// (modifying the segment points directly!). Used by Leaflet to only show polyline
-// points that are on the screen or near, increasing performance.
-export function clipSegment(a, b, bounds, useLastCode, round) {
+/**
+ * Clips the segment a to b by rectangular bounds with the
+ * [Cohen-Sutherland algorithm](https://en.wikipedia.org/wiki/Cohen%E2%80%93Sutherland_algorithm)
+ * (modifying the segment points directly!). Used by Leaflet to only show polyline
+ * points that are on the screen or near, increasing performance.
+ */
+export function clipSegment(
+	a: Point,
+	b: Point,
+	bounds: Bounds,
+	useLastCode?: boolean,
+	round?: boolean,
+): Point[] | undefined {
 	let
 		codeA = useLastCode ? _lastCode : _getBitCode(a, bounds),
 	    codeB = _getBitCode(b, bounds),
@@ -146,7 +157,7 @@ export function clipSegment(a, b, bounds, useLastCode, round) {
 
 		// if a,b is outside the clip window (trivial reject)
 		if (codeA & codeB) {
-			return false;
+			return;
 		}
 
 		// other cases
@@ -169,7 +180,7 @@ export function _getEdgeIntersection(
 	b: Point,
 	code: number,
 	bounds: Bounds,
-	round: boolean,
+	round?: boolean,
 ): Point {
 	const
 		dx = b.x - a.x,
@@ -279,7 +290,7 @@ export function isFlat(latlngs: LatLng[] | LatLng[][]): latlngs is LatLng[] {
 /**
  * Returns the center ([centroid](http://en.wikipedia.org/wiki/Centroid)) of the passed LatLngs (first ring) from a polyline.
  */
-export function polylineCenter(latlngs: readonly LatLng[], crs: typeof CRS): LatLng {
+export function polylineCenter(latlngs: readonly LatLng[], crs: CRS): LatLng {
 	let i, halfDist, segDist, dist, p1, p2, ratio, center: Point;
 
 	if (!latlngs || latlngs.length === 0) {

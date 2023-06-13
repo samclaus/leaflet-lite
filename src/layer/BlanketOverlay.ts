@@ -1,9 +1,8 @@
-import type { LatLng, Map, Point } from '../Leaflet.js';
-import type { HandlerMap } from '../core/Events.js';
-import * as Util from '../core/Util.js';
-import * as DomEvent from '../dom/DomEvent.js';
-import * as DomUtil from '../dom/DomUtil.js';
-import { Bounds } from '../geometry/Bounds.js';
+import { Util, type HandlerMap } from '../core';
+import { DomEvent, DomUtil } from '../dom';
+import type { LatLng } from '../geo';
+import { Bounds, type Point } from '../geometry';
+import type { Map } from '../map';
 import { Layer } from './Layer.js';
 
 /**
@@ -37,7 +36,7 @@ export abstract class BlanketOverlay extends Layer {
 	_center: LatLng | undefined;
 	_zoom: number | undefined;
 
-	constructor(options) {
+	constructor(options: any /* TODO */) {
 		super();
 		Util.setOptions(this, options);
 	}
@@ -141,7 +140,7 @@ export abstract class BlanketOverlay extends Layer {
 
 	_reset(): void {
 		this._onSettled();
-		this._updateTransform(this._center!, this._zoom); // TODO: null safety
+		this._updateTransform(this._center!, this._zoom!); // TODO: null safety
 		this._onViewReset?.();
 	}
 

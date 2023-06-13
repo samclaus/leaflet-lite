@@ -1,6 +1,6 @@
-import { Point } from '../../Leaflet.js';
-import { Handler } from '../Handler.js';
-import * as DomEvent from '../../dom/DomEvent.js';
+import { Handler } from '..';
+import { DomEvent } from '../../dom';
+import { Point } from '../../geometry';
 
 /**
  * L.Handler.ScrollWheelZoom is used by L.Map to enable mouse scroll wheel zoom on the map.

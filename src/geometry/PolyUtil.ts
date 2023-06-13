@@ -1,12 +1,12 @@
-import { Bounds, CRS, LatLng, LatLngBounds, Point } from '../Leaflet.js';
+import { LatLng, LatLngBounds } from '../geo';
+import type { CRS } from '../geo/crs';
+import { Bounds } from './Bounds.js';
 import * as LineUtil from './LineUtil.js';
+import { Point } from './Point.js';
 
-/*
- * @namespace PolyUtil
- * Various utility functions for polygon geometries.
- */
+// This file contains utilities for manipulating polygon geometry.
 
-/* @function clipPolygon(points: Point[], bounds: Bounds, round?: Boolean): Point[]
+/**
  * Clips the polygon geometry defined by the given `points` by the given bounds (using the [Sutherland-Hodgman algorithm](https://en.wikipedia.org/wiki/Sutherland%E2%80%93Hodgman_algorithm)).
  * Used by Leaflet to only show polygon points that are on the screen or near, increasing
  * performance. Note that polygon points needs different algorithm for clipping
@@ -17,7 +17,7 @@ import * as LineUtil from './LineUtil.js';
 export function clipPolygon(
 	points: readonly Point[],
 	bounds: Bounds,
-	round: boolean,
+	round?: boolean,
 ): Point[] {
 	let codes = points.map(p => LineUtil._getBitCode(p, bounds));
 
@@ -68,7 +68,7 @@ export function clipPolygon(
  * TODO: originally this function allowed taking nested arrays of LatLngs, in which case only the first element of the
  * outer array was used--this should be done at the call site if it is actually necessary somewhere
  */
-export function polygonCenter(latlngs: readonly LatLng[], crs: typeof CRS) {
+export function polygonCenter(latlngs: readonly LatLng[], crs: CRS) {
 	let i, j, p1, p2, f, area, x, y, center: Point;
 
 	if (!latlngs || latlngs.length === 0) {

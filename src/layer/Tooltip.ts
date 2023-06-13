@@ -1,8 +1,7 @@
-import type { Map } from '../Leaflet.js';
-import type { HandlerMap } from '../core/Events.js';
-import * as Util from '../core/Util.js';
-import * as DomUtil from '../dom/DomUtil.js';
-import { Point } from '../geometry/Point.js';
+import { Util, type HandlerMap } from '../core';
+import { DomUtil } from '../dom';
+import { Point } from '../geometry';
+import type { Map } from '../map';
 import { DivOverlay } from './DivOverlay.js';
 
 /**

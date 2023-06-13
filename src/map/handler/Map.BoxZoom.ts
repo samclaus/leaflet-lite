@@ -1,10 +1,7 @@
-import type { Point } from '../../Leaflet.js';
-import { Handler } from '../Handler.js';
-import * as DomEvent from '../../dom/DomEvent.js';
-import * as DomUtil from '../../dom/DomUtil.js';
-import { LatLngBounds } from '../../geo/LatLngBounds.js';
-import { Bounds } from '../../geometry/Bounds.js';
-import { Map } from '../Map.js';
+import { Handler, Map } from '..';
+import { DomEvent, DomUtil } from '../../dom';
+import { LatLngBounds } from '../../geo';
+import { Bounds, type Point } from '../../geometry';
 
 /**
  * L.Handler.BoxZoom is used to add shift-drag zoom interaction to the map

@@ -1,4 +1,4 @@
-import type { HandlerFn } from '../core/Events.js';
+import type { HandlerFn } from '../core';
 import * as DomEvent from './DomEvent.js';
 
 /*

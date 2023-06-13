@@ -1,6 +1,6 @@
-import { LatLng, Point } from '../../Leaflet.js';
-import { LatLngBounds } from '../../geo/LatLngBounds.js';
-import { Earth } from '../../geo/crs/CRS.Earth.js';
+import { LatLng, LatLngBounds } from '../../geo';
+import { Earth } from '../../geo/crs';
+import { Point } from '../../geometry';
 import { CircleMarker, type CircleMarkerOptions } from './CircleMarker.js';
 import { Path, type PathOptions } from './Path.js';
 

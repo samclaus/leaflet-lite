@@ -1,5 +1,5 @@
-import { Point } from '../../Leaflet.js';
-import * as DomUtil from '../../dom/DomUtil.js';
+import { DomUtil } from '../../dom';
+import { Point } from '../../geometry';
 import { Icon } from './Icon.js';
 
 let defaultImagePath: string | undefined;

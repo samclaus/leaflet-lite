@@ -1,6 +1,9 @@
-import type { CircleMarker, Layer, Map, Path, Polyline } from '../../Leaflet.js';
-import * as Util from '../../core/Util.js';
-import { BlanketOverlay } from '../BlanketOverlay.js';
+import { BlanketOverlay, Layer } from '..';
+import { Util } from '../../core';
+import { Map } from '../../map';
+import { CircleMarker } from './CircleMarker.js';
+import { Path } from './Path.js';
+import { Polyline } from './Polyline.js';
 
 /**
  * Base class for vector renderer implementations (`SVG`, `Canvas`). Handles the
@@ -24,7 +27,7 @@ export abstract class Renderer extends BlanketOverlay {
 
 	_layers: { [leafletID: number]: Layer } = {};
 
-	constructor(options) {
+	constructor(options: any /* TODO */) {
 		super(options);
 
 		Util.setOptions(this, {...options, continuous: false});

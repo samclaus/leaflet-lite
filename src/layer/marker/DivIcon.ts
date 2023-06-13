@@ -1,5 +1,5 @@
-import {Icon} from './Icon.js';
-import {Point, toPoint as point} from '../../geometry/Point.js';
+import { Point } from '../../geometry';
+import { Icon } from './Icon.js';
 
 /**
  * Represents a lightweight icon for markers that uses a simple `<div>`

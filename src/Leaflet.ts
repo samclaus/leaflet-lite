@@ -1,15 +1,7 @@
 export { version } from '../package.json';
-export { Attribution } from './control/Control.Attribution.js';
-export { Layers } from './control/Control.Layers.js';
-export { Scale } from './control/Control.Scale.js';
-export { Zoom } from './control/Control.Zoom.js';
-export { Control } from './control/Control.js';
-export { Handler } from './map/Handler';
-export * as DomEvent from './dom/DomEvent.js';
-export * as DomUtil from './dom/DomUtil.js';
-export { Draggable } from './dom/Draggable.js';
-export { PosAnimation } from './dom/PosAnimation.js';
+export * from './control';
 export * from './core';
+export * from './dom';
 export * from './geo';
 export * from './geometry';
 export * from './layer';

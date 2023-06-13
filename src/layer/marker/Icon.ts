@@ -1,4 +1,4 @@
-import { Point } from '../../geometry/Point.js';
+import { Point } from '../../geometry';
 
 export interface IconOptions {
 	/**

@@ -1,11 +1,10 @@
-import type { Icon, Map, ZoomAnimationEvent } from '../../Leaflet.js';
-import type { HandlerMap } from '../../core/Events.js';
-import * as Util from '../../core/Util.js';
-import * as DomEvent from '../../dom/DomEvent.js';
-import * as DomUtil from '../../dom/DomUtil.js';
-import { LatLng } from '../../geo/LatLng.js';
-import { Point } from '../../geometry/Point.js';
-import { Layer } from '../Layer.js';
+import { Layer } from '..';
+import { Util, type HandlerMap } from '../../core';
+import { DomEvent, DomUtil } from '../../dom';
+import { LatLng } from '../../geo';
+import { Point } from '../../geometry';
+import type { Map, ZoomAnimationEvent } from '../../map';
+import type { Icon } from './Icon.js';
 import { MarkerDrag } from './Marker.Drag.js';
 import { defaultIcon } from './default-icon.js';
 

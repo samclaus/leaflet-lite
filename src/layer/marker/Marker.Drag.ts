@@ -1,9 +1,8 @@
-import type { LatLng, Map, Marker } from '../../Leaflet.js';
-import { Handler } from '../../map/Handler.js';
-import * as DomUtil from '../../dom/DomUtil.js';
-import { Draggable } from '../../dom/Draggable.js';
-import { Bounds } from '../../geometry/Bounds.js';
-import { Point } from '../../geometry/Point.js';
+import { DomUtil, Draggable } from '../../dom';
+import type { LatLng } from '../../geo';
+import { Bounds, Point } from '../../geometry';
+import { Handler, type Map } from '../../map';
+import { Marker } from './Marker.js';
 
 /**
  * L.Handler.MarkerDrag is used internally by L.Marker to make the markers draggable.
@@ -88,10 +87,10 @@ export class MarkerDrag extends Handler {
 
 			map.panBy(movement, {animate: false});
 
-			this._draggable._newPos._add(movement);
-			this._draggable._startPos._add(movement);
+			this._draggable!._newPos!._add(movement); // TODO: null safety
+			this._draggable!._startPos!._add(movement); // TODO: null safety
 
-			DomUtil.setPosition(marker._icon, this._draggable._newPos);
+			DomUtil.setPosition(marker._icon!, this._draggable!._newPos!); // TODO: null safety
 			this._onDrag(e);
 
 			this._panRequest = requestAnimationFrame(() => this._adjustPan(e));
@@ -121,8 +120,8 @@ export class MarkerDrag extends Handler {
 	_onDrag(e: Event): void {
 		const
 			marker = this._marker,
-		    iconPos = DomUtil.getPosition(marker._icon),
-		    latlng = marker._map.layerPointToLatLng(iconPos);
+		    iconPos = DomUtil.getPosition(marker._icon!), // TODO: null safety
+		    latlng = marker._map!.layerPointToLatLng(iconPos); // TODO: null safety
 
 		marker._latlng = latlng;
 

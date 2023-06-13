@@ -1,16 +1,13 @@
-import { Canvas, Drag, Path, Renderer, SVG, type Control, type Handler, type Layer } from '../Leaflet.js';
-import type { ControlPosition } from '../control/Control.js';
-import Browser from '../core/Browser.js';
-import { Evented, type HandlerFn } from '../core/Events.js';
-import * as Util from '../core/Util.js';
-import * as DomEvent from '../dom/DomEvent.js';
-import * as DomUtil from '../dom/DomUtil.js';
-import { PosAnimation } from '../dom/PosAnimation.js';
-import { LatLng } from '../geo/LatLng.js';
-import { LatLngBounds } from '../geo/LatLngBounds.js';
-import { EPSG3857 } from '../geo/crs/CRS.EPSG3857.js';
-import { Bounds } from '../geometry/Bounds.js';
-import { Point } from '../geometry/Point.js';
+import type { Control, ControlPosition } from '../control';
+import { Browser, Evented, Util, type HandlerFn } from '../core';
+import { DomEvent, DomUtil, PosAnimation } from '../dom';
+import { LatLng, LatLngBounds } from '../geo';
+import { EPSG3857 } from '../geo/crs';
+import { Bounds, Point } from '../geometry';
+import type { Layer } from '../layer';
+import { Canvas, Path, Renderer, SVG } from '../layer';
+import type { Handler } from './Handler.js';
+import type { Drag } from './handler/index.js';
 
 export interface LocateOptions extends PositionOptions {
 	watch?: boolean;

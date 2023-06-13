@@ -1,7 +1,7 @@
-import type { LatLng, Point } from '../../Leaflet.js';
-import { Handler } from '../Handler.js';
-import * as DomEvent from '../../dom/DomEvent.js';
-import { Map } from '../Map.js';
+import { Handler, type Map } from '..';
+import { DomEvent } from '../../dom';
+import type { LatLng } from '../../geo';
+import type { Point } from '../../geometry';
 
 export interface TouchZoomOptions {
 	/**
@@ -148,7 +148,7 @@ export class TouchZoom extends Handler {
 		// Pinch updates GridLayers' levels only when zoomSnap is off, so zoomSnap becomes noUpdate.
 		if (this._map.options.zoomAnimation) {
 			// TODO: null safety
-			this._map._animateZoom(this._center!, this._map._limitZoom(this._zoom), true, this._map.options.zoomSnap);
+			this._map._animateZoom(this._center!, this._map._limitZoom(this._zoom), true, this._map.options.zoomSnap as any); // TODO: cast to boolean with !!?
 		} else {
 			// TODO: null safety
 			this._map._resetView(this._center!, this._map._limitZoom(this._zoom));

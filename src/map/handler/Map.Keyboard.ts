@@ -1,7 +1,6 @@
-import { Point } from '../../Leaflet.js';
-import { Handler } from '../Handler.js';
-import { off, on, stop } from '../../dom/DomEvent.js';
-import { Map } from '../Map.js';
+import { Handler, Map } from '..';
+import { DomEvent } from '../../dom';
+import { Point } from '../../geometry';
 
 const keyCodes = {
 	left:    ['ArrowLeft'],
@@ -36,7 +35,7 @@ export class Keyboard extends Handler {
 			container.tabIndex = 0;
 		}
 
-		on(container, {
+		DomEvent.on(container, {
 			focus: this._onFocus,
 			blur: this._onBlur,
 			pointerdown: this._onPointerDown
@@ -51,7 +50,7 @@ export class Keyboard extends Handler {
 	removeHooks(): void {
 		this._removeHooks();
 
-		off(this._map._container, {
+		DomEvent.off(this._map._container, {
 			focus: this._onFocus,
 			blur: this._onBlur,
 			pointerdown: this._onPointerDown
@@ -124,11 +123,11 @@ export class Keyboard extends Handler {
 	}
 
 	_addHooks() {
-		on(document, 'keydown', this._onKeyDown, this);
+		DomEvent.on(document, 'keydown', this._onKeyDown, this);
 	}
 
 	_removeHooks() {
-		off(document, 'keydown', this._onKeyDown, this);
+		DomEvent.off(document, 'keydown', this._onKeyDown, this);
 	}
 
 	_onKeyDown(e: KeyboardEvent): void {
@@ -163,7 +162,7 @@ export class Keyboard extends Handler {
 			return;
 		}
 
-		stop(e);
+		DomEvent.stop(e);
 	}
 
 }

@@ -1,6 +1,6 @@
 
-import type { Map } from '../Leaflet.js';
-import * as Util from '../core/Util.js';
+import { Util } from '../core';
+import type { Map } from '../map';
 import { Layer } from './Layer.js';
 
 /**

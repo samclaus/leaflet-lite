@@ -1,12 +1,9 @@
-import { LatLng, type Map } from '../../Leaflet.js';
-import Browser from '../../core/Browser.js';
-import type { HandlerMap } from '../../core/Events.js';
-import * as Util from '../../core/Util.js';
-import * as DomUtil from '../../dom/DomUtil.js';
-import { LatLngBounds } from '../../geo/LatLngBounds.js';
-import { Bounds } from '../../geometry/Bounds.js';
-import { Point } from '../../geometry/Point.js';
-import { Layer } from '../Layer.js';
+import { Layer } from '..';
+import { Browser, Util, type HandlerMap } from '../../core';
+import { DomUtil } from '../../dom';
+import { LatLng, LatLngBounds } from '../../geo';
+import { Bounds, Point } from '../../geometry';
+import type { Map } from '../../map';
 
 /** @deprecated TODO: figure out the types for the various 'done' callback parameters throughout codebase */
 export type DoneFn = any;

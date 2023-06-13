@@ -1,5 +1,5 @@
-import * as Util from '../core/Util.js';
-import * as DomUtil from '../dom/DomUtil.js';
+import { Util } from '../core';
+import { DomUtil } from '../dom';
 import { ImageOverlay } from './ImageOverlay.js';
 
 /**

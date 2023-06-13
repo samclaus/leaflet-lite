@@ -1,6 +1,6 @@
-import type { Point } from '../Leaflet.js';
-import { Evented } from '../core/Events.js';
-import * as DomUtil from '../dom/DomUtil.js';
+import { Evented } from '../core';
+import type { Point } from '../geometry';
+import * as DomUtil from './DomUtil.js';
 
 /**
  * Used internally for panning animations, utilizing CSS Transitions for modern browsers and a timer fallback for IE6-9.

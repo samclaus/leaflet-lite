@@ -1,5 +1,5 @@
 
-import { Map } from '../map/Map.js';
+import { Map } from '../map';
 
 export type ControlPosition = 'topleft' | 'topright' | 'bottomleft' | 'bottomright';
 

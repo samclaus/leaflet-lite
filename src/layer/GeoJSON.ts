@@ -1,13 +1,11 @@
-// import type { Layer, Path } from '../Leaflet.js';
-// import * as Util from '../core/Util.js';
-// import { LatLng } from '../geo/LatLng.js';
-// import * as LineUtil from '../geometry/LineUtil.js';
+// import type { Layer, Path } from '../layer';
+// import { Util } from '../core';
+// import { LatLng } from '../geo';
+// import { LineUtil } from '../geometry;
 // import { FeatureGroup } from './FeatureGroup.js';
 // import { LayerGroup } from './LayerGroup.js';
-// import { Marker } from './marker/Marker.js';
-// import { CircleMarker } from './vector/CircleMarker.js';
-// import { Polygon } from './vector/Polygon.js';
-// import { Polyline } from './vector/Polyline.js';
+// import { Marker } from './marker';
+// import { CircleMarker, Polygon, Polyline } from './vector';
 
 // /**
 //  * Represents a GeoJSON object or an array of GeoJSON objects. Allows you to parse
