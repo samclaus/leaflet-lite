@@ -1,4 +1,4 @@
-import { Point } from '../geometry';
+import { Point } from '../geom';
 import * as DomEvent from './DomEvent.js';
 
 /*

@@ -3,7 +3,7 @@ import { Browser, Evented, Util, type HandlerFn } from '../core';
 import { DomEvent, DomUtil, PosAnimation } from '../dom';
 import { LatLng, LatLngBounds } from '../geog';
 import { EPSG3857 } from '../geog/crs';
-import { Bounds, Point } from '../geometry';
+import { Bounds, Point } from '../geom';
 import type { Layer } from '../layer';
 import { Canvas, Path, Renderer, SVG } from '../layer';
 import type { Handler } from './Handler.js';

@@ -1,7 +1,7 @@
 import { Handler, Map } from '..';
 import { DomEvent, DomUtil } from '../../dom';
 import { LatLngBounds } from '../../geog';
-import { Bounds, type Point } from '../../geometry';
+import { Bounds, type Point } from '../../geom';
 
 /**
  * L.Handler.BoxZoom is used to add shift-drag zoom interaction to the map

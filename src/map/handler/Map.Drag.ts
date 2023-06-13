@@ -1,7 +1,7 @@
 import { Handler, type Map } from '..';
 import { Draggable } from '../../dom';
 import { LatLng, type LatLngBounds } from '../../geog';
-import { Bounds, Point } from '../../geometry';
+import { Bounds, Point } from '../../geom';
 
 export interface DragOptions {
 	// @option dragging: Boolean = true

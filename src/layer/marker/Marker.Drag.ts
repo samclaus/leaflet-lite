@@ -1,6 +1,6 @@
 import { DomUtil, Draggable } from '../../dom';
 import type { LatLng } from '../../geog';
-import { Bounds, Point } from '../../geometry';
+import { Bounds, Point } from '../../geom';
 import { Handler, type Map } from '../../map';
 import { Marker } from './Marker.js';
 

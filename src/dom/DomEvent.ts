@@ -1,5 +1,5 @@
 import { Browser, Util, type HandlerFn, type HandlerMap } from '../core';
-import { Point } from '../geometry';
+import { Point } from '../geom';
 import { addDoubleTapListener, removeDoubleTapListener, type DoubleTapHandlers } from './DomEvent.DoubleTap.js';
 import { addPointerListener, removePointerListener } from './DomEvent.Pointer.js';
 import { getScale } from './DomUtil.js';

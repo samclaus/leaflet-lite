@@ -2,7 +2,7 @@ import { Layer } from '..';
 import { Browser, Util, type HandlerMap } from '../../core';
 import { DomUtil } from '../../dom';
 import { LatLng, LatLngBounds } from '../../geog';
-import { Bounds, Point } from '../../geometry';
+import { Bounds, Point } from '../../geom';
 import type { Map } from '../../map';
 
 /** @deprecated TODO: figure out the types for the various 'done' callback parameters throughout codebase */

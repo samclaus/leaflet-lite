@@ -1,6 +1,6 @@
 import { Browser, Util } from '../../core';
 import { DomEvent } from '../../dom';
-import type { Point } from '../../geometry';
+import type { Point } from '../../geom';
 import { GridLayer, type DoneFn } from './GridLayer.js';
 
 /**

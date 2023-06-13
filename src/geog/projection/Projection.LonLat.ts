@@ -1,5 +1,5 @@
 import { LatLng } from '..';
-import { Bounds, Point } from '../../geometry';
+import { Bounds, Point } from '../../geom';
 
 /**
  * Equirectangular, or Plate Carree projection — the most simple projection,

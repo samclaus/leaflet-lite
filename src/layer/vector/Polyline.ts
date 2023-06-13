@@ -1,5 +1,5 @@
 import { LatLng, LatLngBounds } from '../../geog';
-import { Bounds, LineUtil, Point } from '../../geometry';
+import { Bounds, LineUtil, Point } from '../../geom';
 import { DEFAULT_PATH_OPTIONS, Path, type PathOptions } from './Path.js';
 
 export interface PolylineOptions extends PathOptions {

@@ -1,6 +1,6 @@
 import { LatLng, LatLngBounds } from '../../geog';
 import { Earth } from '../../geog/crs';
-import { Point } from '../../geometry';
+import { Point } from '../../geom';
 import { CircleMarker, type CircleMarkerOptions } from './CircleMarker.js';
 import { Path, type PathOptions } from './Path.js';
 

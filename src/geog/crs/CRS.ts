@@ -1,7 +1,7 @@
 
 import { LatLng, LatLngBounds } from '..';
 import { Util } from '../../core';
-import { Bounds, type Point, type Transformation } from '../../geometry';
+import { Bounds, type Point, type Transformation } from '../../geom';
 import { type Projection } from '../projection';
 
 interface HasProjection {

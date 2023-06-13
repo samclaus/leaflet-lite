@@ -1,6 +1,6 @@
 import { Util } from '../../core';
 import { DomUtil } from '../../dom';
-import type { Point } from '../../geometry';
+import type { Point } from '../../geom';
 import type { CircleMarker } from './CircleMarker.js';
 import type { Path } from './Path.js';
 import type { Polyline } from './Polyline.js';

@@ -1,6 +1,6 @@
 
 import { DomUtil } from '../dom';
-import { Point } from '../geometry';
+import { Point } from '../geom';
 import type { Map } from '../map';
 import { Control } from './Control.js';
 

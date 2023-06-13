@@ -1,6 +1,6 @@
 import { Handler, Map } from '..';
 import { DomEvent } from '../../dom';
-import { Point } from '../../geometry';
+import { Point } from '../../geom';
 
 const keyCodes = {
 	left:    ['ArrowLeft'],

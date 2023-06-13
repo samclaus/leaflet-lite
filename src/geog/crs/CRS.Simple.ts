@@ -1,5 +1,5 @@
 import type { LatLng } from '..';
-import { Transformation } from '../../geometry';
+import { Transformation } from '../../geom';
 import { LonLat } from '../projection';
 import { CRS_BASE } from './CRS.js';
 

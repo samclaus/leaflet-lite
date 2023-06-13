@@ -1,6 +1,6 @@
 import { Util, type HandlerMap } from '../core';
 import { DomUtil } from '../dom';
-import { Point } from '../geometry';
+import { Point } from '../geom';
 import type { Map } from '../map';
 import { DivOverlay } from './DivOverlay.js';
 

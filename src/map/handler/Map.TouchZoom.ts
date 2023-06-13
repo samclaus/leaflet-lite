@@ -1,7 +1,7 @@
 import { Handler, type Map } from '..';
 import { DomEvent } from '../../dom';
 import type { LatLng } from '../../geog';
-import type { Point } from '../../geometry';
+import type { Point } from '../../geom';
 
 export interface TouchZoomOptions {
 	/**

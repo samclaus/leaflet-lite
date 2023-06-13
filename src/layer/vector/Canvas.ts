@@ -1,6 +1,6 @@
 import { Util, type HandlerMap } from '../../core';
 import { DomEvent } from '../../dom';
-import { Bounds, type Point } from '../../geometry';
+import { Bounds, type Point } from '../../geom';
 import type { Map } from '../../map';
 import type { CircleMarker } from './CircleMarker';
 import type { Path } from './Path';

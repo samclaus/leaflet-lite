@@ -1,5 +1,5 @@
 import type { LatLng } from '..';
-import type { Bounds, Point } from '../../geometry';
+import type { Bounds, Point } from '../../geom';
 
 export { LonLat } from './Projection.LonLat.js';
 export { Mercator } from './Projection.Mercator.js';

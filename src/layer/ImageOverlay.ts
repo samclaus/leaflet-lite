@@ -1,7 +1,7 @@
 import { Util, type HandlerMap } from '../core';
 import { DomUtil } from '../dom';
 import type { LatLng, LatLngBounds } from '../geog';
-import { Bounds } from '../geometry';
+import { Bounds } from '../geom';
 import { Layer } from './Layer.js';
 
 /**

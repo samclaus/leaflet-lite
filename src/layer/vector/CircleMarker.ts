@@ -1,5 +1,5 @@
 import type { LatLng } from '../../geog';
-import { Bounds, Point } from '../../geometry';
+import { Bounds, Point } from '../../geom';
 import { DEFAULT_PATH_OPTIONS, Path, type PathOptions } from './Path.js';
 
 export interface CircleMarkerOptions extends PathOptions {

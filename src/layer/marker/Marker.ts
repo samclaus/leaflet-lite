@@ -2,7 +2,7 @@ import { Layer } from '..';
 import { Util, type HandlerMap } from '../../core';
 import { DomEvent, DomUtil } from '../../dom';
 import { LatLng } from '../../geog';
-import { Point } from '../../geometry';
+import { Point } from '../../geom';
 import type { Map, ZoomAnimationEvent } from '../../map';
 import type { Icon } from './Icon.js';
 import { MarkerDrag } from './Marker.Drag.js';

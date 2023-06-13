@@ -1,4 +1,4 @@
-import { Transformation } from '../../geometry';
+import { Transformation } from '../../geom';
 import { Mercator } from '../projection';
 import { Earth } from './CRS.Earth.js';
 

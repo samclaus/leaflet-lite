@@ -1,5 +1,5 @@
 import { Evented } from '../core';
-import type { Point } from '../geometry';
+import type { Point } from '../geom';
 import * as DomUtil from './DomUtil.js';
 
 /**

@@ -1,5 +1,5 @@
 import { LatLng } from '../../geog';
-import { Bounds, LineUtil, Point, PolyUtil } from '../../geometry';
+import { Bounds, LineUtil, Point, PolyUtil } from '../../geom';
 import { Polyline, type PolylineOptions } from './Polyline.js';
 
 /**

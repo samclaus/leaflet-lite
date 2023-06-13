@@ -1,5 +1,5 @@
 import { DomUtil } from '../../dom';
-import { Point } from '../../geometry';
+import { Point } from '../../geom';
 import { Icon } from './Icon.js';
 
 let defaultImagePath: string | undefined;

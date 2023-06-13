@@ -1,5 +1,5 @@
 import { LatLng } from '..';
-import { Bounds, Point } from '../../geometry';
+import { Bounds, Point } from '../../geom';
 
 const earthRadius = 6378137;
 

@@ -1,6 +1,6 @@
 import { Handler } from '..';
 import { DomEvent } from '../../dom';
-import { Point } from '../../geometry';
+import { Point } from '../../geom';
 
 /**
  * L.Handler.ScrollWheelZoom is used by L.Map to enable mouse scroll wheel zoom on the map.

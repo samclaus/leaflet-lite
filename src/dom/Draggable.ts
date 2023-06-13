@@ -1,5 +1,5 @@
 import { Browser, Evented, Util } from '../core';
-import { Point } from '../geometry';
+import { Point } from '../geom';
 import * as DomEvent from './DomEvent.js';
 import * as DomUtil from './DomUtil.js';
 

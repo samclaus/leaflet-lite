@@ -1,5 +1,5 @@
 import { LatLng } from '..';
-import { Bounds, Point } from '../../geometry';
+import { Bounds, Point } from '../../geom';
 
 /**
  * Elliptical Mercator projection — more complex than Spherical Mercator. Assumes
