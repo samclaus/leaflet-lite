@@ -1,12 +1,9 @@
-import { Transformation } from '../../geometry/Transformation.js';
-import type { LatLng } from '../LatLng.js';
-import { LonLat } from '../projection/Projection.LonLat.js';
-import { CRS } from './CRS.js';
+import type { LatLng } from '..';
+import { Transformation } from '../../geometry';
+import { LonLat } from '../projection';
+import { CRS_BASE } from './CRS.js';
 
 /**
- * @namespace CRS
- * @crs L.CRS.Simple
- *
  * A simple CRS that maps longitude and latitude into `x` and `y` directly.
  * May be used for maps of flat surfaces (e.g. game maps). Note that the `y`
  * axis should still be inverted (going from bottom to top). `distance()` returns
@@ -14,7 +11,7 @@ import { CRS } from './CRS.js';
  */
 export const Simple = {
 
-	...CRS,
+	...CRS_BASE,
 
 	projection: LonLat,
 	transformation: new Transformation(1, 0, -1, 0),
@@ -36,4 +33,4 @@ export const Simple = {
 		return Math.sqrt(dx*dx + dy*dy);
 	},
 
-};
+} as const;

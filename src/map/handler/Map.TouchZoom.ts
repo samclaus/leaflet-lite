@@ -1,5 +1,5 @@
 import type { LatLng, Point } from '../../Leaflet.js';
-import { Handler } from '../../core/Handler.js';
+import { Handler } from '../Handler.js';
 import * as DomEvent from '../../dom/DomEvent.js';
 import { Map } from '../Map.js';
 

@@ -1,11 +1,8 @@
-import { Transformation } from '../../geometry/Transformation.js';
-import { LonLat } from '../projection/Projection.LonLat.js';
+import { Transformation } from '../../geometry';
+import { LonLat } from '../projection';
 import { Earth } from './CRS.Earth.js';
 
 /**
- * @namespace CRS
- * @crs L.CRS.EPSG4326
- *
  * A common CRS among GIS enthusiasts. Uses simple Equirectangular projection.
  *
  * Leaflet 1.0.x complies with the [TMS coordinate scheme for EPSG:4326](https://wiki.osgeo.org/wiki/Tile_Map_Service_Specification#global-geodetic),
@@ -20,4 +17,4 @@ export const EPSG4326 = {
 	code: 'EPSG:4326',
 	projection: LonLat,
 	transformation: new Transformation(1 / 180, 1, -1 / 180, 0.5),
-};
+} as const;

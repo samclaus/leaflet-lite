@@ -1,13 +1,42 @@
 
-import type { Point } from '../../Leaflet.js';
-import * as Util from '../../core/Util.js';
-import { Bounds } from '../../geometry/Bounds.js';
-import { LatLng } from '../LatLng.js';
-import { LatLngBounds } from '../LatLngBounds.js';
+import { LatLng, LatLngBounds } from '..';
+import { Util } from '../../core';
+import { Bounds, type Point, type Transformation } from '../../geometry';
+import { type Projection } from '../projection';
+
+interface HasProjection {
+	projection: Projection;
+}
+
+interface CRSLike extends HasProjection {
+	transformation: Transformation;
+	infinite?: boolean;
+
+	scale(zoom: number): number;
+}
+
+interface HasWrappingProperties {
+	/**
+	 * An array of two numbers defining whether the longitude (horizontal) coordinate
+	 * axis wraps around a given range and how. Defaults to `[-180, 180]` in most
+	 * geographical CRSs. If `undefined`, the longitude axis does not wrap around.
+	 */
+	wrapLng?: [number, number];
+	/**
+	 * Like `wrapLng`, but for the latitude (vertical) axis.
+	 */
+	wrapLat?: [number, number];
+}
+
+interface CanWrapLatLng {
+	/**
+	 * Returns a `LatLng` where lat and lng has been wrapped according to the
+	 * CRS's `wrapLat` and `wrapLng` properties, if they are outside the CRS's bounds.
+	 */
+	wrapLatLng(latlng: LatLng): LatLng;
+}
 
 /**
- * @namespace CRS
- * @crs L.CRS.Base
  * Object that defines coordinate reference systems for projecting
  * geographical points into pixel (screen) coordinates and back (and to
  * coordinates in other units for [WMS](https://en.wikipedia.org/wiki/Web_Map_Service) services). See
@@ -21,10 +50,77 @@ import { LatLngBounds } from '../LatLngBounds.js';
  * and can't be instantiated. Also, new classes can't inherit from them,
  * and methods can't be added to them with the `include` function.
  */
-export const CRS = {
+export interface CRS extends HasWrappingProperties, CanWrapLatLng {
+	/**
+	 * If true, the coordinate space will be unbounded (infinite in both axes).
+	 */
+	readonly infinite: boolean;
+	/**
+	 * Standard code name of the CRS passed into WMS services (e.g. `'EPSG:3857'`)
+	 */
+	readonly code: string;
 
-	// Projects geographical coordinates into pixel coordinates for a given zoom.
-	latLngToPoint(latlng: LatLng, zoom: number): Point {
+	/**
+	 * Projects geographical coordinates into pixel coordinates for a given zoom.
+	 */
+	latLngToPoint(latlng: LatLng, zoom: number): Point;
+	
+	/**
+	 * The inverse of `latLngToPoint`. Projects pixel coordinates on a given
+	 * zoom into geographical coordinates.
+	 */
+	pointToLatLng(point: Point, zoom: number): LatLng;
+	
+	/**
+	 * Projects geographical coordinates into coordinates in units accepted for
+	 * this CRS (e.g. meters for EPSG:3857, for passing it to WMS services).
+	 */
+	project(latlng: LatLng): Point;
+
+	/**
+	 * Given a projected coordinate returns the corresponding LatLng. The inverse of `project`.
+	 */
+	unproject(point: Point): LatLng;
+	
+	/**
+	 * Returns the scale used when transforming projected coordinates into
+	 * pixel coordinates for a particular zoom. For example, it returns
+	 * `256 * 2^zoom` for Mercator-based CRS.
+	 */
+	scale(zoom: number): number;
+
+	/**
+	 * Inverse of `scale()`, returns the zoom level corresponding to a scale factor of `scale`.
+	 */
+	zoom(scale: number): number;
+
+	/**
+	 * Returns the projection's bounds scaled and transformed for the provided `zoom`.
+	 */
+	getProjectedBounds(zoom: number): Bounds | undefined;
+
+	/**
+	 * Returns the distance between two geographical coordinates.
+	 */
+	distance(latlng1: LatLng, latlng2: LatLng): number;
+	
+	/**
+	 * Returns a `LatLngBounds` with the same size as the given one, ensuring
+	 * that its center is within the CRS's bounds.
+	 */
+	wrapLatLngBounds(bounds: LatLngBounds): LatLngBounds;
+}
+
+/**
+ * Most of the CRSs provided by Leaflet share the majority of their implementation. This
+ * object provides most of the method implementations, with TypeScript making sure the final
+ * CRSs implement the remaining functionality required for these base methods to work.
+ */
+export const CRS_BASE = {
+
+	infinite: false,
+
+	latLngToPoint(this: CRSLike, latlng: LatLng, zoom: number): Point {
 		const
 			projectedPoint = this.projection.project(latlng),
 		    scale = this.scale(zoom);
@@ -32,9 +128,7 @@ export const CRS = {
 		return this.transformation._transform(projectedPoint, scale);
 	},
 
-	// The inverse of `latLngToPoint`. Projects pixel coordinates on a given
-	// zoom into geographical coordinates.
-	pointToLatLng(point: Point, zoom: number): LatLng {
+	pointToLatLng(this: CRSLike, point: Point, zoom: number): LatLng {
 		const
 			scale = this.scale(zoom),
 		    untransformedPoint = this.transformation.untransform(point, scale);
@@ -42,33 +136,23 @@ export const CRS = {
 		return this.projection.unproject(untransformedPoint);
 	},
 
-	// Projects geographical coordinates into coordinates in units accepted for
-	// this CRS (e.g. meters for EPSG:3857, for passing it to WMS services).
-	project(latlng: LatLng): Point {
+	project(this: HasProjection, latlng: LatLng): Point {
 		return this.projection.project(latlng);
 	},
 
-	// Given a projected coordinate returns the corresponding LatLng.
-	// The inverse of `project`.
-	unproject(point: Point): LatLng {
+	unproject(this: HasProjection, point: Point): LatLng {
 		return this.projection.unproject(point);
 	},
 
-	// Returns the scale used when transforming projected coordinates into
-	// pixel coordinates for a particular zoom. For example, it returns
-	// `256 * 2^zoom` for Mercator-based CRS.
 	scale(zoom: number): number {
 		return 256 * Math.pow(2, zoom);
 	},
 
-	// Inverse of `scale()`, returns the zoom level corresponding to a scale
-	// factor of `scale`.
 	zoom(scale: number): number {
 		return Math.log(scale / 256) / Math.LN2;
 	},
 
-	// Returns the projection's bounds scaled and transformed for the provided `zoom`.
-	getProjectedBounds(zoom: number): Bounds | undefined {
+	getProjectedBounds(this: CRSLike, zoom: number): Bounds | undefined {
 		if (this.infinite) { return; }
 
 		const
@@ -80,41 +164,16 @@ export const CRS = {
 		return new Bounds(min, max);
 	},
 
-	// @method distance(latlng1: LatLng, latlng2: LatLng): Number
-	// Returns the distance between two geographical coordinates.
-
-	// @property code: String
-	// Standard code name of the CRS passed into WMS services (e.g. `'EPSG:3857'`)
-	//
-	// @property wrapLng: Number[]
-	// An array of two numbers defining whether the longitude (horizontal) coordinate
-	// axis wraps around a given range and how. Defaults to `[-180, 180]` in most
-	// geographical CRSs. If `undefined`, the longitude axis does not wrap around.
-	//
-	// @property wrapLat: Number[]
-	// Like `wrapLng`, but for the latitude (vertical) axis.
-
-	// wrapLng: [min, max],
-	// wrapLat: [min, max],
-
-	// @property infinite: Boolean
-	// If true, the coordinate space will be unbounded (infinite in both axes)
-	infinite: false,
-
-	// Returns a `LatLng` where lat and lng has been wrapped according to the
-	// CRS's `wrapLat` and `wrapLng` properties, if they are outside the CRS's bounds.
-	wrapLatLng(latlng: LatLng): LatLng {
-		const lng = this.wrapLng ? Util.wrapNum(latlng.lng, this.wrapLng, true) : latlng.lng,
+	wrapLatLng(this: HasWrappingProperties, latlng: LatLng): LatLng {
+		const
+			lng = this.wrapLng ? Util.wrapNum(latlng.lng, this.wrapLng, true) : latlng.lng,
 		    lat = this.wrapLat ? Util.wrapNum(latlng.lat, this.wrapLat, true) : latlng.lat,
 		    alt = latlng.alt;
 
 		return new LatLng(lat, lng, alt);
 	},
 
-	// Returns a `LatLngBounds` with the same size as the given one, ensuring
-	// that its center is within the CRS's bounds.
-	// Only accepts actual `L.LatLngBounds` instances, not arrays.
-	wrapLatLngBounds(bounds: LatLngBounds): LatLngBounds {
+	wrapLatLngBounds(this: CanWrapLatLng, bounds: LatLngBounds): LatLngBounds {
 		const
 			center = bounds.getCenter(),
 		    newCenter = this.wrapLatLng(center),
@@ -132,6 +191,6 @@ export const CRS = {
 		    newNe = new LatLng(ne.lat - latShift, ne.lng - lngShift);
 
 		return new LatLngBounds(newSw, newNe);
-	}
+	},
 
-};
+} as const;

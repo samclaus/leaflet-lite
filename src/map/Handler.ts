@@ -1,4 +1,4 @@
-import type { Map } from '../map/Map.js';
+import type { Map } from './Map.js';
 
 /**
  * L.Handler is a base class for handler classes that are used internally to inject

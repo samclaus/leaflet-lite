@@ -1,4 +1,4 @@
-import { Handler } from '../../core/Handler.js';
+import { Handler } from '../Handler.js';
 import * as DomEvent from '../../dom/DomEvent.js';
 import { Point } from '../../geometry/Point.js';
 

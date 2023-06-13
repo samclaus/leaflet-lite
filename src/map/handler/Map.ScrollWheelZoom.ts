@@ -1,5 +1,5 @@
 import { Point } from '../../Leaflet.js';
-import { Handler } from '../../core/Handler.js';
+import { Handler } from '../Handler.js';
 import * as DomEvent from '../../dom/DomEvent.js';
 
 /**

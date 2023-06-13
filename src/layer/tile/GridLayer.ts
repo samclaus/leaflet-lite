@@ -180,7 +180,7 @@ export abstract class GridLayer extends Layer {
 
 	// Returns the `HTMLElement` corresponding to the given `coords`. If the `done` callback
 	// is specified, it must be called when the tile has finished loading and drawing.
-	abstract createTile(_coords: Point, done?: DoneFn): HTMLElement;
+	abstract createTile(_coords: Point, done?: DoneFn): HTMLImageElement;
 
 	_abortLoading?(): void;
 
@@ -795,12 +795,11 @@ export abstract class GridLayer extends Layer {
 	}
 
 	_initTile(tile: HTMLElement): void {
-		tile.classList.add('leaflet-tile');
-
 		const tileSize = this.getTileSize();
+
+		tile.classList.add('leaflet-tile');
 		tile.style.width = `${tileSize.x}px`;
 		tile.style.height = `${tileSize.y}px`;
-
 		tile.onselectstart = Util.falseFn;
 		tile.onmousemove = Util.falseFn;
 	}

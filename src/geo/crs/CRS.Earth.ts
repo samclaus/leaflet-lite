@@ -1,17 +1,14 @@
-import type { LatLng } from '../LatLng.js';
-import { CRS } from './CRS.js';
+import type { LatLng } from '..';
+import { CRS_BASE } from './CRS.js';
 
-/*
- * @namespace CRS
- * @crs L.CRS.Earth
- *
+/**
  * Serves as the base for CRS that are global such that they cover the earth.
  * Can only be used as the base for other CRS and cannot be used directly,
  * since it does not have a `code`, `projection` or `transformation`. `distance()` returns
  * meters.
  */
 export const Earth = {
-	...CRS,
+	...CRS_BASE,
 
 	wrapLng: [-180, 180],
 
@@ -31,4 +28,4 @@ export const Earth = {
 		    c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 		return this.R * c;
 	},
-};
+} as const;

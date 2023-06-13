@@ -1,5 +1,5 @@
 import { LatLng, Point, type LatLngBounds } from '../../Leaflet.js';
-import { Handler } from '../../core/Handler.js';
+import { Handler } from '../Handler.js';
 import { Draggable } from '../../dom/Draggable.js';
 import { Bounds } from '../../geometry/Bounds.js';
 import { Map } from '../Map.js';

@@ -1,63 +1,58 @@
 
-// @property chrome: Boolean; `true` for the Chrome browser.
-const chrome = userAgentContains('chrome');
+const userAgentLower = navigator.userAgent.toLowerCase();
 
-// @property safari: Boolean; `true` for the Safari browser.
-const safari = !chrome && userAgentContains('safari');
+/**
+ * Are we running in the Chrome browser?
+ */
+export const chrome: boolean = userAgentLower.includes('chrome');
 
-// @property mobile: Boolean; `true` for all browsers running in a mobile device.
-const mobile = typeof orientation !== 'undefined' || userAgentContains('mobile');
+/**
+ * Are we running in the Safari browser?
+ */
+export const safari: boolean = !chrome && userAgentLower.includes('safari');
 
-// @property pointer: Boolean
-// `true` for all browsers supporting [pointer events](https://msdn.microsoft.com/en-us/library/dn433244%28v=vs.85%29.aspx).
-const pointer = !!window.PointerEvent;
+/**
+ * Are we running on a mobile device?
+ */
+export const mobile: boolean = typeof orientation !== 'undefined' || userAgentLower.includes('mobile');
 
-// @property touchNative: Boolean
-// `true` for all browsers supporting [touch events](https://developer.mozilla.org/docs/Web/API/Touch_events).
-// **This does not necessarily mean** that the browser is running in a computer with
-// a touchscreen, it only means that the browser is capable of understanding
-// touch events.
-const touchNative = 'ontouchstart' in window || !!window.TouchEvent;
+/**
+ * Does the browser we are running in support [pointer events](https://developer.mozilla.org/en-US/docs/Web/API/Pointer_events)?
+ */
+export const pointer: boolean = !!window.PointerEvent;
 
-// @property touch: Boolean
-// `true` for all browsers supporting either [touch](#browser-touch) or [pointer](#browser-pointer) events.
-// Note: pointer events will be preferred (if available), and processed for all `touch*` listeners.
-const touch = touchNative || pointer;
+/**
+ * Does the browser we are running in support [touch events](https://developer.mozilla.org/en-US/docs/Web/API/Touch_events)?
+ * 
+ * NOTE: this does not mean that the host computer has a touchscreen, just that the browser is capable of
+ * understanding touch events.
+ */
+export const touchNative: boolean = 'ontouchstart' in window || !!window.TouchEvent;
 
-// @property retina: Boolean
-// `true` for browsers on a high-resolution "retina" screen or on any screen when browser's display zoom is more than 100%.
-const retina = (
+/**
+ * Does the browser we are running into support either [pointer events](https://developer.mozilla.org/en-US/docs/Web/API/Pointer_events) or [touch events](https://developer.mozilla.org/en-US/docs/Web/API/Touch_events), or both?
+ */
+export const touch: boolean = touchNative || pointer;
+
+/**
+ * Are we running on a device with a high DPI "retina" screen, or is the browser's display zoom more
+ * than 100%?
+ * 
+ * @deprecated Browser zoom can easily change during the lifetime of the page, so any code that relies
+ * on that information need to listen for events.
+ */
+export const retina: boolean = (
 	window.devicePixelRatio ||
 	((window.screen as any).deviceXDPI / (window.screen as any).logicalXDPI)
 ) > 1;
 
-// @property mac: Boolean; `true` when the browser is running in a Mac platform
-const mac = navigator.platform.startsWith('Mac');
+/**
+ * Are we running on a Mac computer (OS X)?
+ */
+export const mac: boolean = navigator.platform.startsWith('Mac');
 
-// @property mac: Boolean; `true` when the browser is running in a Linux platform
-const linux = navigator.platform.startsWith('Linux');
-
-function userAgentContains(str: string): boolean {
-	return navigator.userAgent.toLowerCase().includes(str);
-}
 
 /**
- * A namespace with static properties for browser/feature detection used by Leaflet internally.
- *
- * ```js
- * if (L.Browser.chrome) {
- *   alert('You are running Chrome!');
- * }
- * ```
+ * Are we running on Linux?
  */
-export default {
-	chrome,
-	safari,
-	mobile,
-	pointer,
-	touch,
-	touchNative,
-	retina,
-	mac,
-	linux
-};
+export const linux = navigator.platform.startsWith('Linux');
