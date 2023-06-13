@@ -4,8 +4,8 @@ import { DomEvent, DomUtil, PosAnimation } from '../dom';
 import { LatLng, LatLngBounds } from '../geog';
 import { EPSG3857 } from '../geog/crs';
 import { Bounds, Point } from '../geom';
-import type { Layer } from '../layer';
-import { Canvas, Path, Renderer, SVG } from '../layer';
+import { Tooltip, type Layer } from '../layer';
+import { Canvas, Path, Renderer, SVG } from '../layer/vector';
 import type { Handler } from './Handler.js';
 import type { Drag } from './handler/index.js';
 
@@ -238,6 +238,9 @@ export class Map extends Evented {
 	/** @deprecated This seems to be just looked up from options at the necessary times, but keeping it in sync is risky compared with just reading from options every time. Of course that will incur performance penalty--need to disallow changing options at arbitrary times */
 	_fadeAnimated = false;
 
+	_renderer: any;
+	_paneRenderers: Dict<Renderer> = {};
+
 	constructor(
 		id: string | HTMLElement,
 		options: any, // TODO
@@ -304,7 +307,8 @@ export class Map extends Evented {
 		// happens after starting zoom animation (propagating to the map pane), we know that it ended globally
 		if (this._zoomAnimated) {
 			this._createAnimProxy();
-			DomEvent.on(this._proxy, 'transitionend', this._catchTransitionEnd, this);
+			// TODO: null safety
+			DomEvent.on(this._proxy!, 'transitionend', this._catchTransitionEnd, this);
 		}
 
 		for (const layer of this.options.layers) {
@@ -884,7 +888,7 @@ export class Map extends Evented {
 			pane.remove();
 		}
 
-		this._layers = [];
+		this._layers = {};
 		this._panes = {};
 		this._mapPane = undefined;
 		this._renderer = undefined;
@@ -1066,7 +1070,7 @@ export class Map extends Evented {
 	// Given a pixel coordinate relative to the [origin pixel](#map-getpixelorigin),
 	// returns the corresponding geographical coordinate (for the current zoom level).
 	layerPointToLatLng(point: Point): LatLng {
-		const projectedPoint = point.add(this.getPixelOrigin());
+		const projectedPoint = point.add(this.getPixelOrigin()!); // TODO: null safety
 		return this.unproject(projectedPoint);
 	}
 
@@ -1074,7 +1078,7 @@ export class Map extends Evented {
 	// relative to the [origin pixel](#map-getpixelorigin).
 	latLngToLayerPoint(latlng: LatLng): Point {
 		const projectedPoint = this.project(latlng)._round();
-		return projectedPoint._subtract(this.getPixelOrigin());
+		return projectedPoint._subtract(this.getPixelOrigin()!); // TODO: null safety
 	}
 
 	// Returns a `LatLng` where `lat` and `lng` has been wrapped according to the
@@ -1186,7 +1190,7 @@ export class Map extends Evented {
 	}
 
 	_initPanes(): void {
-		const panes = this._panes = {};
+		const panes: Dict<HTMLElement> = this._panes = {};
 		this._paneRenderers = {};
 
 		// @section
@@ -1227,7 +1231,7 @@ export class Map extends Evented {
 
 	// @section Map state change events
 	_resetView(center: LatLng, zoom: number, noMoveStart?: boolean): void {
-		DomUtil.setPosition(this._mapPane, new Point(0, 0));
+		DomUtil.setPosition(this._mapPane!, new Point(0, 0)); // TODO: null safety
 
 		const loading = !this._loaded;
 		this._loaded = true;
@@ -1322,7 +1326,7 @@ export class Map extends Evented {
 	}
 
 	_rawPanBy(offset: Point): void {
-		DomUtil.setPosition(this._mapPane, this._getMapPanePos().subtract(offset));
+		DomUtil.setPosition(this._mapPane!, this._getMapPanePos().subtract(offset)); // TODO: null safety
 	}
 
 	_getZoomSpan(): number {
@@ -1389,7 +1393,8 @@ export class Map extends Evented {
 		}
 
 		if (this.options.transform3DLimit) {
-			(remove ? this.off : this.on).call(this, 'moveend', this._onMoveEnd);
+			// TODO: TypeScript not smart enough to handle the overload signatures here?
+			(remove ? this.off : this.on as any).call(this, 'moveend', this._onMoveEnd);
 		}
 	}
 
@@ -1412,7 +1417,7 @@ export class Map extends Evented {
 		}
 	}
 
-	_findEventTargets(e, type) {
+	_findEventTargets(e: any, type: string): any[] {
 		let targets = [],
 		    target,
 		    src = e.target || e.srcElement,
@@ -1474,7 +1479,7 @@ export class Map extends Evented {
 
 	_mouseEvents = ['click', 'dblclick', 'mouseover', 'mouseout', 'contextmenu'];
 
-	_fireDOMEvent(e: Event, type: string, canvasTargets?) {
+	_fireDOMEvent(e: any, type: string, canvasTargets?: Evented[]) {
 
 		if (e.type === 'click') {
 			// Fire a synthetic 'preclick' event which propagates up (mainly for closing tooltips).
@@ -1548,7 +1553,7 @@ export class Map extends Evented {
 	// private methods for getting map state
 
 	_getMapPanePos(): Point {
-		return DomUtil.getPosition(this._mapPane);
+		return DomUtil.getPosition(this._mapPane!); // TODO: null safety
 	}
 
 	_moved(): boolean {
@@ -1559,7 +1564,7 @@ export class Map extends Evented {
 	_getTopLeftPoint(center?: LatLng, zoom?: number): Point {
 		const pixelOrigin = center && zoom !== undefined ?
 			this._getNewPixelOrigin(center, zoom) :
-			this.getPixelOrigin();
+			this.getPixelOrigin()!; // TODO: null safety
 		return pixelOrigin.subtract(this._getMapPanePos());
 	}
 
@@ -1668,7 +1673,7 @@ export class Map extends Evented {
 	}
 
 	_onPanTransitionEnd(): void {
-		this._mapPane.classList.remove('leaflet-pan-anim');
+		this._mapPane!.classList.remove('leaflet-pan-anim'); // TODO: null safety
 		this.fire('moveend');
 	}
 
@@ -1835,7 +1840,7 @@ export class Map extends Evented {
 		if (!this._layers[id]) { return this; }
 
 		if (this._loaded) {
-			layer.onRemove(this);
+			layer.onRemove?.(this);
 		}
 
 		delete this._layers[id];
@@ -1991,7 +1996,7 @@ export class Map extends Evented {
 		return (this._paneRenderers[name] ||= this._createRenderer({pane: name}));
 	}
 
-	_createRenderer(options): Renderer {
+	_createRenderer(options?: any): Renderer {
 		// @namespace Map; @option preferCanvas: Boolean = false
 		// Whether `Path`s should be rendered on a `Canvas` renderer.
 		// By default, all `Path`s are rendered in a `SVG` renderer.
