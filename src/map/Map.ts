@@ -138,10 +138,6 @@ export class Map extends Evented {
 		// or `-` on the keyboard, or using the [zoom controls](#control-zoom).
 		// Values smaller than `1` (e.g. `0.5`) allow for greater granularity.
 		zoomDelta: 1,
-
-		// @option trackResize: Boolean = true
-		// Whether the map automatically handles browser window resize to update itself.
-		trackResize: true,
 	};
 
 	_handlers: Handler[] = [];
@@ -281,9 +277,7 @@ export class Map extends Evented {
 			this,
 		);
 
-		if (this.options.trackResize) {
-			this._resizeObserver.observe(this._container);
-		}
+		this._resizeObserver.observe(this._container);
 
 		if (this.options.transform3DLimit) {
 			this.on('moveend', this._onMoveEnd);
@@ -792,9 +786,7 @@ export class Map extends Evented {
 		DomEvent.on(this._container, 'click dblclick mousedown mouseup ' +
 			'mouseover mouseout mousemove contextmenu keypress keydown keyup', this._handleDOMEvent, this);
 
-		if (this.options.trackResize) {
-			this._resizeObserver.disconnect();
-		}
+		this._resizeObserver.disconnect();
 
 		if (this.options.transform3DLimit) {
 			this.off('moveend', this._onMoveEnd);
