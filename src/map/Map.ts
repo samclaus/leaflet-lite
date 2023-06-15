@@ -1,4 +1,3 @@
-import type { ControlPosition } from '../control';
 import { Browser, Evented, Util, type HandlerFn } from '../core';
 import { DomEvent, DomUtil, PosAnimation } from '../dom';
 import { LatLng, LatLngBounds } from '../geog';
@@ -176,9 +175,6 @@ export class Map extends Evented {
 	_animateToCenter: LatLng | undefined;
 	_animateToZoom = 0;
 
-	_controlContainer: HTMLElement;
-	_controlCorners: { readonly [Pos in ControlPosition]: HTMLElement };
-
 	// Map drag handler declaration, used in a few places (Handlers get added as dynamic properties)
 	dragging?: Drag; // TODO: do NOT add handlers as properties directly on class at least
 
@@ -249,24 +245,6 @@ export class Map extends Evented {
 
 		if (!this.options.markerZoomAnimation) {
 			markerPane.classList.add('leaflet-zoom-hide');
-		}
-
-		{ // From _initControlPos()
-			const
-				l = 'leaflet-',
-				container = DomUtil.create('div', `${l}control-container`, this._container);
-
-			function createCorner(vSide: string, hSide: string) {
-				return DomUtil.create('div', `${l + vSide} ${l + hSide}`, container);
-			}
-
-			this._controlContainer = container;
-			this._controlCorners = {
-				topleft: createCorner('top', 'left'),
-				topright: createCorner('top', 'right'),
-				bottomleft: createCorner('bottom', 'left'),
-				bottomright: createCorner('bottom', 'right'),
-			};
 		}
 
 		// @event click: MouseEvent
@@ -343,19 +321,6 @@ export class Map extends Evented {
 			const handler = (this as any)[name] = new HandlerClass(this);
 			this._handlers.push(handler);
 			handler.enable();
-		}
-
-		// TODO: NEED TO ALLOW PASSING CONTROLS VIA OPTIONS, WHICH WILL BE TREE SHAKING FRIENDLY
-		// (Zoom and Attribution used to register themselves automatically by default using init
-		// hooks); TO REPRODUCE PREVIOUS AUTOMATIC BEHAVIOR, PASS:
-		//
-		// 	controls: [
-		//		new Attribution(),
-		//		new Zoom(),
-		// 	]
-		//
-		for (const control of options.controls) {
-			control.addTo(this);
 		}
 
 		// don't animate on browsers without hardware-accelerated transitions or old Android
@@ -857,11 +822,6 @@ export class Map extends Evented {
 		this._stop();
 
 		this._mapPane.remove();
-
-		for (const corner of Object.values(this._controlCorners)) {
-			corner.remove();
-		}
-		this._controlContainer.remove();
 
 		if (this._resizeRequest) {
 			cancelAnimationFrame(this._resizeRequest);

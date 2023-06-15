@@ -4,10 +4,12 @@ import type { Point } from '../../geom';
 import { GridLayer, type DoneFn } from './GridLayer.js';
 
 /**
- * Used to load and display tile layers on the map. Note that most tile servers require attribution, which you can set under `Layer`. Extends `GridLayer`.
+ * Used to load and display tile layers on the map. Note that most tile servers require attribution!
+ * Extends `GridLayer`.
  *
  * ```js
- * L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png?{foo}', {foo: 'bar', attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
+ * // REMEMBER: your application would need to attribute Open Street Map for this example!
+ * L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png?{foo}').addTo(map);
  * ```
  *
  * A string of the following form:

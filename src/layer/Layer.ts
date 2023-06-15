@@ -11,10 +11,6 @@ export interface LayerOptions {
 	// By default the layer will be added to the map's [overlay pane](#map-overlaypane). Overriding this option will cause the layer to be placed on another pane by default.
 	pane: string;
 
-	// @option attribution: String = undefined
-	// String to be shown in the attribution control, e.g. "© OpenStreetMap contributors". It describes the layer data and is often a legal obligation towards copyright holders and tile providers.
-	attribution: string | undefined;
-
 	// TODO: document
 	bubblingMouseEvents: boolean;
 }
@@ -24,9 +20,6 @@ export const DEFAULT_LAYER_OPTIONS: Readonly<LayerOptions> = {
 	// By default the layer will be added to the map's [overlay pane](#map-overlaypane). Overriding this option will cause the layer to be placed on another pane by default.
 	pane: 'overlayPane',
 
-	// @option attribution: String = undefined
-	// String to be shown in the attribution control, e.g. "© OpenStreetMap contributors". It describes the layer data and is often a legal obligation towards copyright holders and tile providers.
-	attribution: undefined,
 	bubblingMouseEvents: true,
 };
 
@@ -127,11 +120,6 @@ export abstract class Layer extends Evented {
 			delete this._map._targets[Util.stamp(targetEl)];
 		}
 		return this;
-	}
-
-	// Used by the `attribution control`, returns the [attribution option](#gridlayer-attribution).
-	getAttribution(): string | undefined {
-		return (this as any).options.attribution;
 	}
 
 	_layerAdd(e: { readonly target: Map; }): void {
