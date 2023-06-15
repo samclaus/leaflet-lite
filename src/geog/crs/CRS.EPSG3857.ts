@@ -18,8 +18,11 @@ export const EPSG3857 = {
 	}()),
 } as const;
 
-// TODO: find out and document why there is an identical projection with a different code. Some sort
-// of historical fumble for the spherical Mercator projection where it is known by multiple names?
+/**
+ * Unofficial alias code for Spherical Mercator (EPSG3857) used in OpenLayers.
+ * 
+ * @see https://epsg.io/900913
+ */
 export const EPSG900913 = {
 	...EPSG3857,
 

@@ -63,7 +63,7 @@ export abstract class DivOverlay extends Layer {
 	abstract _adjustPan(): void;
 	abstract _animateZoom(ev: any): void;
 
-	// Adds the overlay to the map. Alternative to `map.openTooltip(tooltip)`.
+	// Adds the overlay to the map.
 	openOn(map: Map = this._source._map): this {
 		if (!map.hasLayer(this)) {
 			map.addLayer(this);
@@ -71,7 +71,7 @@ export abstract class DivOverlay extends Layer {
 		return this;
 	}
 
-	// Closes the overlay. Alternative to `map.closeTooltip(tooltip)` and `layer.closeTooltip()`.
+	// Closes the overlay. Alternative to `layer.closeTooltip()`.
 	close(): this {
 		if (this._map) {
 			this._map.removeLayer(this);

@@ -153,6 +153,7 @@ export abstract class GridLayer extends Layer {
 		keepBuffer: 2
 	};
 
+	/** DOM element that contains the tiles for this layer. */
 	_container: HTMLElement | undefined;
 	_tileZoom: number | undefined;
 	_levels: Dict<LevelModel> = {};

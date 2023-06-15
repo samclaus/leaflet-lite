@@ -146,7 +146,7 @@ export class TouchZoom extends Handler {
 		DomEvent.off(document as any, 'touchend touchcancel', this._onTouchEnd, this);
 
 		// Pinch updates GridLayers' levels only when zoomSnap is off, so zoomSnap becomes noUpdate.
-		if (this._map.options.zoomAnimation) {
+		if (this._map.options.zoomAnimationThreshold > 0) {
 			// TODO: null safety
 			this._map._animateZoom(this._center!, this._map._limitZoom(this._zoom), true, this._map.options.zoomSnap as any); // TODO: cast to boolean with !!?
 		} else {

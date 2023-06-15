@@ -1,18 +1,46 @@
-import { Handler } from '..';
+import { Handler, Map } from '..';
 import { DomEvent } from '../../dom';
 import { Point } from '../../geom';
 
 const tapHoldDelay = 600;
 
+export interface TapHoldOptions {
+	/**
+	 * The max number of pixels a user can shift their finger during touch
+	 * for it to be considered a valid tap. Default is 15.
+	 */
+	tolerance: number;
+}
+
 /**
  * L.Map.TapHold is used to simulate `contextmenu` event on long hold,
  * which otherwise is not fired by mobile Safari.
+ * 
+ * Use the following code to check if running on mobile Safari:
+ * 
+ * ```javascript
+ * import { Browser } from 'leaflet-lite';
+ * 
+ * if (Browser.touchNative && Browser.safari && Browser.mobile) {
+ * 	   // ...
+ * }
+ * ```
  */
 export class TapHold extends Handler {
 
 	_holdTimeout: number | undefined;
 	_startPos!: Point; // TODO: null safety
 	_newPos!: Point; // TODO: null safety
+	_tolerance: number;
+
+	constructor(
+		map: Map,
+		{ tolerance = 15 }: Partial<TapHoldOptions> = {}
+	) {
+		super(map);
+
+		this._tolerance = tolerance;
+	}
 
 	addHooks(): void {
 		DomEvent.on(this._map._container, 'touchstart', this._onDown, this);
@@ -31,7 +59,10 @@ export class TapHold extends Handler {
 
 		this._holdTimeout = setTimeout((() => {
 			this._cancel();
-			if (!this._isTapValid()) { return; }
+
+			if (this._newPos.distanceTo(this._startPos) > this._tolerance) {
+				return;
+			}
 
 			// prevent simulated mouse events https://w3c.github.io/touch-events/#mouse-events
 			DomEvent.on(document, 'touchend', DomEvent.preventDefault);
@@ -57,10 +88,6 @@ export class TapHold extends Handler {
 	_onMove(e: TouchEvent): void {
 		const first = e.touches[0];
 		this._newPos = new Point(first.clientX, first.clientY);
-	}
-
-	_isTapValid(): boolean {
-		return this._newPos.distanceTo(this._startPos) <= this._map.options.tapTolerance;
 	}
 
 	_simulateEvent(type: string, e: Touch): void {

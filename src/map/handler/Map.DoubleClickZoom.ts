@@ -1,9 +1,28 @@
-import { Handler } from '..';
+import { Handler, Map } from '..';
+
+export interface DoubleClickZoomOptions {
+	/**
+	 * Should double-click zoom to the center of the view regardless
+	 * of where the mouse was? Default is false.
+	 */
+	centered: boolean;
+}
 
 /**
- * L.Handler.DoubleClickZoom is used to handle double-click zoom on the map, enabled by default.
+ * L.Handler.DoubleClickZoom is used to enable double-click zoom on the map, enabled by default.
  */
 export class DoubleClickZoom extends Handler {
+
+	_centered: boolean;
+
+	constructor(
+		map: Map,
+		{ centered = false }: Partial<DoubleClickZoomOptions> = {},
+	) {
+		super(map);
+
+		this._centered = centered;
+	}
 
 	addHooks(): void {
 		this._map.on('dblclick', this._onDoubleClick, this);
@@ -20,7 +39,7 @@ export class DoubleClickZoom extends Handler {
 		    delta = map.options.zoomDelta,
 		    zoom = e.originalEvent.shiftKey ? oldZoom - delta : oldZoom + delta;
 
-		if (map.options.doubleClickZoom === 'center') {
+		if (this._centered) {
 			map.setZoom(zoom);
 		} else {
 			map.setZoomAround(e.containerPoint, zoom);

@@ -326,12 +326,12 @@ export abstract class Layer extends Evented {
 		}
 
 		// If the map is moving, we will show the tooltip after it's done.
-		if (this._map.dragging && this._map.dragging.moving() && !this._openOnceFlag) {
+		if (this._map.dragging?.moving() && !this._openOnceFlag) {
 			this._openOnceFlag = true;
 			this._map.on('moveend', () => {
 				this._openOnceFlag = false;
 				this._openTooltip(e);
-			}, undefined, true);
+			}, this, true);
 			return;
 		}
 

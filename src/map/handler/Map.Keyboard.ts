@@ -2,6 +2,13 @@ import { Handler, Map } from '..';
 import { DomEvent } from '../../dom';
 import { Point } from '../../geom';
 
+export interface KeyboardOptions {
+	/**
+	 * Number of pixels to pan when pressing an arrow key. Default is 80.
+	 */
+	panDelta: number;
+}
+
 const keyCodes = {
 	left:    ['ArrowLeft'],
 	right:   ['ArrowRight'],
@@ -20,10 +27,13 @@ export class Keyboard extends Handler {
 	_panKeys: Dict<Point> = Object.create(null);
 	_zoomKeys: Dict<number> = Object.create(null);
 
-	constructor(map: Map) {
+	constructor(
+		map: Map,
+		{ panDelta = 80 }: Partial<KeyboardOptions> = {},
+	) {
 		super(map);
 
-		this._setPanDelta(map.options.keyboardPanDelta);
+		this._setPanDelta(panDelta);
 		this._setZoomDelta(map.options.zoomDelta);
 	}
 

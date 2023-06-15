@@ -37,7 +37,7 @@ interface CanWrapLatLng {
 }
 
 /**
- * Object that defines coordinate reference systems for projecting
+ * Object that defines a coordinate reference system (CRS) for projecting
  * geographical points into pixel (screen) coordinates and back (and to
  * coordinates in other units for [WMS](https://en.wikipedia.org/wiki/Web_Map_Service) services). See
  * [spatial reference system](https://en.wikipedia.org/wiki/Spatial_reference_system).

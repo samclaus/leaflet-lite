@@ -1,19 +1,13 @@
-import type { Control, ControlPosition } from '../control';
+import type { ControlPosition } from '../control';
 import { Browser, Evented, Util, type HandlerFn } from '../core';
 import { DomEvent, DomUtil, PosAnimation } from '../dom';
 import { LatLng, LatLngBounds } from '../geog';
 import { EPSG3857 } from '../geog/crs';
 import { Bounds, Point } from '../geom';
-import { Tooltip, type Layer } from '../layer';
+import { type Layer } from '../layer';
 import { Canvas, Path, Renderer, SVG } from '../layer/vector';
 import type { Handler } from './Handler.js';
 import type { Drag } from './handler/index.js';
-
-export interface LocateOptions extends PositionOptions {
-	watch?: boolean;
-	setView?: boolean;
-	maxZoom?: number;
-}
 
 export interface ZoomOptions {
 
@@ -106,15 +100,11 @@ export class Map extends Evented {
 		// or `L.Canvas` by default depending on browser support.
 		renderer: undefined,
 
-
-		// @section Animation Options
-		// @option zoomAnimation: Boolean = true
-		// Whether the map zoom animation is enabled. By default it's enabled
-		// in all browsers that support CSS Transitions except Android.
-		zoomAnimation: true,
-
-		// @option zoomAnimationThreshold: Number = 4
-		// Won't animate zoom if the zoom difference exceeds this value.
+		/**
+		 * The map will not animate a zoom operation if the zoom delta is greater
+		 * than this value. Set to 0 to disable zoom animations entirely. 4 by
+		 * default.
+		 */
 		zoomAnimationThreshold: 4,
 
 		// @option fadeAnimation: Boolean = true
@@ -153,67 +143,25 @@ export class Map extends Evented {
 		// @option trackResize: Boolean = true
 		// Whether the map automatically handles browser window resize to update itself.
 		trackResize: true,
-	
-		// @option keyboardPanDelta: Number = 80
-		// Amount of pixels to pan when pressing an arrow key.
-		keyboardPanDelta: 80,
-
-		// @option doubleClickZoom: Boolean|String = true
-		// Whether the map can be zoomed in by double clicking on it and
-		// zoomed out by double clicking while holding shift. If passed
-		// `'center'`, double-click zoom will zoom to the center of the
-		//  view regardless of where the mouse was.
-		doubleClickZoom: true,
-
-		// @section Mouse wheel options
-		// @option scrollWheelZoom: Boolean|String = true
-		// Whether the map can be zoomed by using the mouse wheel. If passed `'center'`,
-		// it will zoom to the center of the view regardless of where the mouse was.
-		scrollWheelZoom: true,
-	
-		// @option wheelDebounceTime: Number = 40
-		// Limits the rate at which a wheel can fire (in milliseconds). By default
-		// user can't zoom via wheel more often than once per 40 ms.
-		wheelDebounceTime: 40,
-	
-		// @option wheelPxPerZoomLevel: Number = 60
-		// How many scroll pixels (as reported by [L.DomEvent.getWheelDelta](#domevent-getwheeldelta))
-		// mean a change of one full zoom level. Smaller values will make wheel-zooming
-		// faster (and vice versa).
-		wheelPxPerZoomLevel: 60,
-		
-		// @option boxZoom: Boolean = true
-		// Whether the map can be zoomed to a rectangular area specified by
-		// dragging the mouse while pressing the shift key.
-		boxZoom: true,
-	
-		// @section Touch interaction options
-		// @option tapHold: Boolean
-		// Enables simulation of `contextmenu` event, default is `true` for mobile Safari.
-		tapHold: Browser.touchNative && Browser.safari && Browser.mobile,
-	
-		// @option tapTolerance: Number = 15
-		// The max number of pixels a user can shift his finger during touch
-		// for it to be considered a valid tap.
-		tapTolerance: 15,
 	};
 
 	_handlers: Handler[] = [];
-	_targets: { [leafletID: string]: Evented } = {};
+	_targets: Dict<Evented> = Object.create(null);
 	_layers: { [leafletID: string]: Layer } = {};
 	_zoomBoundLayers: { [leafletID: string]: Layer } = {};
 	_layersMaxZoom: number | undefined;
 	_layersMinZoom: number | undefined;
-	_container!: HTMLElement; // TODO: null safety?
-	_containerId: number | undefined;
+	_container: HTMLElement;
+	_containerId: number;
 	_proxy: HTMLElement | undefined; // animation proxy element
 	_size: Point | undefined;
 	_sizeChanged = true;
 	_zoom!: number; // TODO: null safety?
 	_zoomAnimated: boolean;
 	_panAnim: PosAnimation | undefined;
-	_mapPane: HTMLElement | undefined;
-	_panes: { [name: string]: HTMLElement } = {};
+	_mapPane: HTMLElement;
+	_panes: Dict<HTMLElement> = Object.create(null);
+	_paneRenderers: Dict<Renderer> = Object.create(null);
 	_lastCenter: LatLng | undefined;
 	_loaded = false;
 	_enforcingBounds = false;
@@ -221,8 +169,6 @@ export class Map extends Evented {
 	_flyToFrame = 0; // requestAnimationFrame handle
 	_tempFireZoomEvent = false;
 	_resizeObserver = new ResizeObserver(this._onResize.bind(this));
-	_locateOptions: LocateOptions | undefined;
-	_locationWatchId = 0; // from navigator.geolocation.watchPosition()
 	_sizeTimer: number | undefined;
 	_pixelOrigin: Point | undefined;
 
@@ -230,28 +176,140 @@ export class Map extends Evented {
 	_animateToCenter: LatLng | undefined;
 	_animateToZoom = 0;
 
-	_controlContainer: HTMLElement | undefined;
-	_controlCorners: { readonly [Pos in ControlPosition]: HTMLElement } | undefined;
+	_controlContainer: HTMLElement;
+	_controlCorners: { readonly [Pos in ControlPosition]: HTMLElement };
 
-	dragging?: Drag;
+	// Map drag handler declaration, used in a few places (Handlers get added as dynamic properties)
+	dragging?: Drag; // TODO: do NOT add handlers as properties directly on class at least
 
 	/** @deprecated This seems to be just looked up from options at the necessary times, but keeping it in sync is risky compared with just reading from options every time. Of course that will incur performance penalty--need to disallow changing options at arbitrary times */
 	_fadeAnimated = false;
 
 	_renderer: any;
-	_paneRenderers: Dict<Renderer> = {};
 
 	constructor(
-		id: string | HTMLElement,
+		container: HTMLElement,
 		options: any, // TODO
 	) {
 		super();
 
 		options = Util.setOptions(this, options);
 
-		this._initContainer(id);
-		this._initLayout();
-		this._initEvents();
+		this._container = container;
+		this._containerId = Util.stamp(container);
+		this._targets[this._containerId] = this;
+
+		DomEvent.on(container, 'scroll', this._onScroll, this);
+	
+		this._fadeAnimated = this.options.fadeAnimation;
+
+		const classes = ['leaflet-container'];
+
+		if (Browser.touch) { classes.push('leaflet-touch'); }
+		if (Browser.retina) { classes.push('leaflet-retina'); }
+		if (Browser.safari) { classes.push('leaflet-safari'); }
+		if (this._fadeAnimated) { classes.push('leaflet-fade-anim'); }
+
+		container.classList.add(...classes);
+
+		const {position} = getComputedStyle(container);
+
+		if (position !== 'absolute' && position !== 'relative' && position !== 'fixed' && position !== 'sticky') {
+			container.style.position = 'relative';
+		}
+
+		// @section
+		//
+		// Panes are DOM elements used to control the ordering of layers on the map. You
+		// can access panes with [`map.getPane`](#map-getpane) or
+		// [`map.getPanes`](#map-getpanes) methods. New panes can be created with the
+		// [`map.createPane`](#map-createpane) method.
+		//
+		// Every map has the following default panes that differ only in zIndex.
+		//
+		// @pane mapPane: HTMLElement = 'auto'
+		// Pane that contains all other map panes
+
+		this._mapPane = this.createPane('mapPane', this._container);
+		DomUtil.setPosition(this._mapPane, new Point(0, 0));
+
+		// @pane tilePane: HTMLElement = 200
+		// Pane for `GridLayer`s and `TileLayer`s
+		this.createPane('tilePane');
+		// @pane overlayPane: HTMLElement = 400
+		// Pane for vectors (`Path`s, like `Polyline`s and `Polygon`s), `ImageOverlay`s and `VideoOverlay`s
+		this.createPane('overlayPane');
+		// NOTE: previously there was 'shadowPane' (500) here until Sam removed it
+		// @pane markerPane: HTMLElement = 600
+		// Pane for `Icon`s of `Marker`s
+		const markerPane = this.createPane('markerPane');
+		// @pane tooltipPane: HTMLElement = 650
+		// Pane for `Tooltip`s.
+		this.createPane('tooltipPane');
+
+		if (!this.options.markerZoomAnimation) {
+			markerPane.classList.add('leaflet-zoom-hide');
+		}
+
+		{ // From _initControlPos()
+			const
+				l = 'leaflet-',
+				container = DomUtil.create('div', `${l}control-container`, this._container);
+
+			function createCorner(vSide: string, hSide: string) {
+				return DomUtil.create('div', `${l + vSide} ${l + hSide}`, container);
+			}
+
+			this._controlContainer = container;
+			this._controlCorners = {
+				topleft: createCorner('top', 'left'),
+				topright: createCorner('top', 'right'),
+				bottomleft: createCorner('bottom', 'left'),
+				bottomright: createCorner('bottom', 'right'),
+			};
+		}
+
+		// @event click: MouseEvent
+		// Fired when the user clicks (or taps) the map.
+		// @event dblclick: MouseEvent
+		// Fired when the user double-clicks (or double-taps) the map.
+		// @event mousedown: MouseEvent
+		// Fired when the user pushes the mouse button on the map.
+		// @event mouseup: MouseEvent
+		// Fired when the user releases the mouse button on the map.
+		// @event mouseover: MouseEvent
+		// Fired when the mouse enters the map.
+		// @event mouseout: MouseEvent
+		// Fired when the mouse leaves the map.
+		// @event mousemove: MouseEvent
+		// Fired while the mouse moves over the map.
+		// @event contextmenu: MouseEvent
+		// Fired when the user pushes the right mouse button on the map, prevents
+		// default browser context menu from showing if there are listeners on
+		// this event. Also fired on mobile when the user holds a single touch
+		// for a second (also called long press).
+		// @event keypress: KeyboardEvent
+		// Fired when the user presses a key from the keyboard that produces a character value while the map is focused.
+		// @event keydown: KeyboardEvent
+		// Fired when the user presses a key from the keyboard while the map is focused. Unlike the `keypress` event,
+		// the `keydown` event is fired for keys that produce a character value and for keys
+		// that do not produce a character value.
+		// @event keyup: KeyboardEvent
+		// Fired when the user releases a key from the keyboard while the map is focused.
+		DomEvent.on(
+			this._container,
+			'click dblclick mousedown mouseup mouseover mouseout mousemove contextmenu keypress keydown keyup',
+			this._handleDOMEvent,
+			this,
+		);
+
+		if (this.options.trackResize) {
+			this._resizeObserver.observe(this._container);
+		}
+
+		if (this.options.transform3DLimit) {
+			this.on('moveend', this._onMoveEnd);
+		}
 
 		if (options.maxBounds) {
 			this.setMaxBounds(options.maxBounds);
@@ -301,7 +359,7 @@ export class Map extends Evented {
 		}
 
 		// don't animate on browsers without hardware-accelerated transitions or old Android
-		this._zoomAnimated = this.options.zoomAnimation;
+		this._zoomAnimated = this.options.zoomAnimationThreshold > 0;
 
 		// zoom transitions run with the same duration for all layers, so if one of transitionend events
 		// happens after starting zoom animation (propagating to the map pane), we know that it ended globally
@@ -466,7 +524,7 @@ export class Map extends Evented {
 			this._panAnim = new PosAnimation();
 			this._panAnim.on({
 				'step': this._onPanTransitionStep,
-				'end': this._onPanTransitionEnd
+				'end': this._onPanTransitionEnd,
 			}, this);
 		}
 
@@ -477,12 +535,10 @@ export class Map extends Evented {
 
 		// animate pan unless animate: false specified
 		if (options.animate !== false) {
-			// TODO: null safety for map pane?
-			this._mapPane!.classList.add('leaflet-pan-anim');
+			this._mapPane.classList.add('leaflet-pan-anim');
 
 			const newPos = this._getMapPanePos().subtract(offset).round();
-			// TODO: null safety for map pane?
-			this._panAnim.run(this._mapPane!, newPos, options.duration || 0.25, options.easeLinearity);
+			this._panAnim.run(this._mapPane, newPos, options.duration || 0.25, options.easeLinearity);
 		} else {
 			this._rawPanBy(offset);
 			this.fire('move').fire('moveend');
@@ -733,110 +789,51 @@ export class Map extends Evented {
 		return this._stop();
 	}
 
-	// Tries to locate the user using the Geolocation API, firing a [`locationfound`](#map-locationfound)
-	// event with location data on success or a [`locationerror`](#map-locationerror) event on failure,
-	// and optionally sets the map view to the user's location with respect to
-	// detection accuracy (or to the world view if geolocation failed).
-	// Note that, if your page doesn't use HTTPS, this method will fail in
-	// modern browsers ([Chrome 50 and newer](https://sites.google.com/a/chromium.org/dev/Home/chromium-security/deprecating-powerful-features-on-insecure-origins))
-	// See `Locate options` for more details.
-	locate(options?: LocateOptions): this {
-		options = Object.assign<LocateOptions, LocateOptions | undefined>({
-			timeout: 10000,
-			watch: false,
-			// setView: false
-			// maxZoom: <Number>
-			// maximumAge: 0
-			// enableHighAccuracy: false
-		}, options);
-		
-		this._locateOptions = options;
-
-		if (!('geolocation' in navigator)) {
-			this._handleGeolocationError({
-				code: 0,
-				message: 'Geolocation not supported.',
-				PERMISSION_DENIED: 1,
-				POSITION_UNAVAILABLE: 2,
-				TIMEOUT: 3,
-			});
-			return this;
-		}
-
-		const
-			onResponse = this._handleGeolocationResponse.bind(this),
-		    onError = this._handleGeolocationError.bind(this);
-
-		if (options.watch) {
-			this._locationWatchId = navigator.geolocation.watchPosition(onResponse, onError, options);
-		} else {
-			navigator.geolocation.getCurrentPosition(onResponse, onError, options);
-		}
-		return this;
-	}
-
-	// Stops watching location previously initiated by `map.locate({watch: true})`
-	// and aborts resetting the map view if map.locate was called with
-	// `{setView: true}`.
-	stopLocate(): this {
-		if (navigator.geolocation && navigator.geolocation.clearWatch) {
-			navigator.geolocation.clearWatch(this._locationWatchId);
-		}
-		if (this._locateOptions) {
-			this._locateOptions.setView = false;
-		}
-		return this;
-	}
-
-	_handleGeolocationError(error: GeolocationPositionError): void {
-		if (!this._container._leaflet_id) { return; }
-
-		const c = error.code,
-		    message = error.message ||
-		            (c === 1 ? 'permission denied' :
-		            (c === 2 ? 'position unavailable' : 'timeout'));
-
-		if (this._locateOptions?.setView && !this._loaded) {
-			this.fitWorld();
-		}
-
-		// @section Location events
-		// @event locationerror: ErrorEvent
-		// Fired when geolocation (using the [`locate`](#map-locate) method) failed.
-		this.fire('locationerror', {
-			code: c,
-			message: `Geolocation error: ${message}.`
-		});
-	}
-
-	_handleGeolocationResponse(pos: GeolocationPosition): void {
-		if (!this._container._leaflet_id) { return; }
-
-		const
-			lat = pos.coords.latitude,
-		    lng = pos.coords.longitude,
-		    latlng = new LatLng(lat, lng),
-		    bounds = latlng.toBounds(pos.coords.accuracy * 2),
-		    options = this._locateOptions;
-
-		if (options?.setView) {
-			const zoom = this.getBoundsZoom(bounds);
-			this.setView(latlng, options.maxZoom ? Math.min(zoom, options.maxZoom) : zoom);
-		}
-
-		// @event locationfound: LocationEvent
-		// Fired when geolocation (using the [`locate`](#map-locate) method)
-		// went successfully.
-		this.fire('locationfound', {
-			latlng,
-			bounds,
-			timestamp: pos.timestamp
-		});
-	}
-
-	// Destroys the map and clears all related event listeners.
+	/**
+	 * Destroys the map and clears all related event listeners. The map must NOT be used again
+	 * after calling remove()--assume that all of its state has been corrupted by the operation.
+	 * 
+	 * If you need to show another map, create a brand new instance. Do not hold on to references
+	 * to the old map so that it can be garbage collected.
+	 */
 	remove(): this {
-		this._initEvents(true);
+		// @event click: MouseEvent
+		// Fired when the user clicks (or taps) the map.
+		// @event dblclick: MouseEvent
+		// Fired when the user double-clicks (or double-taps) the map.
+		// @event mousedown: MouseEvent
+		// Fired when the user pushes the mouse button on the map.
+		// @event mouseup: MouseEvent
+		// Fired when the user releases the mouse button on the map.
+		// @event mouseover: MouseEvent
+		// Fired when the mouse enters the map.
+		// @event mouseout: MouseEvent
+		// Fired when the mouse leaves the map.
+		// @event mousemove: MouseEvent
+		// Fired while the mouse moves over the map.
+		// @event contextmenu: MouseEvent
+		// Fired when the user pushes the right mouse button on the map, prevents
+		// default browser context menu from showing if there are listeners on
+		// this event. Also fired on mobile when the user holds a single touch
+		// for a second (also called long press).
+		// @event keypress: KeyboardEvent
+		// Fired when the user presses a key from the keyboard that produces a character value while the map is focused.
+		// @event keydown: KeyboardEvent
+		// Fired when the user presses a key from the keyboard while the map is focused. Unlike the `keypress` event,
+		// the `keydown` event is fired for keys that produce a character value and for keys
+		// that do not produce a character value.
+		// @event keyup: KeyboardEvent
+		// Fired when the user releases a key from the keyboard while the map is focused.
+		DomEvent.on(this._container, 'click dblclick mousedown mouseup ' +
+			'mouseover mouseout mousemove contextmenu keypress keydown keyup', this._handleDOMEvent, this);
+
+		if (this.options.trackResize) {
+			this._resizeObserver.disconnect();
+		}
+
+		if (this.options.transform3DLimit) {
+			this.off('moveend', this._onMoveEnd);
+		}
 
 		if (this.options.maxBounds) { this.off('moveend', this._panInsideMaxBounds); }
 
@@ -859,11 +856,13 @@ export class Map extends Evented {
 
 		this._stop();
 
-		this._mapPane!.remove(); // TODO: null safety?
+		this._mapPane.remove();
 
-		if (this._clearControlPos) {
-			this._clearControlPos();
+		for (const corner of Object.values(this._controlCorners)) {
+			corner.remove();
 		}
+		this._controlContainer.remove();
+
 		if (this._resizeRequest) {
 			cancelAnimationFrame(this._resizeRequest);
 			this._resizeRequest = 0;
@@ -888,9 +887,6 @@ export class Map extends Evented {
 			pane.remove();
 		}
 
-		this._layers = {};
-		this._panes = {};
-		this._mapPane = undefined;
 		this._renderer = undefined;
 
 		return this;
@@ -1020,17 +1016,6 @@ export class Map extends Evented {
 		return typeof pane === 'string' ? this._panes[pane] : pane;
 	}
 
-	// Returns a plain object containing the names of all [panes](#map-pane) as keys and
-	// the panes as values.
-	getPanes(): Dict<HTMLElement> {
-		return this._panes;
-	}
-
-	// Returns the HTML element that contains the map.
-	getContainer(): HTMLElement {
-		return this._container;
-	}
-
 	// @section Conversion Methods
 
 	// Returns the scale factor to be applied to a map transition from zoom level
@@ -1063,7 +1048,6 @@ export class Map extends Evented {
 
 	// Inverse of [`project`](#map-project).
 	unproject(point: Point, zoom = this._zoom): LatLng {
-		zoom = zoom === undefined ? this._zoom : zoom;
 		return this.options.crs.pointToLatLng(point, zoom);
 	}
 
@@ -1148,90 +1132,11 @@ export class Map extends Evented {
 		return this.layerPointToLatLng(this.mouseEventToLayerPoint(e));
 	}
 
-	// map initialization methods
-
-	_initContainer(id: string | HTMLElement): void {
-		const container = DomUtil.get(id);
-
-		if (!container) {
-			throw new Error('Map container not found.');
-		} else if (container._leaflet_id) {
-			throw new Error('Map container is already initialized.');
-		}
-
-		this._container = container;
-		this._containerId = Util.stamp(container);
-
-		DomEvent.on(container, 'scroll', this._onScroll, this);
-	}
-
-	_initLayout(): void {
-		const container = this._container;
-
-		this._fadeAnimated = this.options.fadeAnimation;
-
-		const classes = ['leaflet-container'];
-
-		if (Browser.touch) { classes.push('leaflet-touch'); }
-		if (Browser.retina) { classes.push('leaflet-retina'); }
-		if (Browser.safari) { classes.push('leaflet-safari'); }
-		if (this._fadeAnimated) { classes.push('leaflet-fade-anim'); }
-
-		container.classList.add(...classes);
-
-		const {position} = getComputedStyle(container);
-
-		if (position !== 'absolute' && position !== 'relative' && position !== 'fixed' && position !== 'sticky') {
-			container.style.position = 'relative';
-		}
-
-		this._initPanes();
-		this._initControlPos();
-	}
-
-	_initPanes(): void {
-		const panes: Dict<HTMLElement> = this._panes = {};
-		this._paneRenderers = {};
-
-		// @section
-		//
-		// Panes are DOM elements used to control the ordering of layers on the map. You
-		// can access panes with [`map.getPane`](#map-getpane) or
-		// [`map.getPanes`](#map-getpanes) methods. New panes can be created with the
-		// [`map.createPane`](#map-createpane) method.
-		//
-		// Every map has the following default panes that differ only in zIndex.
-		//
-		// @pane mapPane: HTMLElement = 'auto'
-		// Pane that contains all other map panes
-
-		this._mapPane = this.createPane('mapPane', this._container);
-		DomUtil.setPosition(this._mapPane, new Point(0, 0));
-
-		// @pane tilePane: HTMLElement = 200
-		// Pane for `GridLayer`s and `TileLayer`s
-		this.createPane('tilePane');
-		// @pane overlayPane: HTMLElement = 400
-		// Pane for vectors (`Path`s, like `Polyline`s and `Polygon`s), `ImageOverlay`s and `VideoOverlay`s
-		this.createPane('overlayPane');
-		// NOTE: previously there was 'shadowPane' (500) here until Sam removed it
-		// @pane markerPane: HTMLElement = 600
-		// Pane for `Icon`s of `Marker`s
-		this.createPane('markerPane');
-		// @pane tooltipPane: HTMLElement = 650
-		// Pane for `Tooltip`s.
-		this.createPane('tooltipPane');
-
-		if (!this.options.markerZoomAnimation) {
-			panes.markerPane.classList.add('leaflet-zoom-hide');
-		}
-	}
-
 	// private methods that modify map state
 
 	// @section Map state change events
 	_resetView(center: LatLng, zoom: number, noMoveStart?: boolean): void {
-		DomUtil.setPosition(this._mapPane!, new Point(0, 0)); // TODO: null safety
+		DomUtil.setPosition(this._mapPane, new Point(0, 0));
 
 		const loading = !this._loaded;
 		this._loaded = true;
@@ -1326,7 +1231,7 @@ export class Map extends Evented {
 	}
 
 	_rawPanBy(offset: Point): void {
-		DomUtil.setPosition(this._mapPane!, this._getMapPanePos().subtract(offset)); // TODO: null safety
+		DomUtil.setPosition(this._mapPane, this._getMapPanePos().subtract(offset));
 	}
 
 	_getZoomSpan(): number {
@@ -1346,57 +1251,6 @@ export class Map extends Evented {
 	}
 
 	// DOM event handling
-
-	// @section Interaction events
-	_initEvents(remove?: boolean): void {
-		this._targets = {};
-		this._targets[Util.stamp(this._container)] = this;
-
-		const onOff = remove ? DomEvent.off : DomEvent.on;
-
-		// @event click: MouseEvent
-		// Fired when the user clicks (or taps) the map.
-		// @event dblclick: MouseEvent
-		// Fired when the user double-clicks (or double-taps) the map.
-		// @event mousedown: MouseEvent
-		// Fired when the user pushes the mouse button on the map.
-		// @event mouseup: MouseEvent
-		// Fired when the user releases the mouse button on the map.
-		// @event mouseover: MouseEvent
-		// Fired when the mouse enters the map.
-		// @event mouseout: MouseEvent
-		// Fired when the mouse leaves the map.
-		// @event mousemove: MouseEvent
-		// Fired while the mouse moves over the map.
-		// @event contextmenu: MouseEvent
-		// Fired when the user pushes the right mouse button on the map, prevents
-		// default browser context menu from showing if there are listeners on
-		// this event. Also fired on mobile when the user holds a single touch
-		// for a second (also called long press).
-		// @event keypress: KeyboardEvent
-		// Fired when the user presses a key from the keyboard that produces a character value while the map is focused.
-		// @event keydown: KeyboardEvent
-		// Fired when the user presses a key from the keyboard while the map is focused. Unlike the `keypress` event,
-		// the `keydown` event is fired for keys that produce a character value and for keys
-		// that do not produce a character value.
-		// @event keyup: KeyboardEvent
-		// Fired when the user releases a key from the keyboard while the map is focused.
-		onOff(this._container, 'click dblclick mousedown mouseup ' +
-			'mouseover mouseout mousemove contextmenu keypress keydown keyup', this._handleDOMEvent, this);
-
-		if (this.options.trackResize) {
-			if (!remove) {
-				this._resizeObserver.observe(this._container);
-			} else {
-				this._resizeObserver.disconnect();
-			}
-		}
-
-		if (this.options.transform3DLimit) {
-			// TODO: TypeScript not smart enough to handle the overload signatures here?
-			(remove ? this.off : this.on as any).call(this, 'moveend', this._onMoveEnd);
-		}
-	}
 
 	_onResize(): void {
 		cancelAnimationFrame(this._resizeRequest);
@@ -1553,7 +1407,7 @@ export class Map extends Evented {
 	// private methods for getting map state
 
 	_getMapPanePos(): Point {
-		return DomUtil.getPosition(this._mapPane!); // TODO: null safety
+		return DomUtil.getPosition(this._mapPane);
 	}
 
 	_moved(): boolean {
@@ -1673,7 +1527,7 @@ export class Map extends Evented {
 	}
 
 	_onPanTransitionEnd(): void {
-		this._mapPane!.classList.remove('leaflet-pan-anim'); // TODO: null safety
+		this._mapPane.classList.remove('leaflet-pan-anim');
 		this.fire('moveend');
 	}
 
@@ -1925,49 +1779,6 @@ export class Map extends Evented {
 		}
 	}
 
-	// Methods for UI controls
-
-	// Adds the given control to the map
-	addControl(control: Control): this {
-		control.addTo(this);
-		return this;
-	}
-
-	// Removes the given control from the map
-	removeControl(control: Control): this {
-		control.remove();
-		return this;
-	}
-
-	_initControlPos(): void {
-		const
-		    l = 'leaflet-',
-		    container = DomUtil.create('div', `${l}control-container`, this._container);
-
-		function createCorner(vSide: string, hSide: string) {
-			return DomUtil.create('div', `${l + vSide} ${l + hSide}`, container);
-		}
-
-		this._controlContainer = container;
-		this._controlCorners = {
-			topleft: createCorner('top', 'left'),
-			topright: createCorner('top', 'right'),
-			bottomleft: createCorner('bottom', 'left'),
-			bottomright: createCorner('bottom', 'right'),
-		};
-	}
-
-	_clearControlPos(): void {
-		if (this._controlContainer) {
-			for (const corner of Object.values(this._controlCorners!)) {
-				corner.remove();
-			}
-			this._controlContainer.remove();
-			this._controlContainer = undefined;
-			this._controlCorners = undefined;
-		}
-	}
-
 	// Returns the instance of `Renderer` that should be used to render the given
 	// `Path`. It will ensure that the `renderer` options of the map and paths
 	// are respected, and that the renderers do exist on the map.
@@ -2001,45 +1812,6 @@ export class Map extends Evented {
 		// Whether `Path`s should be rendered on a `Canvas` renderer.
 		// By default, all `Path`s are rendered in a `SVG` renderer.
 		return this.options.preferCanvas ? new Canvas(options) : new SVG(options);
-	}
-
-	// From DivOverlay
-	
-	_initOverlay(OverlayClass: any, content: any, latlng: any, options?: any): any {
-		let overlay = content;
-		if (!(overlay instanceof OverlayClass)) {
-			overlay = new OverlayClass(options).setContent(content);
-		}
-		if (latlng) {
-			overlay.setLatLng(latlng);
-		}
-		return overlay;
-	}
-
-	// From Tooltip
-
-	/** Opens the specified tooltip. */
-	openTooltip(tooltip: Tooltip): this;
-	/** Creates a tooltip with the specified content and options and open it. */
-	openTooltip(
-		content: string | HTMLElement,
-		latlng: LatLng,
-		options?: any, /* TODO: tooltip options */
-	): this
-	openTooltip(
-		tooltip: Tooltip | string | HTMLElement,
-		latlng?: LatLng,
-		options?: any, /* TODO: tooltip options */
-	): this {
-		this._initOverlay(Tooltip, tooltip, latlng, options).openOn(this);
-		return this;
-	}
-
-	// Closes the tooltip given as parameter.
-	/** @deprecated Another example of way too many ways to do the same thing. */
-	closeTooltip(tooltip: Tooltip): this {
-		tooltip.close();
-		return this;
 	}
 
 }

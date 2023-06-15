@@ -1,6 +1,22 @@
-import { Handler } from '..';
+import { Handler, Map } from '..';
 import { DomEvent } from '../../dom';
 import { Point } from '../../geom';
+
+export interface ScrollWheelZoomOptions {
+	/**
+	 * Limits the rate at which a wheel can fire (in milliseconds). Default
+	 * value is 40, meaning the user can't zoom via wheel more often than
+	 * once per 40 ms.
+	 */
+	debounceTime: number;
+
+	/**
+	 * How many scroll pixels (as reported by [DomEvent.getWheelDelta](#domevent-getwheeldelta))
+	 * mean a change of one full zoom level. Smaller values will make wheel-zooming
+	 * faster (and vice versa). Default is 60.
+	 */
+	pxPerZoomLevel: number;
+}
 
 /**
  * L.Handler.ScrollWheelZoom is used by L.Map to enable mouse scroll wheel zoom on the map.
@@ -11,6 +27,21 @@ export class ScrollWheelZoom extends Handler {
 	_lastMousePos = new Point(0, 0);
 	_startTime = 0;
 	_timer: number | undefined;
+	_debounceTime: number;
+	_pxPerZoomLevel: number;
+
+	constructor(
+		map: Map,
+		{
+			debounceTime = 40,
+			pxPerZoomLevel = 60,
+		}: Partial<ScrollWheelZoomOptions> = {},
+	) {
+		super(map);
+
+		this._debounceTime = debounceTime;
+		this._pxPerZoomLevel = pxPerZoomLevel;
+	}
 
 	addHooks(): void {
 		DomEvent.on(this._map._container, 'wheel', this._onWheelScroll, this);

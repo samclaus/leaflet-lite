@@ -39,22 +39,14 @@ export abstract class Control {
 	setPosition(position: ControlPosition): this {
 		const map = this._map;
 
-		if (map) {
-			map.removeControl(this);
-		}
-
+		this.remove();
 		this.position = position;
 
 		if (map) {
-			map.addControl(this);
+			this.addTo(map);
 		}
 
 		return this;
-	}
-
-	// Returns the HTMLElement that contains the control.
-	getContainer(): HTMLElement | undefined {
-		return this._container;
 	}
 
 	// Adds the control to the given map.
@@ -65,7 +57,7 @@ export abstract class Control {
 		const
 			container = this._container = this.onAdd(map),
 		    pos = this.getPosition(),
-		    corner = map._controlCorners![pos]; // TODO: null safety?
+		    corner = map._controlCorners[pos];
 
 		container.classList.add('leaflet-control');
 
@@ -103,7 +95,7 @@ export abstract class Control {
 		// NOTE: make sure it is not a 'pseudo' click event triggered by pressing
 		// spacebar or enter while on a button/input
 		if (this._map && e && e.screenX > 0 && e.screenY > 0) {
-			this._map.getContainer().focus();
+			this._map._container.focus();
 		}
 	}
 

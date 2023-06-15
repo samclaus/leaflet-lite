@@ -5,7 +5,7 @@ import { Bounds, type Point } from '../../geom';
 
 /**
  * L.Handler.BoxZoom is used to add shift-drag zoom interaction to the map
- * (zoom to a selected bounding box), enabled by default.
+ * (zoom to a selected bounding box).
  */
 export class BoxZoom extends Handler {
 
