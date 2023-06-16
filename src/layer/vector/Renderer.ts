@@ -25,6 +25,8 @@ import { Polyline } from './Polyline.js';
  */
 export abstract class Renderer extends BlanketOverlay {
 
+	static MY_CONST = { foo: "bar" } as const;
+
 	_layers: { [leafletID: number]: Layer } = {};
 
 	constructor(options: any /* TODO */) {

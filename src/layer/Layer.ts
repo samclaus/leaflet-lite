@@ -41,6 +41,8 @@ export const DEFAULT_LAYER_OPTIONS: Readonly<LayerOptions> = {
  */
 export abstract class Layer extends Evented {
 
+	declare options: any;
+
 	_mapToAdd: Map | undefined;
 	_map: Map | undefined;
 	_zoomAnimated = false;
@@ -58,6 +60,10 @@ export abstract class Layer extends Evented {
 	 * [`map.removeLayer(layer)`](#map-removelayer).
 	 */
 	abstract onRemove?(map: Map): this;
+
+	_project(): void {}
+	_update(): void {}
+	_reset(): void {}
 
 	setZIndex?(zIndex: number): void;
 

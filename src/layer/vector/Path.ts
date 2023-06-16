@@ -1,5 +1,7 @@
-import { DEFAULT_LAYER_OPTIONS, Layer, type LayerOptions, type Renderer } from '..';
+import { DEFAULT_LAYER_OPTIONS, Layer, type LayerOptions } from '..';
+import type { Bounds, Point } from '../../geom';
 import type { Map } from '../../map';
+import type { Renderer } from "./Renderer";
 
 export interface PathOptions extends LayerOptions {
 	// @option stroke: Boolean = true
@@ -59,6 +61,13 @@ export interface PathOptions extends LayerOptions {
 	bubblingMouseEvents: boolean;
 }
 
+/** @deprecated TODO: figure out better way to manage render order for Canvas */
+export interface RenderOrderNode {
+	layer: Path;
+	prev: RenderOrderNode | undefined;
+	next: RenderOrderNode | undefined;
+}
+
 export const DEFAULT_PATH_OPTIONS: Readonly<PathOptions> = {
 	...DEFAULT_LAYER_OPTIONS,
 	stroke: true,
@@ -87,10 +96,14 @@ export abstract class Path extends Layer {
 
 	_renderer: Renderer | undefined;
 	_path: any; // TODO: type this
+	_pxBounds: Bounds | undefined;
 
-	abstract _project(): void;
-	abstract _update(): void;
+	/** @deprecated TODO: figure out better way to manage render order for Canvas */
+	_order?: RenderOrderNode;
+
 	abstract _updateBounds(): void;
+	abstract _updatePath(): void;
+	abstract _containsPoint(p: Point): boolean;
 
 	beforeAdd(map: Map): this {
 		// Renderer is set here because we need to call renderer.getEvents
@@ -166,7 +179,7 @@ export abstract class Path extends Layer {
 	_clickTolerance(): number {
 		// used when doing hit detection for Canvas layers
 		return (this.options.stroke ? this.options.weight / 2 : 0) +
-		  (this._renderer!.options.tolerance || 0);
+		  ((this._renderer!.options as any).tolerance || 0);
 	}
 
 }

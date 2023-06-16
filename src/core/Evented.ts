@@ -59,13 +59,18 @@ export class Evented {
 	}
 
 	/**
-	 * Removes a previously added listener function. If no function is specified, it will remove
-	 * all the listeners of that particular event from the object. Note that if you passed a
-	 * custom context to `on`, you must pass the same context to `off` in order to remove the
-	 * listener.
+	 * Remove all listeners for all types of events.
 	 */
 	off(): this;
+	/**
+	 * Remove the given handler for each of a space-separated list of event types. Note that the
+	 * context must match the context passed to `on()` in order for the handler to be removed.
+	 */
 	off(types: string, handler?: HandlerFn, context?: any): this;
+	/**
+	 * Remove the given event type/handler pairs. Note that the context must match the context
+	 * passed to `on()` in order for a handler to be removed.
+	 */
 	off(types: Readonly<HandlerMap>, context?: any): this;
 	off(types?: string | Readonly<HandlerMap>, handlerOrContext?: any, context?: any): this {
 		if (types === undefined) {

@@ -31,6 +31,11 @@ export class Point {
 	 */
 	z?: number;
 
+	/**
+	 * @deprecated
+	 */
+	distance?: number;
+
 	constructor(
 		x: number,
 		y: number,

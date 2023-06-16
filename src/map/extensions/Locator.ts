@@ -17,6 +17,10 @@ export class Locator extends Evented {
         public _map: Map,
     ) {
         super();
+
+		// The map will automatically unregister all event handlers when destroyed,
+		// so no need to clean up this callback manually
+		_map.on("unload", this.stopLocate, this);
     }
     
 	// Tries to locate the user using the Geolocation API, firing a [`locationfound`](#map-locationfound)
@@ -38,6 +42,10 @@ export class Locator extends Evented {
 		
 		this._locateOptions = options;
 
+		// TODO: remove and let final application decide whether to guard?
+		// Honestly, this whole class should maybe just be removed--it doesn't
+		// really save any code complexity for the final application by just
+		// wrapping the Geolocation browser API with an Evented structure..
 		if (!('geolocation' in navigator)) {
 			this._handleGeolocationError({
 				code: 0,
@@ -65,7 +73,7 @@ export class Locator extends Evented {
 	// and aborts resetting the map view if map.locate was called with
 	// `{setView: true}`.
 	stopLocate(): this {
-		if (navigator.geolocation && navigator.geolocation.clearWatch) {
+		if (this._locationWatchId) {
 			navigator.geolocation.clearWatch(this._locationWatchId);
 		}
 		if (this._locateOptions) {

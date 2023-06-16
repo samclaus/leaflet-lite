@@ -256,7 +256,7 @@ export class Layers extends Control {
 		this._expandIfNotCollapsed();
 	}
 
-	_update() {
+	_update(): this {
 		if (!this._container) { return this; }
 
 		this._baseLayersList.replaceChildren();

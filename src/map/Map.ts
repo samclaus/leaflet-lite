@@ -8,38 +8,41 @@ import { Canvas, Path, Renderer, SVG } from '../layer/vector';
 import type { Handler } from './Handler.js';
 import type { Drag } from './handler/index.js';
 
-export interface ZoomOptions {
+export type ZoomOptions = any;
 
-}
+export type PanOptions = any;
+// {
+// 	// TODO
 
-export interface PanOptions {
-	// TODO
+// 	noMoveStart?: boolean;
+// 	animate?: boolean;
+// 	duration?: number;
+// 	easeLinearity?: number;
+// }
 
-	noMoveStart?: boolean;
-	animate?: boolean;
-	duration?: number;
-	easeLinearity?: number;
-}
+export type ZoomPanOptions = any
+// {
+// 	zoom?: ZoomOptions | undefined;
+// 	pan?: boolean;
+// 	animate?: boolean | undefined;
+// 	debounceMoveend?: boolean;
+// 	reset?: boolean;
+// }
 
-export interface ZoomPanOptions {
-	zoom?: ZoomOptions | undefined;
-	pan?: boolean;
-	animate?: boolean | undefined;
-	debounceMoveend?: boolean;
-}
+export type FitBoundsOptions = any;
+// {
+// 	padding?: Point;
+// 	paddingTopLeft?: Point;
+// 	paddingBottomRight?: Point;
+// 	maxZoom?: number;
+// }
 
-export interface FitBoundsOptions {
-	padding?: Point;
-	paddingTopLeft?: Point;
-	paddingBottomRight?: Point;
-	maxZoom?: number;
-}
-
-export interface ZoomAnimationEvent {
-	center: LatLng,
-	zoom: number,
-	noUpdate: boolean | undefined;
-}
+export type ZoomAnimationEvent = any;
+// {
+// 	center: LatLng,
+// 	zoom: number,
+// 	noUpdate: boolean | undefined;
+// }
 
 /**
  * The central class of the API — it is used to create a map on a page and manipulate it.
@@ -56,7 +59,7 @@ export class Map extends Evented {
 
 	// TODO: these are the static/default options which get overridden
 	// for each instance by passing options to the constructor
-	options = {
+	options: any = {
 		// @section Map State Options
 		// @option crs: CRS = L.CRS.EPSG3857
 		// The [Coordinate Reference System](#crs) to use. Don't change this if you're not
@@ -349,7 +352,11 @@ export class Map extends Evented {
 
 			if (options.animate !== undefined) {
 				options.zoom = { animate: options.animate, ...options.zoom };
-				options.pan = { animate: options.animate, duration: options.duration, ...options.pan };
+				options.pan = {
+					animate: options.animate,
+					duration: options.duration,
+					...options.pan
+				};
 			}
 
 			// try animating pan or zoom
@@ -515,14 +522,16 @@ export class Map extends Evented {
 
 		this._stop();
 
-		const from = this.project(this.getCenter()),
+		const
+			from = this.project(this.getCenter()),
 		    to = this.project(targetCenter),
 		    size = this.getSize(),
 		    startZoom = this._zoom;
 
 		targetZoom ??= startZoom;
 
-		const w0 = Math.max(size.x, size.y),
+		const
+			w0 = Math.max(size.x, size.y),
 		    w1 = w0 * this.getZoomScale(startZoom, targetZoom),
 		    u1 = (to.distanceTo(from)) || 1,
 		    rho = 1.42,
@@ -755,7 +764,7 @@ export class Map extends Evented {
 	 * If you need to show another map, create a brand new instance. Do not hold on to references
 	 * to the old map so that it can be garbage collected.
 	 */
-	remove(): this {
+	remove(): void {
 		// @event click: MouseEvent
 		// Fired when the user clicks (or taps) the map.
 		// @event dblclick: MouseEvent
@@ -798,8 +807,6 @@ export class Map extends Evented {
 			throw new Error('Map container is being reused by another instance');
 		}
 
-		this._containerId = undefined;
-
 		try {
 			// throws error in IE6-8
 			delete this._container._leaflet_id;
@@ -807,12 +814,7 @@ export class Map extends Evented {
 			this._container._leaflet_id = undefined;
 		}
 
-		if (this._locationWatchId !== undefined) {
-			this.stopLocate();
-		}
-
 		this._stop();
-
 		this._mapPane.remove();
 
 		if (this._resizeRequest) {
@@ -840,8 +842,7 @@ export class Map extends Evented {
 		}
 
 		this._renderer = undefined;
-
-		return this;
+		this.off();
 	}
 
 	// @section Other Methods
@@ -1337,9 +1338,9 @@ export class Map extends Evented {
 		}
 	}
 
-	_draggableMoved(obj) {
-		obj = obj.dragging && obj.dragging.enabled() ? obj : this;
-		return (obj.dragging && obj.dragging.moved()) || (this.boxZoom?._moved);
+	_draggableMoved(obj: any): boolean {
+		obj = obj.dragging?.enabled() ? obj : this;
+		return obj.dragging?.moved() || !!((this as any).boxZoom?._moved);
 	}
 
 	// @section Other Methods
@@ -1413,7 +1414,8 @@ export class Map extends Evented {
 	_limitCenter(center: LatLng, zoom?: number, bounds?: LatLngBounds): LatLng {
 		if (!bounds) { return center; }
 
-		const centerPoint = this.project(center, zoom),
+		const
+			centerPoint = this.project(center, zoom),
 		    viewHalf = this.getSize().divideBy(2),
 		    viewBounds = new Bounds(centerPoint.subtract(viewHalf), centerPoint.add(viewHalf)),
 		    offset = this._getBoundsOffset(viewBounds, bounds, zoom);

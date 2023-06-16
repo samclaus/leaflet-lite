@@ -48,10 +48,9 @@ export class Polyline extends Path {
 
 	options: PolylineOptions;
 	_parts: Point[][] = [];
-	_rings: any[]; // TODO
+	_rings!: any[]; // TODO
 	_latlngs!: LatLng[] | LatLng[][]; // initialized via _setLatLngs() call in constructor
 	_bounds!: LatLngBounds; // initialized via _setLatLngs() call in constructor
-	_pxBounds: Bounds | undefined;
 	_rawPxBounds: Bounds | undefined;
 
 	constructor(
@@ -174,7 +173,7 @@ export class Polyline extends Path {
 		return LineUtil.isFlat(this._latlngs) ? this._latlngs : this._latlngs[0];
 	}
 
-	_project() {
+	_project(): void {
 		const pxBounds = new Bounds();
 
 		this._rings = [];
@@ -186,7 +185,7 @@ export class Polyline extends Path {
 		}
 	}
 
-	_updateBounds() {
+	_updateBounds(): void {
 		const
 			w = this._clickTolerance(),
 		    p = new Point(w, w);
@@ -242,7 +241,7 @@ export class Polyline extends Path {
 			points = this._rings[i];
 
 			for (j = 0, len2 = points.length; j < len2 - 1; j++) {
-				segment = LineUtil.clipSegment(points[j], points[j + 1], bounds, j, true);
+				segment = LineUtil.clipSegment(points[j], points[j + 1], bounds, j as any, true); // TODO
 
 				if (!segment) { continue; }
 

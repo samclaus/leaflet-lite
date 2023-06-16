@@ -31,7 +31,7 @@ export abstract class BlanketOverlay extends Layer {
 		continuous: false,
 	};
 
-	_container: HTMLElement | undefined;
+	_container!: HTMLElement | undefined;
 	_bounds: Bounds | undefined;
 	_center: LatLng | undefined;
 	_zoom: number | undefined;

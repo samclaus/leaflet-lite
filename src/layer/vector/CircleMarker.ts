@@ -17,7 +17,6 @@ export class CircleMarker extends Path {
 	_radius: number;
 	_radiusY: number = NaN; // needed for Circle inheritance
 	_point: Point | undefined;
-	_pxBounds: Bounds | undefined;
 
 	constructor(
 		public _latlng: LatLng,
