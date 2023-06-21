@@ -20,7 +20,7 @@ import { Marker } from './Marker.js';
 export class MarkerDrag extends Handler {
 
 	_oldLatLng: LatLng | undefined;
-	_panRequest = 0; // from requestAnimationFrame()
+	_panFrame = 0;
 	_draggable: Draggable | undefined;
 
 	constructor(
@@ -93,7 +93,7 @@ export class MarkerDrag extends Handler {
 			DomUtil.setPosition(marker._icon!, this._draggable!._newPos!); // TODO: null safety
 			this._onDrag(e);
 
-			this._panRequest = requestAnimationFrame(() => this._adjustPan(e));
+			this._panFrame = requestAnimationFrame(() => this._adjustPan(e));
 		}
 	}
 
@@ -112,8 +112,8 @@ export class MarkerDrag extends Handler {
 
 	_onPreDrag(e: Event): void {
 		if (this._marker.options.autoPan) {
-			cancelAnimationFrame(this._panRequest);
-			this._panRequest = requestAnimationFrame(() => this._adjustPan(e));
+			cancelAnimationFrame(this._panFrame);
+			this._panFrame = requestAnimationFrame(() => this._adjustPan(e));
 		}
 	}
 
@@ -137,7 +137,7 @@ export class MarkerDrag extends Handler {
 	}
 
 	_onDragEnd(e: Event): void {
-		cancelAnimationFrame(this._panRequest);
+		cancelAnimationFrame(this._panFrame);
 
 		// @event moveend: Event
 		// Fired when the marker stops moving (because of dragging).

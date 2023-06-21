@@ -2,9 +2,9 @@ import { Util, type HandlerMap } from '../../core';
 import { DomEvent } from '../../dom';
 import { Bounds, Point } from '../../geom';
 import type { Map } from '../../map';
-import type { CircleMarker } from './CircleMarker';
-import type { Path, RenderOrderNode } from './Path';
-import type { Polyline } from './Polyline';
+import type { CircleMarker } from './CircleMarker.js';
+import type { Path, RenderOrderNode } from './Path.js';
+import type { Polyline } from './Polyline.js';
 import { Renderer } from './Renderer.js';
 
 /**
@@ -39,7 +39,7 @@ export class Canvas extends Renderer {
 	_ctxScale = window.devicePixelRatio;
 	_ctx: CanvasRenderingContext2D | undefined;
 	_redrawBounds: Bounds | undefined;
-	_redrawRequest = 0;
+	_redrawFrame = 0;
 	_postponeUpdatePaths = false;
 	_drawing = false;
 	_drawFirst: RenderOrderNode | undefined;
@@ -80,7 +80,7 @@ export class Canvas extends Renderer {
 	}
 
 	_destroyContainer(): void {
-		cancelAnimationFrame(this._redrawRequest);
+		cancelAnimationFrame(this._redrawFrame);
 		this._ctx = undefined;
 		Renderer.prototype._destroyContainer.call(this);
 	}
@@ -219,7 +219,7 @@ export class Canvas extends Renderer {
 		if (!this._map) { return; }
 
 		this._extendRedrawBounds(layer);
-		this._redrawRequest ||= requestAnimationFrame(() => this._redraw());
+		this._redrawFrame ||= requestAnimationFrame(() => this._redraw());
 	}
 
 	_extendRedrawBounds(layer: Path): void {
@@ -235,7 +235,7 @@ export class Canvas extends Renderer {
 	}
 
 	_redraw(): void {
-		this._redrawRequest = 0;
+		this._redrawFrame = 0;
 
 		if (this._redrawBounds) {
 			this._redrawBounds.min._floor();

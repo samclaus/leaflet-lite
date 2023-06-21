@@ -3,10 +3,9 @@ import { DomEvent, DomUtil, PosAnimation } from '../dom';
 import { LatLng, LatLngBounds } from '../geog';
 import { EPSG3857 } from '../geog/crs';
 import { Bounds, Point } from '../geom';
-import { type Layer } from '../layer';
+import { type Layer } from '../layer/Layer.js';
 import { Canvas, Path, Renderer, SVG } from '../layer/vector';
 import type { Handler } from './Handler.js';
-import type { Drag } from './handler/index.js';
 
 export type ZoomOptions = any;
 
@@ -162,8 +161,8 @@ export class Map extends Evented {
 	_lastCenter: LatLng | undefined;
 	_loaded = false;
 	_enforcingBounds = false;
-	_resizeRequest = 0; // requestAnimationFrame handle
-	_flyToFrame = 0; // requestAnimationFrame handle
+	_resizeFrame = 0;
+	_flyToFrame = 0;
 	_tempFireZoomEvent = false;
 	_resizeObserver = new ResizeObserver(this._onResize.bind(this));
 	_sizeTimer: number | undefined;
@@ -174,10 +173,9 @@ export class Map extends Evented {
 	_animateToZoom = 0;
 
 	// Map drag handler declaration, used in a few places (Handlers get added as dynamic properties)
-	dragging?: Drag; // TODO: do NOT add handlers as properties directly on class at least
+	dragging?: any; // TODO: do NOT add handlers as properties directly on class at least
 
-	/** @deprecated This seems to be just looked up from options at the necessary times, but keeping it in sync is risky compared with just reading from options every time. Of course that will incur performance penalty--need to disallow changing options at arbitrary times */
-	_fadeAnimated = false;
+	readonly _fadeAnimated: boolean;
 
 	_renderer: Renderer | undefined;
 
@@ -191,11 +189,10 @@ export class Map extends Evented {
 
 		this._container = container;
 		this._targets[Util.stamp(container)] = this;
+		this._fadeAnimated = this.options.fadeAnimation;
 
 		DomEvent.on(container, 'scroll', this._onScroll, this);
 	
-		this._fadeAnimated = this.options.fadeAnimation;
-
 		const classes = ['leaflet-container'];
 
 		if (Browser.touch) { classes.push('leaflet-touch'); }
@@ -813,9 +810,9 @@ export class Map extends Evented {
 		this._stop();
 		this._mapPane.remove();
 
-		if (this._resizeRequest) {
-			cancelAnimationFrame(this._resizeRequest);
-			this._resizeRequest = 0;
+		if (this._resizeFrame) {
+			cancelAnimationFrame(this._resizeFrame);
+			this._resizeFrame = 0;
 		}
 
 		for (let i = 0, len = this._handlers.length; i < len; i++) {
@@ -851,9 +848,7 @@ export class Map extends Evented {
 			className = `leaflet-pane${name ? ` leaflet-${name.replace('Pane', '')}-pane` : ''}`,
 		    pane = DomUtil.create('div', className, container || this._mapPane);
 
-		if (name) {
-			this._panes[name] = pane;
-		}
+		this._panes[name] = pane;
 
 		return pane;
 	}
@@ -1202,8 +1197,8 @@ export class Map extends Evented {
 	// DOM event handling
 
 	_onResize(): void {
-		cancelAnimationFrame(this._resizeRequest);
-		this._resizeRequest = requestAnimationFrame(() => this.invalidateSize({debounceMoveend: true}));
+		cancelAnimationFrame(this._resizeFrame);
+		this._resizeFrame = requestAnimationFrame(() => this.invalidateSize({debounceMoveend: true}));
 	}
 
 	_onScroll(): void {
@@ -1498,7 +1493,7 @@ export class Map extends Evented {
 	_createAnimProxy(): void {
 		const proxy = DomUtil.create('div', 'leaflet-proxy leaflet-zoom-animated');
 		this._proxy = proxy;
-		this._panes.mapPane.appendChild(proxy);
+		this._mapPane.appendChild(proxy);
 
 		this.on('zoomanim', function (e) {
 			const transform = this._proxy.style.transform;

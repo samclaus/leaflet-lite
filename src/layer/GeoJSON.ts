@@ -1,4 +1,5 @@
-// import type { Layer, Path } from '../layer';
+// import type { Layer } from './Layer.js';
+// import type { Path } from './Path.js';
 // import { Util } from '../core';
 // import { LatLng } from '../geog';
 // import { GeogUtil } from '../geog/util';

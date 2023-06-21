@@ -1,4 +1,3 @@
-
 import { Util } from '../core';
 import type { Map } from '../map';
 import { Layer } from './Layer.js';

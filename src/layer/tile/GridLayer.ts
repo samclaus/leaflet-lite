@@ -165,7 +165,7 @@ export abstract class GridLayer extends Layer {
 	_noPrune = false;
 	_loading = false;
 	_onMove: (() => void) | undefined;
-	_fadeFrame = 0; // from requestAnimationFrame()
+	_fadeFrame = 0;
 	_globalTileRange: Bounds | undefined;
 	_level: any; // TODO
 	_wrapX: any; // TODO

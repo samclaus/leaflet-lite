@@ -37,7 +37,7 @@ export class PosAnimation extends Evented {
 	_startPos: Point | undefined;
 	_offset: Point | undefined;
 	_startTime = 0;
-	_animId = 0; // from requestAnimationFrame
+	_animFrame = 0;
 
 	// Run an animation of a given element to a new position, optionally setting
 	// duration in seconds (`0.25` by default) and easing linearity factor (3rd
@@ -65,7 +65,7 @@ export class PosAnimation extends Evented {
 	}
 
 	_animate(): void {
-		this._animId = requestAnimationFrame(() => this._animate());
+		this._animFrame = requestAnimationFrame(() => this._animate());
 		this._step();
 	}
 
@@ -96,7 +96,7 @@ export class PosAnimation extends Evented {
 	}
 
 	_complete(): void {
-		cancelAnimationFrame(this._animId);
+		cancelAnimationFrame(this._animFrame);
 
 		this._inProgress = false;
 		this.fire('end');

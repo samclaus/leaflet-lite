@@ -24,7 +24,7 @@ export class TouchZoom extends Handler {
 
 	_moved = false;
 	_zooming = false;
-	_animRequest = 0; // requestAnimationFrame handle
+	_animFrame = 0;
 	_startDist = 0;
 	_startZoom = 0;
 	_centerPoint: Point | undefined;
@@ -124,10 +124,11 @@ export class TouchZoom extends Handler {
 			this._moved = true;
 		}
 
-		cancelAnimationFrame(this._animRequest);
+		cancelAnimationFrame(this._animFrame);
 
-		const moveFn = map._move.bind(map, this._center, this._zoom, {pinch: true, round: false}, undefined);
-		this._animRequest = requestAnimationFrame(moveFn.bind(this));
+		// TODO: null safety
+		const moveFn = map._move.bind(map, this._center!, this._zoom, {pinch: true, round: false}, undefined);
+		this._animFrame = requestAnimationFrame(moveFn.bind(this));
 
 		DomEvent.preventDefault(e);
 	}
@@ -139,7 +140,7 @@ export class TouchZoom extends Handler {
 		}
 
 		this._zooming = false;
-		cancelAnimationFrame(this._animRequest);
+		cancelAnimationFrame(this._animFrame);
 
 		// TODO: improve/remove DOM event code and remove these typecasts
 		DomEvent.off(document as any, 'touchmove', this._onTouchMove, this);
