@@ -1,4 +1,3 @@
-export { GridLayer } from './GridLayer.js';
-export { TileLayerWMS } from './TileLayer.WMS.js';
-export { TileLayer } from './TileLayer.js';
-
+export * from './GridLayer.js';
+export * from './TileLayer.WMS.js';
+export * from './TileLayer.js';
