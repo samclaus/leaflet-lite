@@ -1,5 +1,6 @@
 import { LatLng, LatLngBounds } from '../../geog';
-import { Bounds, LineUtil, Point } from '../../geom';
+import { GeogUtil } from '../../geog/util';
+import { Bounds, GeomUtil, Point } from '../../geom';
 import { DEFAULT_PATH_OPTIONS, Path, type PathOptions } from './Path.js';
 
 export interface PolylineOptions extends PathOptions {
@@ -97,7 +98,7 @@ export class Polyline extends Path {
 		    p1,
 			p2;
 
-		const closest = LineUtil._sqClosestPointOnSegment;
+		const closest = GeomUtil._sqClosestPointOnSegment;
 
 		for (let j = 0, jLen = this._parts.length; j < jLen; j++) {
 			const points = this._parts[j];
@@ -125,7 +126,7 @@ export class Polyline extends Path {
 	// Returns the center ([centroid](https://en.wikipedia.org/wiki/Centroid)) of the polyline.
 	getCenter(): LatLng {
 		// TODO: null safety
-		return LineUtil.polylineCenter(this._defaultShape(), this._map!.options.crs);
+		return GeogUtil.polylineCenter(this._defaultShape(), this._map!.options.crs);
 	}
 
 	// Adds a given point to the polyline. By default, adds to the first ring of
@@ -144,7 +145,7 @@ export class Polyline extends Path {
 		this._latlngs = latlngs;
 
 		// Now extend the bounds to include every coordinate
-		if (LineUtil.isFlat(latlngs)) {
+		if (GeogUtil.isFlat(latlngs)) {
 			for (const latlng of latlngs) {
 				bounds.extend(latlng);
 			}
@@ -158,7 +159,7 @@ export class Polyline extends Path {
 	}
 
 	_defaultShape(): LatLng[] {
-		return LineUtil.isFlat(this._latlngs) ? this._latlngs : this._latlngs[0];
+		return GeogUtil.isFlat(this._latlngs) ? this._latlngs : this._latlngs[0];
 	}
 
 	_project(): void {
@@ -190,7 +191,7 @@ export class Polyline extends Path {
 
 	// recursively turns latlngs into a set of rings with projected coordinates
 	_projectLatlngs(latlngs: LatLng[] | LatLng[][], result: Point[][], projectedBounds: Bounds): void {
-		if (!LineUtil.isFlat(latlngs)) {
+		if (!GeogUtil.isFlat(latlngs)) {
 			for (let i = 0; i < latlngs.length; ++i) {
 				this._projectLatlngs(latlngs[i], result, projectedBounds);
 			}
@@ -229,7 +230,7 @@ export class Polyline extends Path {
 			points = this._rings[i];
 
 			for (j = 0, len2 = points.length; j < len2 - 1; j++) {
-				segment = LineUtil.clipSegment(points[j], points[j + 1], bounds, j as any, true); // TODO
+				segment = GeomUtil.clipSegment(points[j], points[j + 1], bounds, j as any, true); // TODO
 
 				if (!segment) { continue; }
 
@@ -252,7 +253,7 @@ export class Polyline extends Path {
 		    tolerance = this.options.smoothFactor;
 
 		for (let i = 0, len = parts.length; i < len; i++) {
-			parts[i] = LineUtil.simplify(parts[i], tolerance);
+			parts[i] = GeomUtil.simplify(parts[i], tolerance);
 		}
 	}
 
@@ -283,7 +284,7 @@ export class Polyline extends Path {
 			for (j = 0, len2 = part.length, k = len2 - 1; j < len2; k = j++) {
 				if (!closed && (j === 0)) { continue; }
 
-				if (LineUtil.pointToSegmentDistance(p, part[k], part[j]) <= w) {
+				if (GeomUtil.pointToSegmentDistance(p, part[k], part[j]) <= w) {
 					return true;
 				}
 			}

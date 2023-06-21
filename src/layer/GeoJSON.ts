@@ -1,7 +1,7 @@
 // import type { Layer, Path } from '../layer';
 // import { Util } from '../core';
-// import { LatLng } from '../geo';
-// import { LineUtil } from '../geometry;
+// import { LatLng } from '../geog';
+// import { GeogUtil } from '../geog/util';
 // import { FeatureGroup } from './FeatureGroup.js';
 // import { LayerGroup } from './LayerGroup.js';
 // import { Marker } from './marker';
@@ -272,7 +272,7 @@
 // 	for (let i = 0, len = latlngs.length; i < len; i++) {
 // 		// Check for flat arrays required to ensure unbalanced arrays are correctly converted in recursion
 // 		coords.push(levelsDeep ?
-// 			latLngsToCoords(latlngs[i], LineUtil.isFlat(latlngs[i]) ? 0 : levelsDeep - 1, close, precision) :
+// 			latLngsToCoords(latlngs[i], GeogUtil.isFlat(latlngs[i]) ? 0 : levelsDeep - 1, close, precision) :
 // 			latLngToCoords(latlngs[i], precision));
 // 	}
 
@@ -312,7 +312,7 @@
 
 // export function polylineToGeoJSON(line: Polyline, precision?: number) {
 // 	const
-// 		multi = !LineUtil.isFlat(line._latlngs),
+// 		multi = !GeogUtil.isFlat(line._latlngs),
 // 		coords = latLngsToCoords(line._latlngs, multi ? 1 : 0, false, precision);
 
 // 	return getFeature(line, {
@@ -323,8 +323,8 @@
 
 // export function polygonToGeoJSON(poly: Polygon, precision?: number) {
 // 	const
-// 		holes = !LineUtil.isFlat(poly._latlngs),
-// 		multi = holes && !LineUtil.isFlat(poly._latlngs[0]);
+// 		holes = !GeogUtil.isFlat(poly._latlngs),
+// 		multi = holes && !GeogUtil.isFlat(poly._latlngs[0]);
 
 // 	let coords = latLngsToCoords(poly._latlngs, multi ? 2 : holes ? 1 : 0, true, precision);
 

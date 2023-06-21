@@ -1,10 +1,13 @@
-import { LatLng, LatLngBounds } from '../geog';
-import { type CRS } from '../geog/crs';
 import type { Bounds } from './Bounds.js';
 import { Point } from './Point.js';
-import { centroid } from './PolyUtil.js';
 
-// This file contains utilities for manipulating polyline geometry.
+/*************************************************************************
+ * This file contains utilities for manipulating geometric *primitives*. *
+ *                                                                       *
+ * DO NOT DUMP CODE HERE THAT DEPENDS ON ANYTHING OTHER THAN GEOMETRIC   *
+ * PRIMITIVES IN THE SURROUNDING FOLDER. THINK ABOUT THE HIERARCHY OF    *
+ * CODE (LOW-LEVEL TO HIGH-LEVEL).                                       *
+ *************************************************************************/
 
 /**
  * Simplify polyline with vertex reduction and Douglas-Peucker simplification.
@@ -279,80 +282,58 @@ export function _sqClosestPointOnSegment(
 }
 
 /**
- * Returns true if `latlngs` is a flat array, false is nested.
+ * Clips the polygon geometry defined by the given `points` by the given bounds (using the [Sutherland-Hodgman algorithm](https://en.wikipedia.org/wiki/Sutherland%E2%80%93Hodgman_algorithm)).
+ * Used by Leaflet to only show polygon points that are on the screen or near, increasing
+ * performance. Note that polygon points needs different algorithm for clipping
+ * than polyline, so there's a separate method for it.
  * 
- * @deprecated Working with nested arrays should be very explicit throughout the code.
+ * TODO: make this function allocate fewer arrays (just reuse them carefully)
  */
-export function isFlat(latlngs: LatLng[] | LatLng[][]): latlngs is LatLng[] {
-	return !latlngs.length || latlngs[0] instanceof LatLng;
-}
+export function clipPolygon(
+	points: readonly Point[],
+	bounds: Bounds,
+	round?: boolean,
+): Point[] {
+	let codes = points.map(p => _getBitCode(p, bounds));
 
-/**
- * Returns the center ([centroid](http://en.wikipedia.org/wiki/Centroid)) of the passed LatLngs (first ring) from a polyline.
- */
-export function polylineCenter(latlngs: readonly LatLng[], crs: CRS): LatLng {
-	let i, halfDist, segDist, dist, p1, p2, ratio, center: Point;
+	// for each edge (left, bottom, right, top)
+	for (const edge of [1, 4, 2, 8]) {
+		const
+			clippedPoints: Point[] = [],
+			clippedCodes: number[] = [];
 
-	if (!latlngs || latlngs.length === 0) {
-		throw new Error('latlngs not passed');
-	}
+		for (let i = 0, len = points.length, j = len - 1; i < len; j = i++) {
+			const
+				a = points[i],
+				acode = codes[i],
+				b = points[j],
+				bcode = codes[j];
 
-	let centroidLatLng = new LatLng(0, 0);
+			// if a is inside the clip window
+			if (!(acode & edge)) {
+				// if b is outside the clip window (a->b goes out of screen)
+				if (bcode & edge) {
+					const p = _getEdgeIntersection(b, a, edge, bounds, round);
+					clippedPoints.push(p);
+					clippedCodes.push(_getBitCode(p, bounds));
+				}
+				clippedPoints.push(a);
+				clippedCodes.push(acode);
 
-	const bounds = new LatLngBounds(...latlngs);
-	const areaBounds = bounds.getNorthWest().distanceTo(bounds.getSouthWest()) * bounds.getNorthEast().distanceTo(bounds.getNorthWest());
-
-	// tests showed that below 1700 rounding errors are happening
-	if (areaBounds < 1700) {
-		// getting a inexact center, to move the latlngs near to [0, 0] to prevent rounding errors
-		centroidLatLng = centroid(latlngs);
-	}
-
-	const len = latlngs.length;
-	const points: Point[] = [];
-
-	for (i = 0; i < len; i++) {
-		const latlng = latlngs[i];
-
-		points.push(
-			crs.project(
-				new LatLng(
-					latlng.lat - centroidLatLng.lat,
-					latlng.lng - centroidLatLng.lng,
-				),
-			),
-		);
-	}
-
-	for (i = 0, halfDist = 0; i < len - 1; i++) {
-		halfDist += points[i].distanceTo(points[i + 1]) / 2;
-	}
-
-	// The line is so small in the current view that all points are on the same pixel.
-	if (halfDist === 0) {
-		center = points[0];
-	} else {
-		for (i = 0, dist = 0; i < len - 1; i++) {
-			p1 = points[i];
-			p2 = points[i + 1];
-			segDist = p1.distanceTo(p2);
-			dist += segDist;
-
-			if (dist > halfDist) {
-				ratio = (dist - halfDist) / segDist;
-				center = new Point(
-					p2.x - ratio * (p2.x - p1.x),
-					p2.y - ratio * (p2.y - p1.y)
-				);
-				break;
+			// else if b is inside the clip window (a->b enters the screen)
+			} else if (!(bcode & edge)) {
+				const p = _getEdgeIntersection(b, a, edge, bounds, round);
+				clippedPoints.push(p);
+				clippedCodes.push(_getBitCode(p, bounds));
 			}
 		}
+
+		points = clippedPoints;
+		codes = clippedCodes;
 	}
 
-	const latlngCenter = crs.unproject(center!); // TODO: null safety
-
-	return new LatLng(
-		latlngCenter.lat + centroidLatLng.lat,
-		latlngCenter.lng + centroidLatLng.lng,
-	);
+	// Safely cast away readonly because the variable will definitely be pointing to
+	// the last 'clipped' point array we allocated from inside this function, NOT the
+	// original passed array which we are basically promising not to mutate
+	return points as Point[];
 }

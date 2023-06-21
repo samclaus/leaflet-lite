@@ -1,5 +1,6 @@
 import { LatLng } from '../../geog';
-import { Bounds, LineUtil, Point, PolyUtil } from '../../geom';
+import { GeogUtil } from '../../geog/util';
+import { Bounds, GeomUtil, Point } from '../../geom';
 import { Polyline, type PolylineOptions } from './Polyline.js';
 
 /**
@@ -61,14 +62,14 @@ export class Polygon extends Polyline {
 	// Returns the center ([centroid](http://en.wikipedia.org/wiki/Centroid)) of the Polygon.
 	getCenter(): LatLng {
 		// TODO: null safety
-		return PolyUtil.polygonCenter(this._defaultShape(), this._map!.options.crs);
+		return GeogUtil.polygonCenter(this._defaultShape(), this._map!.options.crs);
 	}
 
 	_setLatLngs(latlngs: LatLng[] | LatLng[][]): void {
 		Polyline.prototype._setLatLngs.call(this, latlngs);
 		latlngs = this._latlngs; // in case the Polyline method modified the coordinates
 
-		if (LineUtil.isFlat(latlngs)) {
+		if (GeogUtil.isFlat(latlngs)) {
 			// Remove the last point if it equals the first
 			if (latlngs.length >= 2 && latlngs[0].equals(latlngs[latlngs.length - 1])) {
 				latlngs.pop();
@@ -82,7 +83,7 @@ export class Polygon extends Polyline {
 		// This class has even deeper nested coordinate arrays so that it can represent
 		// multiple polygons, each potentially having nested holes
 		const latlngs = this._latlngs as LatLng[][] | LatLng[][][]
-		return LineUtil.isFlat(latlngs[0]) ? latlngs[0] : latlngs[0][0];
+		return GeogUtil.isFlat(latlngs[0]) ? latlngs[0] : latlngs[0][0];
 	}
 
 	_clipPoints(): void {
@@ -108,7 +109,7 @@ export class Polygon extends Polyline {
 		}
 
 		for (let i = 0, len = this._rings.length, clipped; i < len; i++) {
-			clipped = PolyUtil.clipPolygon(this._rings[i], bounds, true);
+			clipped = GeomUtil.clipPolygon(this._rings[i], bounds, true);
 			if (clipped.length) {
 				this._parts.push(clipped);
 			}
