@@ -59,6 +59,11 @@ export interface PathOptions extends LayerOptions {
 	// When `true`, a mouse event on this path will trigger the same event on the map
 	// (unless [`L.DomEvent.stopPropagation`](#domevent-stoppropagation) is used).
 	bubblingMouseEvents: boolean;
+
+	/**
+	 * Custom class name set on an element. Only for SVG renderer.
+	 */
+	className: string | undefined;
 }
 
 /** @deprecated TODO: figure out better way to manage render order for Canvas */
@@ -84,6 +89,7 @@ export const DEFAULT_PATH_OPTIONS: Readonly<PathOptions> = {
 	fillRule: 'evenodd',
 	interactive: true,
 	bubblingMouseEvents: true,
+	className: undefined,
 };
 
 /**
@@ -179,7 +185,7 @@ export abstract class Path extends Layer {
 	_clickTolerance(): number {
 		// used when doing hit detection for Canvas layers
 		return (this.options.stroke ? this.options.weight / 2 : 0) +
-		  ((this._renderer!.options as any).tolerance || 0);
+		  (this._renderer!.options.tolerance || 0);
 	}
 
 }

@@ -124,20 +124,8 @@ export class Polyline extends Path {
 
 	// Returns the center ([centroid](https://en.wikipedia.org/wiki/Centroid)) of the polyline.
 	getCenter(): LatLng {
-		// throws error when not yet added to map as this center calculation requires projected coordinates
-		if (!this._map) {
-			throw new Error('Must add layer to map before using getCenter()');
-		}
-
-		// TODO: hopefully we can lift this decision up and simplify further
-		let latlngs = this._defaultShape();
-
-		if (!LineUtil.isFlat(latlngs)) {
-			console.warn('Polyline default shape latlngs are not flat! Only the first ring will be used');
-			latlngs = latlngs[0];
-		}
-
-		return LineUtil.polylineCenter(latlngs, this._map.options.crs);
+		// TODO: null safety
+		return LineUtil.polylineCenter(this._defaultShape(), this._map!.options.crs);
 	}
 
 	// Adds a given point to the polyline. By default, adds to the first ring of

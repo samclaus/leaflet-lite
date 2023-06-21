@@ -83,9 +83,6 @@ export class SVG extends Renderer {
 	_initPath(layer: Path): void {
 		const path = layer._path = create('path');
 
-		// @namespace Path
-		// @option className: String = null
-		// Custom class name set on an element. Only for SVG renderer.
 		if (layer.options.className) {
 			path.classList.add(...Util.splitWords(layer.options.className));
 		}
@@ -116,7 +113,8 @@ export class SVG extends Renderer {
 	}
 
 	_updateStyle(layer: Path): void {
-		const path = layer._path,
+		const
+			path = layer._path,
 		    options = layer.options;
 
 		if (!path) { return; }

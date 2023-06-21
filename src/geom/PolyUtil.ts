@@ -78,7 +78,10 @@ export function polygonCenter(latlngs: readonly LatLng[], crs: CRS) {
 	let centroidLatLng = new LatLng(0, 0);
 
 	const bounds = new LatLngBounds(...latlngs);
-	const areaBounds = bounds.getNorthWest().distanceTo(bounds.getSouthWest()) * bounds.getNorthEast().distanceTo(bounds.getNorthWest());
+	const areaBounds = (
+		bounds.getNorthWest().distanceTo(bounds.getSouthWest()) *
+		bounds.getNorthEast().distanceTo(bounds.getNorthWest())
+	);
 	
 	// tests showed that below 1700 rounding errors are happening
 	if (areaBounds < 1700) {

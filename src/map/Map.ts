@@ -150,7 +150,6 @@ export class Map extends Evented {
 	_layersMaxZoom: number | undefined;
 	_layersMinZoom: number | undefined;
 	_container: HTMLElement;
-	_containerId: number;
 	_proxy: HTMLElement | undefined; // animation proxy element
 	_size: Point | undefined;
 	_sizeChanged = true;
@@ -191,8 +190,7 @@ export class Map extends Evented {
 		options = Util.setOptions(this, options);
 
 		this._container = container;
-		this._containerId = Util.stamp(container);
-		this._targets[this._containerId] = this;
+		this._targets[Util.stamp(container)] = this;
 
 		DomEvent.on(container, 'scroll', this._onScroll, this);
 	
@@ -801,10 +799,8 @@ export class Map extends Evented {
 			this.off('moveend', this._onMoveEnd);
 		}
 
-		if (this.options.maxBounds) { this.off('moveend', this._panInsideMaxBounds); }
-
-		if (this._containerId !== this._container._leaflet_id) {
-			throw new Error('Map container is being reused by another instance');
+		if (this.options.maxBounds) {
+			this.off('moveend', this._panInsideMaxBounds);
 		}
 
 		try {
@@ -1627,10 +1623,15 @@ export class Map extends Evented {
 
 	// Methods pertaining to layers
 
-	// Adds the given layer to the map
+	/**
+	 * Adds the given layer to the map IF it is not already added (so
+	 * this is always safe to call).
+	 */
 	addLayer(layer: Layer): Map {
 		const id = Util.stamp(layer);
-		if (this._layers[id]) { return this; }
+
+		if (id in this._layers) { return this; }
+
 		this._layers[id] = layer;
 
 		layer._mapToAdd = this;
@@ -1740,15 +1741,19 @@ export class Map extends Evented {
 		// @namespace Path; @option renderer: Renderer
 		// Use this specific instance of `Renderer` for this path. Takes
 		// precedence over the map's [default renderer](#map-renderer).
-		let renderer = layer.options.renderer || this._getPaneRenderer(layer.options.pane) || this.options.renderer || this._renderer;
+		let renderer = (
+			layer.options.renderer ||
+			this._getPaneRenderer(layer.options.pane) ||
+			this.options.renderer ||
+			this._renderer
+		);
 
 		if (!renderer) {
 			renderer = this._renderer = this._createRenderer();
 		}
 
-		if (!this.hasLayer(renderer)) {
-			this.addLayer(renderer);
-		}
+		this.addLayer(renderer);
+
 		return renderer;
 	}
 

@@ -7,11 +7,14 @@ import type { LayerGroup } from './LayerGroup.js';
 import { Tooltip } from './Tooltip.js';
 
 export interface LayerOptions {
-	// @option pane: String = 'overlayPane'
-	// By default the layer will be added to the map's [overlay pane](#map-overlaypane). Overriding this option will cause the layer to be placed on another pane by default.
+	/**
+	 * By default the layer will be added to the map's [overlay pane](#map-overlaypane).
+	 * Overriding this option will cause the layer to be placed on another pane by default.
+	 */
 	pane: string;
-
-	// TODO: document
+	/**
+	 * TODO: document this.
+	 */
 	bubblingMouseEvents: boolean;
 }
 
@@ -41,8 +44,7 @@ export const DEFAULT_LAYER_OPTIONS: Readonly<LayerOptions> = {
  */
 export abstract class Layer extends Evented {
 
-	declare options: any;
-
+	options = DEFAULT_LAYER_OPTIONS;
 	_mapToAdd: Map | undefined;
 	_map: Map | undefined;
 	_zoomAnimated = false;

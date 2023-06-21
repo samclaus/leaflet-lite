@@ -60,11 +60,8 @@ export class Polygon extends Polyline {
 
 	// Returns the center ([centroid](http://en.wikipedia.org/wiki/Centroid)) of the Polygon.
 	getCenter(): LatLng {
-		// throws error when not yet added to map as this center calculation requires projected coordinates
-		if (!this._map) {
-			throw new Error('Must add layer to map before using getCenter()');
-		}
-		return PolyUtil.polygonCenter(this._defaultShape(), this._map.options.crs);
+		// TODO: null safety
+		return PolyUtil.polygonCenter(this._defaultShape(), this._map!.options.crs);
 	}
 
 	_setLatLngs(latlngs: LatLng[] | LatLng[][]): void {
@@ -81,9 +78,11 @@ export class Polygon extends Polyline {
 		}
 	}
 
-	_defaultShape() {
-		// TODO: does this class use even deeper nested coordinate arrays than Polyline does??
-		return LineUtil.isFlat(this._latlngs[0]) ? this._latlngs[0] : this._latlngs[0][0];
+	_defaultShape(): LatLng[] {
+		// This class has even deeper nested coordinate arrays so that it can represent
+		// multiple polygons, each potentially having nested holes
+		const latlngs = this._latlngs as LatLng[][] | LatLng[][][]
+		return LineUtil.isFlat(latlngs[0]) ? latlngs[0] : latlngs[0][0];
 	}
 
 	_clipPoints(): void {

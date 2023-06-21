@@ -31,14 +31,15 @@ export class Locator extends Evented {
 	// modern browsers ([Chrome 50 and newer](https://sites.google.com/a/chromium.org/dev/Home/chromium-security/deprecating-powerful-features-on-insecure-origins))
 	// See `Locate options` for more details.
 	locate(options?: LocateOptions): this {
-		options = Object.assign<LocateOptions, LocateOptions | undefined>({
+		options = {
 			timeout: 10000,
 			watch: false,
 			// setView: false
 			// maxZoom: <Number>
 			// maximumAge: 0
 			// enableHighAccuracy: false
-		}, options);
+			...options,
+		};
 		
 		this._locateOptions = options;
 

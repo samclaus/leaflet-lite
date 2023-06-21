@@ -1,9 +1,17 @@
-import { BlanketOverlay, Layer } from '..';
+import { BlanketOverlay, Layer, type BlanketOverlayOptions } from '..';
 import { Util } from '../../core';
 import { Map } from '../../map';
 import { CircleMarker } from './CircleMarker.js';
 import { Path } from './Path.js';
 import { Polyline } from './Polyline.js';
+
+export interface RendererOptions extends BlanketOverlayOptions {
+	/**
+	 * How much to extend the click tolerance around a path/object on the map.
+	 * Only used by Canvas renderer.
+	 */
+	tolerance: number | undefined;
+}
 
 /**
  * Base class for vector renderer implementations (`SVG`, `Canvas`). Handles the
@@ -25,14 +33,14 @@ import { Polyline } from './Polyline.js';
  */
 export abstract class Renderer extends BlanketOverlay {
 
-	static MY_CONST = { foo: "bar" } as const;
+	declare options: RendererOptions;
 
 	_layers: { [leafletID: number]: Layer } = {};
 
-	constructor(options: any /* TODO */) {
+	constructor(options?: RendererOptions) {
 		super(options);
 
-		Util.setOptions(this, {...options, continuous: false});
+		Util.setOptions(this, { ...options, continuous: false });
 		Util.stamp(this);
 	}
 

@@ -3,7 +3,22 @@ import { DomEvent, DomUtil } from '../dom';
 import type { LatLng } from '../geog';
 import { Bounds, type Point } from '../geom';
 import type { Map } from '../map';
-import { Layer } from './Layer.js';
+import { Layer, type LayerOptions } from './Layer.js';
+
+export interface BlanketOverlayOptions extends LayerOptions {
+	/**
+	 * How much to extend the clip area around the map view (relative to its size)
+	 * e.g. 0.1 would be 10% of map view in each direction. 0.1 by default.
+	 */
+	padding: number;
+	/**
+	 * When `false`, the blanket will update its position only when the
+	 * map state settles (*after* a pan/zoom animation). When `true`,
+	 * it will update when the map state changes (*during* pan/zoom
+	 * animations). False by default.
+	 */
+	continuous: boolean;
+}
 
 /**
  * Represents an HTML element that covers ("blankets") the entire surface
@@ -17,28 +32,20 @@ import { Layer } from './Layer.js';
  */
 export abstract class BlanketOverlay extends Layer {
 
-	options = {
-		// @option padding: Number = 0.1
-		// How much to extend the clip area around the map view (relative to its size)
-		// e.g. 0.1 would be 10% of map view in each direction
-		padding: 0.1,
-
-		// @option continuous: Boolean = false
-		// When `false`, the blanket will update its position only when the
-		// map state settles (*after* a pan/zoom animation). When `true`,
-		// it will update when the map state changes (*during* pan/zoom
-		// animations)
-		continuous: false,
-	};
+	declare options: BlanketOverlayOptions;
 
 	_container!: HTMLElement | undefined;
 	_bounds: Bounds | undefined;
 	_center: LatLng | undefined;
 	_zoom: number | undefined;
 
-	constructor(options: any /* TODO */) {
+	constructor(options?: Partial<BlanketOverlayOptions>) {
 		super();
-		Util.setOptions(this, options);
+
+		Util.setOptions(this, options, {
+			padding: 0.1,
+			continuous: false,
+		});
 	}
 
 	/**

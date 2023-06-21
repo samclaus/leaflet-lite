@@ -1,7 +1,62 @@
 import { Browser, Util } from '../../core';
 import { DomEvent } from '../../dom';
 import type { Point } from '../../geom';
-import { GridLayer, type DoneFn } from './GridLayer.js';
+import { GridLayer, type DoneFn, type GridLayerOptions } from './GridLayer.js';
+
+export interface TileLayerOptions extends GridLayerOptions {
+	/**
+	 * Subdomains of the tile service. Can be passed in the form of one
+	 * string (where each letter is a subdomain name) or an array of
+	 * strings. 'abc' by default.
+	 */
+	subdomains: string | string[];
+	/**
+	 * If specified, URL to the tile image to show in place of the tile
+	 * that failed to load.
+	 */
+	errorTileUrl: string;
+	/**
+	 * The zoom number used in tile URLs will be offset with this value.
+	 * 0 by default.
+	 */
+	zoomOffset: number;
+	/**
+	 * If `true`, inverses Y axis numbering for tiles (turn this on for
+	 * [TMS](https://en.wikipedia.org/wiki/Tile_Map_Service) services).
+	 * False by default.
+	 */
+	tms: boolean;
+	/**
+	 * If set to true, the zoom number used in tile URLs will be reversed
+	 * (`maxZoom - zoom` instead of `zoom`). False by default.
+	 */
+	zoomReverse: boolean;
+	/**
+	 * If `true` and user is on a retina display, it will request four tiles
+	 * of half the specified size and a bigger zoom level in place of one to
+	 * utilize the high resolution. False by default.
+	 */
+	detectRetina: boolean;
+	/**
+	 * Whether the crossOrigin attribute will be added to the tiles. If a
+	 * string is provided, all tiles will have their crossOrigin attribute set
+	 * to the string provided. This is needed if you want to access tile pixel
+	 * data. Refer to
+	 * [CORS Settings](https://developer.mozilla.org/en-US/docs/Web/HTML/CORS_settings_attributes)
+	 * for possible values.
+	 */
+	crossOrigin: string | undefined;
+	/**
+	 * Whether the referrerPolicy attribute will be added to the tiles. If a
+	 * string is provided, all tiles will have their referrerPolicy attribute
+	 * set to the string provided. This may be needed if your map's rendering
+	 * context has a strict default but your tile provider expects a valid
+	 * referrer (e.g. to validate an API token). Refer to
+	 * [HTMLImageElement.referrerPolicy](https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/referrerPolicy)
+	 * for possible values.
+	 */
+	referrerPolicy: string | undefined;
+}
 
 /**
  * Used to load and display tile layers on the map. Note that most tile servers require attribution!
@@ -28,86 +83,51 @@ import { GridLayer, type DoneFn } from './GridLayer.js';
  */
 export class TileLayer extends GridLayer {
 
-	options = {
-		// @option minZoom: Number = 0
-		// The minimum zoom level down to which this layer will be displayed (inclusive).
-		minZoom: 0,
-
-		// @option maxZoom: Number = 18
-		// The maximum zoom level up to which this layer will be displayed (inclusive).
-		maxZoom: 18,
-
-		// @option subdomains: String|String[] = 'abc'
-		// Subdomains of the tile service. Can be passed in the form of one string (where each letter is a subdomain name) or an array of strings.
-		subdomains: 'abc',
-
-		// @option errorTileUrl: String = ''
-		// URL to the tile image to show in place of the tile that failed to load.
-		errorTileUrl: '',
-
-		// @option zoomOffset: Number = 0
-		// The zoom number used in tile URLs will be offset with this value.
-		zoomOffset: 0,
-
-		// @option tms: Boolean = false
-		// If `true`, inverses Y axis numbering for tiles (turn this on for [TMS](https://en.wikipedia.org/wiki/Tile_Map_Service) services).
-		tms: false,
-
-		// @option zoomReverse: Boolean = false
-		// If set to true, the zoom number used in tile URLs will be reversed (`maxZoom - zoom` instead of `zoom`)
-		zoomReverse: false,
-
-		// @option detectRetina: Boolean = false
-		// If `true` and user is on a retina display, it will request four tiles of half the specified size and a bigger zoom level in place of one to utilize the high resolution.
-		detectRetina: false,
-
-		// @option crossOrigin: Boolean|String = false
-		// Whether the crossOrigin attribute will be added to the tiles.
-		// If a String is provided, all tiles will have their crossOrigin attribute set to the String provided. This is needed if you want to access tile pixel data.
-		// Refer to [CORS Settings](https://developer.mozilla.org/en-US/docs/Web/HTML/CORS_settings_attributes) for valid String values.
-		crossOrigin: false,
-
-		// @option referrerPolicy: Boolean|String = false
-		// Whether the referrerPolicy attribute will be added to the tiles.
-		// If a String is provided, all tiles will have their referrerPolicy attribute set to the String provided.
-		// This may be needed if your map's rendering context has a strict default but your tile provider expects a valid referrer
-		// (e.g. to validate an API token).
-		// Refer to [HTMLImageElement.referrerPolicy](https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/referrerPolicy) for valid String values.
-		referrerPolicy: false
-	};
+	declare options: TileLayerOptions;
 
 	constructor(
 		public _url: string,
-		options?: any, // TODO: type for these
+		options?: Partial<TileLayerOptions>,
 	) {
 		super(options);
 
-		options = Util.setOptions(this, options);
+		const opts = Util.setOptions(this, options, {
+			minZoom: 0,
+			maxZoom: 18,
+			subdomains: 'abc',
+			errorTileUrl: '',
+			zoomOffset: 0,
+			tms: false,
+			zoomReverse: false,
+			detectRetina: false,
+			crossOrigin: undefined,
+			referrerPolicy: undefined,
+		}) as any; // TODO
 
 		// detecting retina displays, adjusting tileSize and zoom levels
-		if (options.detectRetina && Browser.retina && options.maxZoom > 0) {
+		if (opts.detectRetina && Browser.retina && opts.maxZoom > 0) {
 
-			options.tileSize = Math.floor(options.tileSize / 2);
+			opts.tileSize = Math.floor(opts.tileSize / 2);
 
-			if (!options.zoomReverse) {
-				options.zoomOffset++;
-				options.maxZoom = Math.max(options.minZoom, options.maxZoom - 1);
+			if (!opts.zoomReverse) {
+				opts.zoomOffset++;
+				opts.maxZoom = Math.max(opts.minZoom, opts.maxZoom - 1);
 			} else {
-				options.zoomOffset--;
-				options.minZoom = Math.min(options.maxZoom, options.minZoom + 1);
+				opts.zoomOffset--;
+				opts.minZoom = Math.min(opts.maxZoom, opts.minZoom + 1);
 			}
 
-			options.minZoom = Math.max(0, options.minZoom);
-		} else if (!options.zoomReverse) {
+			opts.minZoom = Math.max(0, opts.minZoom);
+		} else if (!opts.zoomReverse) {
 			// make sure maxZoom is gte minZoom
-			options.maxZoom = Math.max(options.minZoom, options.maxZoom);
+			opts.maxZoom = Math.max(opts.minZoom, opts.maxZoom);
 		} else {
 			// make sure minZoom is lte maxZoom
-			options.minZoom = Math.min(options.maxZoom, options.minZoom);
+			opts.minZoom = Math.min(opts.maxZoom, opts.minZoom);
 		}
 
-		if (typeof options.subdomains === 'string') {
-			options.subdomains = options.subdomains.split('');
+		if (typeof opts.subdomains === 'string') {
+			opts.subdomains = opts.subdomains.split('');
 		}
 
 		this.on('tileunload', this._onTileRemove);
@@ -139,7 +159,7 @@ export class TileLayer extends GridLayer {
 		DomEvent.on(tile, 'error', this._tileOnError.bind(this, done, tile));
 
 		if (this.options.crossOrigin || this.options.crossOrigin === '') {
-			tile.crossOrigin = this.options.crossOrigin === true ? '' : this.options.crossOrigin;
+			tile.crossOrigin = this.options.crossOrigin;
 		}
 
 		// for this new option we follow the documented behavior
@@ -203,7 +223,8 @@ export class TileLayer extends GridLayer {
 		const {maxZoom, zoomReverse, zoomOffset} = this.options;
 
 		if (zoomReverse) {
-			zoom = maxZoom - zoom;
+			// TODO: null safety
+			zoom = maxZoom! - zoom;
 		}
 
 		return zoom + zoomOffset;

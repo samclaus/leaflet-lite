@@ -4,34 +4,36 @@ import { LatLng } from '../geog';
 import { Point } from '../geom';
 import { Map } from '../map';
 import { FeatureGroup } from './FeatureGroup.js';
-import { Layer } from './Layer.js';
+import { Layer, type LayerOptions } from './Layer.js';
+
+export interface DivOverlayOptions extends LayerOptions {
+	/**
+	 * If true, the tooltip will listen to the mouse events.
+	 */
+	interactive: boolean;
+	/**
+	 * The offset of the overlay position. (0, 0) by default.
+	 */
+	offset: Point;
+	/**
+	 * A custom CSS class name to assign to the overlay.
+	 */
+	className: string | undefined;
+	/**
+	 * Sets the HTML content of the overlay while initializing.
+	 * If a function is passed the source layer will be passed
+	 * to the function. The function should return a string or
+	 * element to be used in the overlay. Empty string by default.
+	 */
+	content: string | HTMLElement | ((layer: Layer) => string | HTMLElement);
+}
 
 /**
  * Base model for L.Tooltip. Inherit from it for custom overlays like plugins.
  */
 export abstract class DivOverlay extends Layer {
 
-	options = {
-		// @option interactive: Boolean = false
-		// If true, the tooltip will listen to the mouse events.
-		interactive: false,
-
-		// The offset of the overlay position.
-		offset: new Point(0, 0),
-
-		// @option className: String = ''
-		// A custom CSS class name to assign to the overlay.
-		className: '',
-
-		// @option pane: String = undefined
-		// `Map pane` where the overlay will be added.
-		pane: undefined,
-
-		// @option content: String|HTMLElement|Function = ''
-		// Sets the HTML content of the overlay while initializing. If a function is passed the source layer will be
-		// passed to the function. The function should return a `String` or `HTMLElement` to be used in the overlay.
-		content: ''
-	};
+	declare options: DivOverlayOptions;
 
 	_latlng: LatLng | undefined;
 	_source: any; // TODO
@@ -45,11 +47,19 @@ export abstract class DivOverlay extends Layer {
 	constructor(latlngOrOptions: any, optionsOrSource: any) {
 		super();
 
+		const optionDefaults = {
+			interactive: false,
+			offset: new Point(0, 0),
+			className: '',
+			pane: undefined,
+			content: ''
+		};
+
 		if (latlngOrOptions instanceof LatLng) {
 			this._latlng = latlngOrOptions;
-			Util.setOptions(this, optionsOrSource);
+			Util.setOptions(this, optionsOrSource, optionDefaults);
 		} else {
-			Util.setOptions(this, latlngOrOptions);
+			Util.setOptions(this, latlngOrOptions, optionDefaults);
 			this._source = optionsOrSource;
 		}
 		if (this.options.content) {

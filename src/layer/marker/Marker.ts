@@ -200,7 +200,7 @@ export class Marker extends Layer {
 		const
 			options = this.options,
 		    classToAdd = `leaflet-zoom-${this._zoomAnimated ? 'animated' : 'hide'}`,
-			icon = options.icon.createIcon(this._icon);
+			icon = options.icon.createIcon(this._icon as any); // TODO: better types?
 
 		let addIcon = false;
 
@@ -223,7 +223,7 @@ export class Marker extends Layer {
 		icon.classList.add(classToAdd);
 
 		if (options.keyboard) {
-			icon.tabIndex = '0';
+			icon.tabIndex = 0;
 			icon.setAttribute('role', 'button');
 		}
 

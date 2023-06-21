@@ -1,8 +1,62 @@
 import { Browser, Util } from '../../core';
-import { EPSG4326 } from '../../geog/crs';
+import { EPSG4326, type CRS } from '../../geog/crs';
 import { Bounds, type Point } from '../../geom';
 import type { Map } from '../../map';
-import { TileLayer } from './TileLayer.js';
+import { TileLayer, type TileLayerOptions } from './TileLayer.js';
+
+export interface WMSParams {
+	/**
+	 * TODO: figure out what this is. 'WMS' by default.
+	 */
+	service: string;
+	/**
+	 * TODO: figure out what this is. 'GetMap' by default.
+	 */
+	request: string;
+	/**
+	 * Comma-separated list of WMS layers to show. REQUIRED.
+	 */
+	layers: string;
+	/**
+	 * Comma-separated list of WMS styles.
+	 */
+	styles: string;
+	/**
+	 * WMS image format (use 'image/png' for layers with transparency).
+	 * 'image/jpeg' by default.
+	 */
+	format: 'image/jpeg',
+	/**
+	 * If `true`, the WMS service will return images with transparency.
+	 */
+	transparent: boolean;
+	/**
+	 * Version of the WMS service to use. '1.1.1' by default.
+	 */
+	version: string;
+	/**
+	 * If any custom options not documented here are used, they will be sent to the
+	 * WMS server as extra parameters in each request URL. This can be useful for
+	 * [non-standard vendor WMS parameters](https://docs.geoserver.org/stable/en/user/services/wms/vendor.html).
+	 */
+	[param: string]: any;
+}
+
+export interface TileLayerWMSOptions extends TileLayerOptions {
+	/**
+	 * Coordinate Reference System to use for the WMS requests, defaults to
+	 * map CRS. Don't change this if you're not sure what it means.
+	 */
+	crs: CRS | undefined;
+	/**
+	 * If true, WMS request parameter keys will be uppercase. False by default.
+	 */
+	uppercase: boolean;
+	/**
+	 * Parameters to be used when communicating with the Web Map Service (WMS).
+	 */
+	wmsParams: WMSParams | undefined;
+}
 
 /**
  * Used to display [WMS](https://en.wikipedia.org/wiki/Web_Map_Service) services as
@@ -20,65 +74,34 @@ import { TileLayer } from './TileLayer.js';
  */
 export class TileLayerWMS extends TileLayer {
 
-	// @section
-	// @aka TileLayer.WMS options
-	// If any custom options not documented here are used, they will be sent to the
-	// WMS server as extra parameters in each request URL. This can be useful for
-	// [non-standard vendor WMS parameters](https://docs.geoserver.org/stable/en/user/services/wms/vendor.html).
-	defaultWmsParams = {
-		service: 'WMS',
-		request: 'GetMap',
+	declare options: TileLayerWMSOptions;
 
-		// @option layers: String = ''
-		// **(required)** Comma-separated list of WMS layers to show.
-		layers: '',
-
-		// @option styles: String = ''
-		// Comma-separated list of WMS styles.
-		styles: '',
-
-		// @option format: String = 'image/jpeg'
-		// WMS image format (use `'image/png'` for layers with transparency).
-		format: 'image/jpeg',
-
-		// @option transparent: Boolean = false
-		// If `true`, the WMS service will return images with transparency.
-		transparent: false,
-
-		// @option version: String = '1.1.1'
-		// Version of the WMS service to use
-		version: '1.1.1'
-	};
-
-	options = {
-		// @option crs: CRS = null
-		// Coordinate Reference System to use for the WMS requests, defaults to
-		// map CRS. Don't change this if you're not sure what it means.
-		crs: null,
-
-		// @option uppercase: Boolean = false
-		// If `true`, WMS request parameter keys will be uppercase.
-		uppercase: false
-	};
-
-	_crs: any; // TODO
-	wmsParams: any; // TODO
+	_crs!: CRS; // TODO
+	wmsParams: WMSParams; // TODO
 	_wmsVersion: any; // TODO
 
 	// TODO: type for the options
-	constructor(url: string, options?: any) {
+	constructor(
+		url: string,
+		options?: Partial<TileLayerWMSOptions>,
+	) {
 		super(url, options);
 
-		const wmsParams: any = { ...this.defaultWmsParams };
+		const wmsParams: WMSParams = {
+			service: 'WMS',
+			request: 'GetMap',
+			layers: '',
+			styles: '',
+			format: 'image/jpeg',
+			transparent: false,
+			version: '1.1.1',
+			...options?.wmsParams,
+		};
 
-		// all keys that are not TileLayer options go to WMS params
-		for (const i in options) {
-			if (!(i in this.options)) {
-				wmsParams[i] = options[i];
-			}
-		}
-
-		options = Util.setOptions(this, options);
+		options = Util.setOptions(this, options, {
+			crs: undefined,
+			uppercase: false,
+		});
 
 		const realRetina = options.detectRetina && Browser.retina ? 2 : 1;
 		const tileSize = this.getTileSize();
@@ -118,7 +141,7 @@ export class TileLayerWMS extends TileLayer {
 	}
 
 	// Merges an object with the new parameters and re-requests tiles on the current screen (unless `noRedraw` was set to true).
-	setParams(params: any /* TODO */, noRedraw?: boolean): this {
+	setParams(params: Partial<WMSParams>, noRedraw?: boolean): this {
 		Object.assign(this.wmsParams, params);
 
 		if (!noRedraw) {

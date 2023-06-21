@@ -1,10 +1,82 @@
-import { Layer } from '..';
+import { Layer, type LayerOptions } from '..';
 import { Browser, Util, type HandlerMap } from '../../core';
 import { DomUtil } from '../../dom';
 import { LatLng, LatLngBounds } from '../../geog';
 import { Bounds, Point } from '../../geom';
 import type { Map } from '../../map';
 
+export interface GridLayerOptions extends LayerOptions {
+	/**
+	 * Width/height of tiles in the grid. You may pass a simple number if width = height.
+	 */
+	tileSize: number | Point;
+	/**
+	 * Opacity of the tiles. Can be used in the `createTile()` function.
+	 */
+	opacity: number;
+	/**
+	 * Load new tiles only when panning ends. True by default on mobile browsers, in order
+	 * to avoid too many requests and keep smooth navigation. False otherwise in order to
+	 * display new tiles _during_ panning, since it is easy to pan outside the
+	 * [`keepBuffer`](#gridlayer-keepbuffer) option in desktop browsers.
+	 */
+	updateWhenIdle: boolean;
+	/**
+	 * By default, a smooth zoom animation (during a [touch zoom](#map-touchzoom) or a
+	 * [`flyTo()`](#map-flyto)) will update grid layers every integer zoom level. Setting
+	 * this option to false will update the grid layer only when the smooth animation ends.
+	 */
+	updateWhenZooming: boolean;
+	/**
+	 * Tiles will not update more than once every `updateInterval` milliseconds when panning.
+	 */
+	updateInterval: 200;
+	/**
+	 * The explicit zIndex of the tile layer. 1 by default.
+	 */
+	zIndex: number;
+	/** If set, tiles will only be loaded inside these bounds. */
+	bounds: LatLngBounds | undefined;
+	/**
+	 * The minimum zoom level down to which this layer will be displayed (inclusive).
+	 * 0 by default.
+	 */
+	minZoom: number;
+	/**
+	 * If set, the maximum zoom level up to which this layer will be displayed
+	 * (inclusive).
+	 */
+	maxZoom: number | undefined;
+	/**
+	 * Maximum zoom number the tile source has available. If it is specified,
+	 * the tiles on all zoom levels higher than `maxNativeZoom` will be loaded
+	 * from `maxNativeZoom` level and auto-scaled.
+	 */
+	maxNativeZoom: number | undefined;
+	/**
+	 * Minimum zoom number the tile source has available. If it is specified,
+	 * the tiles on all zoom levels lower than `minNativeZoom` will be loaded
+	 * from `minNativeZoom` level and auto-scaled.
+	 */
+	minNativeZoom: number | undefined;
+	/**
+	 * Whether the layer is wrapped around the antimeridian. If `true`, the
+	 * GridLayer will only be displayed once at low zoom levels. Has no
+	 * effect when the [map CRS](#map-crs) doesn't wrap around. Can be used
+	 * in combination with [`bounds`](#gridlayer-bounds) to prevent requesting
+	 * tiles outside the CRS limits. False by default.
+	 */
+	noWrap: boolean;
+	/** Map pane where the grid layer will be added. 'tilePane' by default. */
+	pane: string;
+	/** A custom class name to assign to the tile layer. Empty by default. */
+	className: string;
+	/**
+	 * When panning the map, keep this many rows and columns of tiles before unloading
+	 * them. 2 by default.
+	 */
+	keepBuffer: 2;
+}
 
 /** @deprecated TODO: figure out the types for the various 'done' callback parameters throughout codebase */
 export type DoneFn = any;
@@ -79,90 +151,17 @@ export interface LevelModel {
  */
 export abstract class GridLayer extends Layer {
 
-	// @section
-	// @aka GridLayer options
-	options = {
-		// @option tileSize: Number|Point = 256
-		// Width and height of tiles in the grid. Use a number if width and height are equal, or `L.point(width, height)` otherwise.
-		tileSize: 256,
-
-		// @option opacity: Number = 1.0
-		// Opacity of the tiles. Can be used in the `createTile()` function.
-		opacity: 1,
-
-		// @option updateWhenIdle: Boolean = (depends)
-		// Load new tiles only when panning ends.
-		// `true` by default on mobile browsers, in order to avoid too many requests and keep smooth navigation.
-		// `false` otherwise in order to display new tiles _during_ panning, since it is easy to pan outside the
-		// [`keepBuffer`](#gridlayer-keepbuffer) option in desktop browsers.
-		updateWhenIdle: Browser.mobile,
-
-		// @option updateWhenZooming: Boolean = true
-		// By default, a smooth zoom animation (during a [touch zoom](#map-touchzoom) or a [`flyTo()`](#map-flyto)) will update grid layers every integer zoom level. Setting this option to `false` will update the grid layer only when the smooth animation ends.
-		updateWhenZooming: true,
-
-		// @option updateInterval: Number = 200
-		// Tiles will not update more than once every `updateInterval` milliseconds when panning.
-		updateInterval: 200,
-
-		// @option zIndex: Number = 1
-		// The explicit zIndex of the tile layer.
-		zIndex: 1,
-
-		// @option bounds: LatLngBounds = undefined
-		// If set, tiles will only be loaded inside the set `LatLngBounds`.
-		bounds: null,
-
-		// @option minZoom: Number = 0
-		// The minimum zoom level down to which this layer will be displayed (inclusive).
-		minZoom: 0,
-
-		// @option maxZoom: Number = undefined
-		// The maximum zoom level up to which this layer will be displayed (inclusive).
-		maxZoom: undefined,
-
-		// @option maxNativeZoom: Number = undefined
-		// Maximum zoom number the tile source has available. If it is specified,
-		// the tiles on all zoom levels higher than `maxNativeZoom` will be loaded
-		// from `maxNativeZoom` level and auto-scaled.
-		maxNativeZoom: undefined,
-
-		// @option minNativeZoom: Number = undefined
-		// Minimum zoom number the tile source has available. If it is specified,
-		// the tiles on all zoom levels lower than `minNativeZoom` will be loaded
-		// from `minNativeZoom` level and auto-scaled.
-		minNativeZoom: undefined,
-
-		// @option noWrap: Boolean = false
-		// Whether the layer is wrapped around the antimeridian. If `true`, the
-		// GridLayer will only be displayed once at low zoom levels. Has no
-		// effect when the [map CRS](#map-crs) doesn't wrap around. Can be used
-		// in combination with [`bounds`](#gridlayer-bounds) to prevent requesting
-		// tiles outside the CRS limits.
-		noWrap: false,
-
-		// @option pane: String = 'tilePane'
-		// `Map pane` where the grid layer will be added.
-		pane: 'tilePane',
-
-		// @option className: String = ''
-		// A custom class name to assign to the tile layer. Empty by default.
-		className: '',
-
-		// @option keepBuffer: Number = 2
-		// When panning the map, keep this many rows and columns of tiles before unloading them.
-		keepBuffer: 2
-	};
+	declare options: GridLayerOptions;
 
 	/** DOM element that contains the tiles for this layer. */
 	_container: HTMLElement | undefined;
 	_tileZoom: number | undefined;
 	_levels: Dict<LevelModel> = {};
 	_tiles: Dict<TileModel> = {};
-	_onOpaqueTile = Util.falseFn;
-	_onUpdateLevel = Util.falseFn;
-	_onRemoveLevel = Util.falseFn;
-	_onCreateLevel = Util.falseFn;
+	_onOpaqueTile: (tile: TileModel) => void = Util.falseFn;
+	_onUpdateLevel: (levelID: number) => void = Util.falseFn;
+	_onRemoveLevel: (levelID: number) => void = Util.falseFn;
+	_onCreateLevel: (level: LevelModel) => void = Util.falseFn;
 	_noPrune = false;
 	_loading = false;
 	_onMove: (() => void) | undefined;
@@ -172,9 +171,26 @@ export abstract class GridLayer extends Layer {
 	_wrapX: any; // TODO
 	_wrapY: any; // TODO
 
-	constructor(options: any /* TODO */) {
+	constructor(options?: Partial<GridLayerOptions>) {
 		super();
-		Util.setOptions(this, options);
+
+		Util.setOptions(this, options, {
+			tileSize: 256,
+			opacity: 1,
+			updateWhenIdle: Browser.mobile,
+			updateWhenZooming: true,
+			updateInterval: 200,
+			zIndex: 1,
+			bounds: undefined,
+			minZoom: 0,
+			maxZoom: undefined,
+			maxNativeZoom: undefined,
+			minNativeZoom: undefined,
+			noWrap: false,
+			pane: 'tilePane',
+			className: '',
+			keepBuffer: 2
+		});
 	}
 
 	// Returns the `HTMLElement` corresponding to the given `coords`. If the `done` callback
@@ -375,11 +391,12 @@ export abstract class GridLayer extends Layer {
 
 		if (zoom === undefined) { return undefined; }
 
-		for (let [z, level] of Object.entries(this._levels)) {
-			z = Number(z);
+		for (let [_z, level] of Object.entries(this._levels)) {
+			const z = Number(_z);
 	
 			if (level.el.children.length || z === zoom) {
-				level.el.style.zIndex = maxZoom - Math.abs(zoom - z);
+				// TODO: null safety for maxZoom
+				level.el.style.zIndex = (maxZoom! - Math.abs(zoom - z)) as any; // automatically coerced to string
 				this._onUpdateLevel(z);
 			} else {
 				level.el.remove();
@@ -404,7 +421,7 @@ export abstract class GridLayer extends Layer {
 			this._setZoomTransform(level, map.getCenter(), map._zoom);
 
 			// force reading offsetWidth so the browser considers the newly added element for transition
-			Util.falseFn(level.el.offsetWidth);
+			(Util.falseFn as any)(level.el.offsetWidth);
 
 			this._onCreateLevel(level);
 		}
@@ -732,7 +749,9 @@ export abstract class GridLayer extends Layer {
 
 		// don't load tile if it doesn't intersect the bounds in options
 		const tileBounds = this._tileCoordsToBounds(coords);
-		return latLngBounds(this.options.bounds).overlaps(tileBounds);
+
+		// TODO: fix types and remove type assertion
+		return (this.options.bounds as LatLngBounds).overlaps(tileBounds);
 	}
 
 	_keyToBounds(key: string): LatLngBounds {
@@ -803,7 +822,7 @@ export abstract class GridLayer extends Layer {
 		tile.onmousemove = Util.falseFn;
 	}
 
-	_addTile(coords: Point, container: HTMLElement): void {
+	_addTile(coords: Point, container: Node): void {
 		const
 			tilePos = this._getTilePos(coords),
 		    key = this._tileCoordsToKey(coords),

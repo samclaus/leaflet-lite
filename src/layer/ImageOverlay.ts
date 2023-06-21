@@ -4,6 +4,49 @@ import type { LatLng, LatLngBounds } from '../geog';
 import { Bounds } from '../geom';
 import { Layer } from './Layer.js';
 
+export interface ImageOverlayOptions {
+	/**
+	 * Opacity of the image overlay in range [0, 1]. 1 (fully opaque) by default.
+	 */
+	opacity: number;
+	/**
+	 * Text for the `alt` attribute of the image (useful for accessibility).
+	 */
+	alt: string;
+	/**
+	 * If `true`, the image overlay will emit [mouse events](#interactive-layer)
+	 * when clicked or hovered.
+	 */
+	interactive: boolean;
+	/**
+	 * Whether the crossOrigin attribute will be added to the image. If a string is
+	 * provided, the image will have its crossOrigin attribute set to the string
+	 * provided. This is needed if you want to access image pixel data. Refer to
+	 * [CORS Settings](https://developer.mozilla.org/en-US/docs/Web/HTML/CORS_settings_attributes)
+	 * for possible values.
+	 */
+	crossOrigin: string | undefined;
+
+	// @option errorOverlayUrl: String = ''
+	// URL to the overlay image to show in place of the overlay that failed to load.
+	errorOverlayUrl: '',
+
+	// @option zIndex: Number = 1
+	// The explicit [zIndex](https://developer.mozilla.org/docs/Web/CSS/CSS_Positioning/Understanding_z_index) of the overlay layer.
+	zIndex: 1,
+
+	// @option className: String = ''
+	// A custom class name to assign to the image. Empty by default.
+	className: '',
+
+	// @option decoding: String = 'auto'
+	// Tells the browser whether to decode the image in a synchronous fashion,
+	// as per the [`decoding` HTML attribute](https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/decoding).
+	// If the image overlay is flickering when being added/removed, set
+	// this option to `'sync'`.
+	decoding: 'auto'
+}
+
 /**
  * Used to load and display a single image over specific bounds of the map. Extends `Layer`.
  *

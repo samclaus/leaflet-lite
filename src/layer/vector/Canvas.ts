@@ -34,12 +34,6 @@ import { Renderer } from './Renderer.js';
  */
 export class Canvas extends Renderer {
 
-	options = {
-		// @option tolerance: Number = 0
-		// How much to extend the click tolerance around a path/object on the map.
-		tolerance: 0
-	};
-
 	declare _container: HTMLCanvasElement | undefined;
 
 	_ctxScale = window.devicePixelRatio;
