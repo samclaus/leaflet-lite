@@ -162,6 +162,7 @@ export class Point {
 	distanceTo(point: Point): number {
 		const dx = point.x - this.x;
 		const dy = point.y - this.y;
+
 		return Math.sqrt(dx*dx + dy*dy);
 	}
 

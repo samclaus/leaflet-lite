@@ -1,6 +1,6 @@
 import { LatLng, LatLngBounds } from '..';
 import { Point } from '../../geom';
-import type { CRS } from '../crs';
+import { Earth, type CRS } from '../crs';
 
 /**************************************************************************
  * This file contains utilities for manipulating geographic *primitives*. *
@@ -54,7 +54,10 @@ export function polylineCenter(latlngs: readonly LatLng[], crs: CRS): LatLng {
 	let centroidLatLng = new LatLng(0, 0);
 
 	const bounds = new LatLngBounds(...latlngs);
-	const areaBounds = bounds.getNorthWest().distanceTo(bounds.getSouthWest()) * bounds.getNorthEast().distanceTo(bounds.getNorthWest());
+	const areaBounds = (
+		Earth.distance(bounds.getNorthWest(), bounds.getSouthWest()) *
+		Earth.distance(bounds.getNorthEast(), bounds.getNorthWest())
+	);
 
 	// tests showed that below 1700 rounding errors are happening
 	if (areaBounds < 1700) {
@@ -126,8 +129,8 @@ export function polygonCenter(latlngs: readonly LatLng[], crs: CRS): LatLng {
 
 	const bounds = new LatLngBounds(...latlngs);
 	const areaBounds = (
-		bounds.getNorthWest().distanceTo(bounds.getSouthWest()) *
-		bounds.getNorthEast().distanceTo(bounds.getNorthWest())
+		Earth.distance(bounds.getNorthWest(), bounds.getSouthWest()) *
+		Earth.distance(bounds.getNorthEast(), bounds.getNorthWest())
 	);
 	
 	// tests showed that below 1700 rounding errors are happening

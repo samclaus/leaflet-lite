@@ -1,5 +1,4 @@
 import { Util } from '../core';
-import { Earth } from './crs';
 import { LatLngBounds } from './LatLngBounds.js';
 
 /**
@@ -21,16 +20,6 @@ export class LatLng {
 			Math.abs(this.lng - other.lng),
 		);
 		return margin <= maxMargin;
-	}
-
-	// Returns the distance (in meters) to the given `LatLng` calculated using the [Spherical Law of Cosines](https://en.wikipedia.org/wiki/Spherical_law_of_cosines).
-	distanceTo(other: LatLng): number {
-		return Earth.distance(this, other);
-	}
-
-	// Returns a new `LatLng` object with the longitude wrapped so it's always between -180 and +180 degrees.
-	wrap(): LatLng {
-		return Earth.wrapLatLng(this);
 	}
 
 	// Returns a new `LatLngBounds` object in which each boundary is `sizeInMeters/2` meters apart from the `LatLng`.
