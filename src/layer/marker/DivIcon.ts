@@ -1,5 +1,18 @@
+import { Util } from '../../core';
 import { Point } from '../../geom';
-import { Icon } from './Icon.js';
+import { Icon, type IconOptions } from './Icon.js';
+
+export interface DivIconOptions extends IconOptions {
+	/**
+	 * Custom HTML code to put inside the div element, empty by default.
+	 * Alternatively, an instance of `HTMLElement`.
+	 */
+	html: string | HTMLElement;
+	/**
+	 * Optional relative position of the background, in pixels.
+	 */
+	bgPos: Point | undefined;
+}
 
 /**
  * Represents a lightweight icon for markers that uses a simple `<div>`
@@ -16,25 +29,24 @@ import { Icon } from './Icon.js';
  */
 export class DivIcon extends Icon {
 
-	options = {
-		// @section
-		// @aka DivIcon options
-		iconSize: [12, 12], // also can be set through CSS
+	declare options: DivIconOptions;
 
-		// iconAnchor: (Point),
+	constructor(options: DivIconOptions) {
+		super(options);
 
-		// @option html: String|HTMLElement = ''
-		// Custom HTML code to put inside the div element, empty by default. Alternatively,
-		// an instance of `HTMLElement`.
-		html: '',
+		Util.setOptions(this, options, {
+			iconSize: new Point(12, 12), // also can be set through CSS
+			html: '',
+			bgPos: new Point(0, 0),
+			className: 'leaflet-div-icon',
+		});
+	}
 
-		// Optional relative position of the background, in pixels
-		bgPos: new Point(0, 0),
-
-		className: 'leaflet-div-icon',
-	};
-
-	createIcon(el: HTMLElement = document.createElement('div')): HTMLElement {
+	// TODO: types are not compatible because Icon parent class expects HTMLImageElement
+	// everywhere--honestly I kinda feel like this should be the generic icon class which
+	// doesn't really care about the element type, and this should be inherited by an
+	// img-based icon class.
+	createIcon(el: any = document.createElement('div')): any {
 		const {html, bgPos} = this.options;
 
 		if (html instanceof Element) {

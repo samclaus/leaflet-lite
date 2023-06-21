@@ -42,9 +42,9 @@ export abstract class DivOverlay extends Layer {
 	_contentNode: HTMLElement | undefined;
 	_removeTimeout: number | undefined;
 
-	constructor(latlng: LatLng, options?: any /* TODO */)
-	constructor(options: any /* TODO */, source: any /* TODO */)
-	constructor(latlngOrOptions: any, optionsOrSource: any) {
+	constructor(latlng?: LatLng, options?: Partial<DivOverlayOptions>)
+	constructor(options?: Partial<DivOverlayOptions>, source?: any /* TODO */)
+	constructor(latlngOrOptions?: LatLng | Partial<DivOverlayOptions>, optionsOrSource?: any /* TODO */) {
 		super();
 
 		const optionDefaults = {

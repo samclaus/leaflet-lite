@@ -179,7 +179,7 @@ export class Map extends Evented {
 	/** @deprecated This seems to be just looked up from options at the necessary times, but keeping it in sync is risky compared with just reading from options every time. Of course that will incur performance penalty--need to disallow changing options at arbitrary times */
 	_fadeAnimated = false;
 
-	_renderer: any;
+	_renderer: Renderer | undefined;
 
 	constructor(
 		container: HTMLElement,
@@ -1688,7 +1688,9 @@ export class Map extends Evented {
 	}
 
 	_addZoomLimit(layer: Layer): void {
-		if (!isNaN(layer.options.maxZoom) || !isNaN(layer.options.minZoom)) {
+		// NOTE: isNaN() returns `true` if passed `undefined`, so it is safe to
+		// use non-null assertions for min/maxZoom here
+		if (!isNaN(layer.options.maxZoom!) || !isNaN(layer.options.minZoom!)) {
 			this._zoomBoundLayers[Util.stamp(layer)] = layer;
 			this._updateZoomLevels();
 		}
@@ -1738,28 +1740,24 @@ export class Map extends Evented {
 	// `Path`. It will ensure that the `renderer` options of the map and paths
 	// are respected, and that the renderers do exist on the map.
 	getRenderer(layer: Path): Renderer {
-		// @namespace Path; @option renderer: Renderer
-		// Use this specific instance of `Renderer` for this path. Takes
-		// precedence over the map's [default renderer](#map-renderer).
-		let renderer = (
+		const renderer: Renderer = (
 			layer.options.renderer ||
 			this._getPaneRenderer(layer.options.pane) ||
 			this.options.renderer ||
-			this._renderer
-		);
 
-		if (!renderer) {
-			renderer = this._renderer = this._createRenderer();
-		}
+			// Last choice: use the map's main/default renderer, creating it first
+			// if necessary
+			(this._renderer ||= this._createRenderer())
+		);
 
 		this.addLayer(renderer);
 
 		return renderer;
 	}
 
-	_getPaneRenderer(name: string) {
+	_getPaneRenderer(name: string): Renderer | undefined {
 		if (name === 'overlayPane' || name === undefined) {
-			return false;
+			return undefined;
 		}
 
 		// Fancy one-liner to 'create if not exists' and then return it

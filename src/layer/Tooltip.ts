@@ -1,8 +1,31 @@
 import { Util, type HandlerMap } from '../core';
 import { DomUtil } from '../dom';
+import { LatLng } from '../geog';
 import { Point } from '../geom';
 import type { Map } from '../map';
-import { DivOverlay } from './DivOverlay.js';
+import { DivOverlay, type DivOverlayOptions } from './DivOverlay.js';
+
+export interface TooltipOptions extends DivOverlayOptions {
+	/**
+	 * Direction where to open the tooltip. Possible values are: `right`, `left`,
+	 * `top`, `bottom`, `center`, and `auto`. `auto` (the default) will dynamically
+	 * switch between `right` and `left` according to the tooltip position on the map.
+	 */
+	direction: 'right' | 'left' | 'top' | 'bottom' | 'center' | 'auto';
+	/**
+	 * Whether to open the tooltip permanently or only on mouseover. False by default.
+	 */
+	permanent: boolean;
+	/**
+	 * If true, the tooltip will follow the mouse instead of being fixed at the feature
+	 * center. False by default.
+	 */
+	sticky: boolean;
+	/**
+	 * Tooltip container opacity, in range [0, 1]. 0.9 by default.
+	 */
+	opacity: number;
+}
 
 /**
  * Used to display small texts on top of map layers.
@@ -39,34 +62,26 @@ import { DivOverlay } from './DivOverlay.js';
  */
 export class Tooltip extends DivOverlay {
 
-	options = {
-		// @option pane: String = 'tooltipPane'
-		// `Map pane` where the tooltip will be added.
-		pane: 'tooltipPane',
+	declare options: TooltipOptions;
 
-		// @option offset: Point = Point(0, 0)
-		// Optional offset of the tooltip position.
-		offset: new Point(0, 0),
+	constructor(latlng?: LatLng, options?: Partial<DivOverlayOptions>)
+	constructor(options?: Partial<DivOverlayOptions>, source?: any /* TODO */)
+	constructor(latlngOrOptions?: LatLng | Partial<DivOverlayOptions>, optionsOrSource?: any /* TODO */) {
+		super(latlngOrOptions as any, optionsOrSource);
 
-		// @option direction: String = 'auto'
-		// Direction where to open the tooltip. Possible values are: `right`, `left`,
-		// `top`, `bottom`, `center`, `auto`.
-		// `auto` will dynamically switch between `right` and `left` according to the tooltip
-		// position on the map.
-		direction: 'auto',
-
-		// @option permanent: Boolean = false
-		// Whether to open the tooltip permanently or only on mouseover.
-		permanent: false,
-
-		// @option sticky: Boolean = false
-		// If true, the tooltip will follow the mouse instead of being fixed at the feature center.
-		sticky: false,
-
-		// @option opacity: Number = 0.9
-		// Tooltip container opacity.
-		opacity: 0.9
-	};
+		Util.setOptions(
+			this,
+			(!(latlngOrOptions instanceof LatLng) && latlngOrOptions) || optionsOrSource,
+			{
+				pane: 'tooltipPane',
+				offset: new Point(0, 0),
+				direction: 'auto',
+				permanent: false,
+				sticky: false,
+				opacity: 0.9
+			},
+		);
+	}
 
 	onAdd(map: Map): this {
 		DivOverlay.prototype.onAdd.call(this, map);

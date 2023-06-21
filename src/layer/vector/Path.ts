@@ -64,6 +64,11 @@ export interface PathOptions extends LayerOptions {
 	 * Custom class name set on an element. Only for SVG renderer.
 	 */
 	className: string | undefined;
+	/**
+	 * Use this specific instance of `Renderer` for this path. Takes
+	 * precedence over the map's [default renderer](#map-renderer).
+	 */
+	renderer: Renderer | undefined;
 }
 
 /** @deprecated TODO: figure out better way to manage render order for Canvas */
@@ -90,6 +95,7 @@ export const DEFAULT_PATH_OPTIONS: Readonly<PathOptions> = {
 	interactive: true,
 	bubblingMouseEvents: true,
 	className: undefined,
+	renderer: undefined,
 };
 
 /**

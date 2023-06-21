@@ -1,6 +1,35 @@
 import { Util } from '../core';
 import { DomUtil } from '../dom';
-import { ImageOverlay } from './ImageOverlay.js';
+import { ImageOverlay, type ImageOverlayOptions } from './ImageOverlay.js';
+
+export interface VideoOverlayOptions extends ImageOverlayOptions {
+	/**
+	 * Whether the video starts playing automatically when loaded.
+	 * On some browsers autoplay will only work with `muted: true`.
+	 * True by default.
+	 */
+	autoplay: boolean;
+	/**
+	 * Whether the video will loop back to the beginning when played.
+	 * True by default.
+	 */
+	loop: boolean;
+	/**
+	 * Whether the video will save aspect ratio after the projection.
+	 * Relevant for supported browsers. See [browser compatibility](https://developer.mozilla.org/en-US/docs/Web/CSS/object-fit).
+	 * True by default.
+	 */
+	keepAspectRatio: boolean;
+	/**
+	 * Whether the video starts on mute when loaded. True by default.
+	 */
+	muted: boolean;
+	/**
+	 * Mobile browsers will play the video right where it is instead of
+	 * opening it up in fullscreen mode. True by default.
+	 */
+	playsInline: boolean;
+}
 
 /**
  * Used to load and display a video player over specific bounds of the map. Extends `ImageOverlay`.
@@ -16,29 +45,19 @@ import { ImageOverlay } from './ImageOverlay.js';
  */
 export class VideoOverlay extends ImageOverlay {
 
-	options = {
-		// @option autoplay: Boolean = true
-		// Whether the video starts playing automatically when loaded.
-		// On some browsers autoplay will only work with `muted: true`
-		autoplay: true,
+	declare options: VideoOverlayOptions;
 
-		// @option loop: Boolean = true
-		// Whether the video will loop back to the beginning when played.
-		loop: true,
+	constructor(url: any, bounds: any, options?: Partial<VideoOverlayOptions>) {
+		super(url, bounds, options);
 
-		// @option keepAspectRatio: Boolean = true
-		// Whether the video will save aspect ratio after the projection.
-		// Relevant for supported browsers. See [browser compatibility](https://developer.mozilla.org/en-US/docs/Web/CSS/object-fit)
-		keepAspectRatio: true,
-
-		// @option muted: Boolean = false
-		// Whether the video starts on mute when loaded.
-		muted: false,
-
-		// @option playsInline: Boolean = true
-		// Mobile browsers will play the video right where it is instead of open it up in fullscreen mode.
-		playsInline: true
-	};
+		Util.setOptions(this, options, {
+			autoplay: true,
+			loop: true,
+			keepAspectRatio: true,
+			muted: true,
+			playsInline: true
+		});
+	}
 
 	_initImage(): void {
 		const wasElementSupplied = this._url.tagName === 'VIDEO';
@@ -78,7 +97,7 @@ export class VideoOverlay extends ImageOverlay {
 		vid.playsInline = !!this.options.playsInline;
 
 		for (let i = 0; i < this._url.length; i++) {
-			const source = DomUtil.create('source');
+			const source = DomUtil.create('source') as HTMLSourceElement;
 			source.src = this._url[i];
 			vid.appendChild(source);
 		}

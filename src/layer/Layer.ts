@@ -16,14 +16,22 @@ export interface LayerOptions {
 	 * TODO: document this.
 	 */
 	bubblingMouseEvents: boolean;
+	/**
+	 * The minimum zoom level down to which this layer will be displayed (inclusive).
+	 */
+	minZoom: number | undefined;
+	/**
+	 * If set, the maximum zoom level up to which this layer will be displayed
+	 * (inclusive).
+	 */
+	maxZoom: number | undefined;
 }
 
 export const DEFAULT_LAYER_OPTIONS: Readonly<LayerOptions> = {
-	// @option pane: String = 'overlayPane'
-	// By default the layer will be added to the map's [overlay pane](#map-overlaypane). Overriding this option will cause the layer to be placed on another pane by default.
 	pane: 'overlayPane',
-
 	bubblingMouseEvents: true,
+	minZoom: undefined,
+	maxZoom: undefined,
 };
 
 /**

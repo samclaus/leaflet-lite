@@ -49,18 +49,15 @@ export interface IconOptions {
  */
 export class Icon {
 
-	options: Required<IconOptions>;
+	options: IconOptions;
 
 	constructor(options: IconOptions) {
-		// TODO: how to make TypeScript not complain? This code should be correct, but
-		// apparently Required<T> strips away 'undefined' from the property types, not
-		// just the '?' optional presence operator
 		this.options = {
 			tooltipAnchor: new Point(0, 0),
 			crossOrigin: false,
 			className: '',
 			...options,
-		} as any;
+		};
 	}
 
 	// Called internally when the icon has to be shown, returns a `<img>` HTML element
