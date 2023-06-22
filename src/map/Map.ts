@@ -211,8 +211,8 @@ export class Map extends Evented {
 		// @section
 		//
 		// Panes are DOM elements used to control the ordering of layers on the map. You
-		// can access panes with [`map.getPane`](#map-getpane) or
-		// [`map.getPanes`](#map-getpanes) methods. New panes can be created with the
+		// can access panes with [`map.getPane(name)`](#map-getpane) or `map._panes`. New
+		// panes can be created with the
 		// [`map.createPane`](#map-createpane) method.
 		//
 		// Every map has the following default panes that differ only in zIndex.
