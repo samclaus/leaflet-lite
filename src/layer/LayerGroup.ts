@@ -82,8 +82,8 @@ export class LayerGroup extends Layer {
 		return this.eachLayer(map.addLayer, map);
 	}
 
-	onRemove(map: Map): this {
-		return this.eachLayer(map.removeLayer, map);
+	onRemove(map: Map): void {
+		this.eachLayer(map.removeLayer, map);
 	}
 
 	/**

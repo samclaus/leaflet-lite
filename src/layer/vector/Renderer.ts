@@ -63,9 +63,9 @@ export abstract class Renderer extends BlanketOverlay {
 		return this.on('update', this._updatePaths, this);
 	}
 
-	onRemove(): this {
+	onRemove(): void {
 		BlanketOverlay.prototype.onRemove.call(this);
-		return this.off('update', this._updatePaths, this);
+		this.off('update', this._updatePaths, this);
 	}
 
 	_onZoomEnd(): void {

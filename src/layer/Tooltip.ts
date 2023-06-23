@@ -106,7 +106,7 @@ export class Tooltip extends DivOverlay {
 		return this;
 	}
 
-	onRemove(map: Map): this {
+	onRemove(map: Map): void {
 		DivOverlay.prototype.onRemove.call(this, map);
 
 		// @namespace Map
@@ -124,8 +124,6 @@ export class Tooltip extends DivOverlay {
 			// Fired when a tooltip bound to this layer is closed.
 			this._source.fire('tooltipclose', {tooltip: this}, true);
 		}
-
-		return this;
 	}
 
 	getEvents(): HandlerMap {

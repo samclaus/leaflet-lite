@@ -48,13 +48,13 @@ export class Zoom extends Control {
 		        `${zoomName}-out`, container, this._zoomOut);
 
 		this._updateDisabled();
-		map.on('zoomend zoomlevelschange', this._updateDisabled, this);
+		map.on('zoomend zoomlimitschanged', this._updateDisabled, this);
 
 		return container;
 	}
 
 	onRemove(map: Map): void {
-		map.off('zoomend zoomlevelschange', this._updateDisabled, this);
+		map.off('zoomend zoomlimitschanged', this._updateDisabled, this);
 	}
 
 	disable(): this {
@@ -72,16 +72,16 @@ export class Zoom extends Control {
 	_zoomIn(e: KeyboardEvent): void {
 		const map = this._map!; // TODO: null safety
 
-		if (!this._disabled && map._zoom < map.getMaxZoom()) {
-			map.zoomIn(map.options.zoomDelta * (e.shiftKey ? 3 : 1));
+		if (!this._disabled && map._zoom < map.options.maxZoom) {
+			map.setZoom(map._zoom + (map.options.zoomDelta * (e.shiftKey ? 3 : 1)));
 		}
 	}
 
 	_zoomOut(e: KeyboardEvent): void {
 		const map = this._map!; // TODO: null safety
 
-		if (!this._disabled && map._zoom > map.getMinZoom()) {
-			map.zoomOut(map.options.zoomDelta * (e.shiftKey ? 3 : 1));
+		if (!this._disabled && map._zoom > map.options.minZoom) {
+			map.setZoom(map._zoom - (map.options.zoomDelta * (e.shiftKey ? 3 : 1)));
 		}
 	}
 
@@ -124,11 +124,11 @@ export class Zoom extends Control {
 		zoomInBtn.setAttribute('aria-disabled', 'false');
 		zoomOutBtn.setAttribute('aria-disabled', 'false');
 
-		if (this._disabled || map._zoom === map.getMinZoom()) {
+		if (this._disabled || map._zoom === map.options.minZoom) {
 			zoomOutBtn.classList.add(className);
 			zoomOutBtn.setAttribute('aria-disabled', 'true');
 		}
-		if (this._disabled || map._zoom === map.getMaxZoom()) {
+		if (this._disabled || map._zoom === map.options.maxZoom) {
 			zoomInBtn.classList.add(className);
 			zoomInBtn.setAttribute('aria-disabled', 'true');
 		}

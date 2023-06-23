@@ -99,14 +99,12 @@ export class ImageOverlay extends Layer {
 		return this;
 	}
 
-	onRemove(): this {
+	onRemove(): void {
 		this._image!.remove(); // TODO: null safety
 
 		if (this.options.interactive) {
 			this.removeInteractiveTarget(this._image!);
 		}
-
-		return this;
 	}
 
 	// Sets the opacity of the overlay.

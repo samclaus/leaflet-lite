@@ -52,17 +52,13 @@ export interface MapOptions {
      */
     zoom: number | undefined;
     /**
-     * Minimum zoom level of the map. If not specified and at least one `GridLayer`
-     * or `TileLayer` is in the map, the lowest of their `minZoom` options will be
-     * used instead.
+     * Minimum zoom level of the map. 0 by default.
      */
-    minZoom: number | undefined;
+    minZoom: number;
     /**
-     * Maximum zoom level of the map. If not specified and at least one `GridLayer`
-     * or `TileLayer` is in the map, the highest of their `maxZoom` options will be
-     * used instead.
+     * Maximum zoom level of the map. Infinity by default.
      */
-    maxZoom: number | undefined;
+    maxZoom: number;
     /**
      * Array of layers that will be added to the map initially.
      */
@@ -116,11 +112,10 @@ export interface MapOptions {
      */
     zoomSnap: number;
     /**
-     * Controls how much the map's zoom level will change after a
-     * [`zoomIn()`](#map-zoomin), [`zoomOut()`](#map-zoomout), pressing `+`
-     * or `-` on the keyboard, or using the [zoom controls](#control-zoom).
-     * Values smaller than `1` (e.g. `0.5`) allow for greater granularity.
-     * 1 by default.
+     * Centralized/federated preference for the amount the map should zoom in/out by
+     * when interacted with by the user. Zoom +/- buttons and keyboard controls
+     * should use this value, but the map itself does not use it internally in order
+     * to keep the API surface small and straightforward.
      */
     zoomDelta: number;
     /**

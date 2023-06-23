@@ -16,22 +16,11 @@ export interface LayerOptions {
 	 * TODO: document this.
 	 */
 	bubblingMouseEvents: boolean;
-	/**
-	 * The minimum zoom level down to which this layer will be displayed (inclusive).
-	 */
-	minZoom: number | undefined;
-	/**
-	 * If set, the maximum zoom level up to which this layer will be displayed
-	 * (inclusive).
-	 */
-	maxZoom: number | undefined;
 }
 
 export const DEFAULT_LAYER_OPTIONS: Readonly<LayerOptions> = {
 	pane: 'overlayPane',
 	bubblingMouseEvents: true,
-	minZoom: undefined,
-	maxZoom: undefined,
 };
 
 /**
@@ -69,7 +58,7 @@ export abstract class Layer extends Evented {
 	 * removes listeners previously added in [`onAdd`](#layer-onadd). Called on
 	 * [`map.removeLayer(layer)`](#map-removelayer).
 	 */
-	abstract onRemove?(map: Map): this;
+	abstract onRemove?(map: Map): void;
 
 	_project(): void {}
 	_update(): void {}
@@ -89,7 +78,7 @@ export abstract class Layer extends Evented {
 	 * added to the map, before events are initialized, without waiting until the map is in a
 	 * usable state. Use for early initialization only.
 	 */
-	beforeAdd?(map: Map): this;
+	beforeAdd?(map: Map): void;
 
 	getBounds?(): LatLngBounds;
 	getLatLng?(): LatLng;

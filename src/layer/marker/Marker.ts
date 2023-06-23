@@ -138,7 +138,7 @@ export class Marker extends Layer {
 		return this;
 	}
 
-	onRemove(map: Map): this {
+	onRemove(map: Map): void {
 		if (this.dragging?.enabled()) {
 			this.options.draggable = true;
 			this.dragging.removeHooks();
@@ -151,8 +151,6 @@ export class Marker extends Layer {
 		}
 
 		this._removeIcon();
-
-		return this;
 	}
 
 	getEvents(): HandlerMap {

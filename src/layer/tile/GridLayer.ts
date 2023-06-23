@@ -208,18 +208,11 @@ export abstract class GridLayer extends Layer {
 		return this;
 	}
 
-	beforeAdd(map: Map): this {
-		map._addZoomLimit(this);
-		return this;
-	}
-
-	onRemove(map: Map): this {
+	onRemove(map: Map): void {
 		this._removeAllTiles();
 		this._container!.remove(); // TODO: null safety
-		map._removeZoomLimit(this);
 		this._container = undefined;
 		this._tileZoom = undefined;
-		return this;
 	}
 
 	// Brings the tile layer to the top of all tile layers.

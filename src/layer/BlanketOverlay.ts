@@ -81,9 +81,8 @@ export abstract class BlanketOverlay extends Layer {
 		return this;
 	}
 
-	onRemove(): this {
+	onRemove(): void {
 		this._destroyContainer();
-		return this;
 	}
 
 	getEvents(): HandlerMap {

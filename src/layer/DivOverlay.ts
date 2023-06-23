@@ -138,7 +138,7 @@ export abstract class DivOverlay extends Layer {
 		return this;
 	}
 
-	onRemove(map: Map): this {
+	onRemove(map: Map): void {
 		if (map._fadeAnimated) {
 			this._container.style.opacity = 0;
 			this._removeTimeout = setTimeout(() => this._container.remove(), 200);
@@ -150,8 +150,6 @@ export abstract class DivOverlay extends Layer {
 			this._container.classList.remove('leaflet-interactive');
 			this.removeInteractiveTarget(this._container);
 		}
-
-		return this;
 	}
 
 	// Returns the geographical point of the overlay.

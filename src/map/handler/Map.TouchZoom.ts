@@ -101,8 +101,8 @@ export class TouchZoom extends Handler {
 		if (
 			!this.options.bounceAtZoomLimits &&
 			(
-				(this._zoom < map.getMinZoom() && scale < 1) ||
-				(this._zoom > map.getMaxZoom() && scale > 1)
+				(this._zoom < map.options.minZoom && scale < 1) ||
+				(this._zoom > map.options.maxZoom && scale > 1)
 			)
 		) {
 			this._zoom = map._limitZoom(this._zoom);

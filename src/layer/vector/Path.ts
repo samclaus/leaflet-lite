@@ -117,11 +117,10 @@ export abstract class Path extends Layer {
 	abstract _updatePath(): void;
 	abstract _containsPoint(p: Point): boolean;
 
-	beforeAdd(map: Map): this {
+	beforeAdd(map: Map): void {
 		// Renderer is set here because we need to call renderer.getEvents
 		// before this.getEvents.
 		this._renderer = map.getRenderer(this);
-		return this;
 	}
 
 	onAdd(): this {
@@ -133,10 +132,9 @@ export abstract class Path extends Layer {
 		return this;
 	}
 
-	onRemove(): this {
+	onRemove(): void {
 		// TODO: null safety
 		this._renderer!._removePath(this);
-		return this;
 	}
 
 	// Redraws the layer. Sometimes useful after you changed the coordinates that the path uses.

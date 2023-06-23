@@ -18,6 +18,34 @@ import type { FitBoundsOptions, MapOptions, PanOptions, ZoomOptions, ZoomPanOpti
  * 	zoom: 13
  * });
  * ```
+ * 
+ * @event click: MouseEvent
+ * Fired when the user clicks (or taps) the map.
+ * @event dblclick: MouseEvent
+ * Fired when the user double-clicks (or double-taps) the map.
+ * @event mousedown: MouseEvent
+ * Fired when the user pushes the mouse button on the map.
+ * @event mouseup: MouseEvent
+ * Fired when the user releases the mouse button on the map.
+ * @event mouseover: MouseEvent
+ * Fired when the mouse enters the map.
+ * @event mouseout: MouseEvent
+ * Fired when the mouse leaves the map.
+ * @event mousemove: MouseEvent
+ * Fired while the mouse moves over the map.
+ * @event contextmenu: MouseEvent
+ * Fired when the user pushes the right mouse button on the map, prevents
+ * default browser context menu from showing if there are listeners on
+ * this event. Also fired on mobile when the user holds a single touch
+ * for a second (also called long press).
+ * @event keypress: KeyboardEvent
+ * Fired when the user presses a key from the keyboard that produces a character value whil *e map is focused.
+ * @event keydown: KeyboardEvent
+ * Fired when the user presses a key from the keyboard while the map is focused. Unlike th *eypress` event,
+ * the `keydown` event is fired for keys that produce a character value and for keys
+ * that do not produce a character value.
+ * @event keyup: KeyboardEvent
+ * Fired when the user releases a key from the keyboard while the map is focused.
  */
 export class Map extends Evented {
 
@@ -25,9 +53,6 @@ export class Map extends Evented {
 	_handlers: Handler[] = [];
 	_targets: Dict<Evented> = Object.create(null);
 	_layers: { [leafletID: string]: Layer } = {};
-	_zoomBoundLayers: { [leafletID: string]: Layer } = {};
-	_layersMaxZoom: number | undefined;
-	_layersMinZoom: number | undefined;
 	_container: HTMLElement;
 	_proxy: HTMLElement | undefined; // animation proxy element
 	_size: Point | undefined;
@@ -66,8 +91,8 @@ export class Map extends Evented {
 			crs: EPSG3857,
 			center: undefined,
 			zoom: undefined,
-			minZoom: undefined,
-			maxZoom: undefined,
+			minZoom: 0,
+			maxZoom: Infinity,
 			layers: [],
 			handlers: Object.create(null),
 			maxBounds: undefined,
@@ -136,33 +161,6 @@ export class Map extends Evented {
 			markerPane.classList.add('leaflet-zoom-hide');
 		}
 
-		// @event click: MouseEvent
-		// Fired when the user clicks (or taps) the map.
-		// @event dblclick: MouseEvent
-		// Fired when the user double-clicks (or double-taps) the map.
-		// @event mousedown: MouseEvent
-		// Fired when the user pushes the mouse button on the map.
-		// @event mouseup: MouseEvent
-		// Fired when the user releases the mouse button on the map.
-		// @event mouseover: MouseEvent
-		// Fired when the mouse enters the map.
-		// @event mouseout: MouseEvent
-		// Fired when the mouse leaves the map.
-		// @event mousemove: MouseEvent
-		// Fired while the mouse moves over the map.
-		// @event contextmenu: MouseEvent
-		// Fired when the user pushes the right mouse button on the map, prevents
-		// default browser context menu from showing if there are listeners on
-		// this event. Also fired on mobile when the user holds a single touch
-		// for a second (also called long press).
-		// @event keypress: KeyboardEvent
-		// Fired when the user presses a key from the keyboard that produces a character value while the map is focused.
-		// @event keydown: KeyboardEvent
-		// Fired when the user presses a key from the keyboard while the map is focused. Unlike the `keypress` event,
-		// the `keydown` event is fired for keys that produce a character value and for keys
-		// that do not produce a character value.
-		// @event keyup: KeyboardEvent
-		// Fired when the user releases a key from the keyboard while the map is focused.
 		DomEvent.on(
 			this._container,
 			'click dblclick mousedown mouseup mouseover mouseout mousemove contextmenu keypress keydown keyup',
@@ -271,16 +269,6 @@ export class Map extends Evented {
 			return this;
 		}
 		return this.setView(this.getCenter(), zoom, {zoom: options});
-	}
-
-	// Increases the zoom of the map by `delta` ([`zoomDelta`](#map-zoomdelta) by default).
-	zoomIn(delta = this.options.zoomDelta, options?: ZoomOptions): this {
-		return this.setZoom(this._zoom + delta, options);
-	}
-
-	// Decreases the zoom of the map by `delta` ([`zoomDelta`](#map-zoomdelta) by default).
-	zoomOut(delta = this.options.zoomDelta, options?: ZoomOptions): this {
-		return this.setZoom(this._zoom - delta, options);
 	}
 
 	// Zooms the map while keeping a specified geographical point OR pixel (relative to the
@@ -507,31 +495,41 @@ export class Map extends Evented {
 		return this.on('moveend', this._panInsideMaxBounds);
 	}
 
-	// Sets the lower limit for the available zoom levels (see the [minZoom](#map-minzoom) option).
+	/**
+	 * Updates the minZoom option for the map, fires a 'zoomlimitschanged'
+	 * event, and clamps the current zoom to the new limits as necessary.
+	 * 
+	 * Does nothing if the map is not initialized or minZoom is the same
+	 * as before.
+	 */
 	setMinZoom(minZoom: number): this {
 		if (this._loaded && minZoom !== this.options.minZoom) {
 			this.options.minZoom = minZoom;
-			this.fire('zoomlevelschange');
+			this.fire('zoomlimitschanged');
 
 			if (this._zoom < minZoom) {
 				this.setZoom(minZoom);
 			}
 		}
-
 		return this;
 	}
 
-	// Sets the upper limit for the available zoom levels (see the [maxZoom](#map-maxzoom) option).
+	/**
+	 * Updates the maxZoom option for the map, fires a 'zoomlimitschanged'
+	 * event, and clamps the current zoom to the new limits as necessary.
+	 * 
+	 * Does nothing if the map is not initialized or maxZoom is the same
+	 * as before.
+	 */
 	setMaxZoom(maxZoom: number): this {
 		if (this._loaded && maxZoom !== this.options.maxZoom) {
 			this.options.maxZoom = maxZoom;
-			this.fire('zoomlevelschange');
+			this.fire('zoomlimitschanged');
 
 			if (this._zoom > maxZoom) {
 				this.setZoom(maxZoom);
 			}
 		}
-
 		return this;
 	}
 
@@ -760,21 +758,12 @@ export class Map extends Evented {
 
 	// Returns the geographical bounds visible in the current map view
 	getBounds(): LatLngBounds {
-		const bounds = this.getPixelBounds(),
+		const
+			bounds = this.getPixelBounds(),
 		    sw = this.unproject(bounds.getBottomLeft()),
 		    ne = this.unproject(bounds.getTopRight());
 
 		return new LatLngBounds(sw, ne);
-	}
-
-	// Returns the minimum zoom level of the map (if set in the `minZoom` option of the map or of any layers), or `0` by default.
-	getMinZoom(): number {
-		return this.options.minZoom || this._layersMinZoom || 0;
-	}
-
-	// Returns the maximum zoom level of the map (if set in the `maxZoom` option of the map or of any layers).
-	getMaxZoom(): number {
-		return this.options.maxZoom ?? this._layersMaxZoom ?? Infinity;
 	}
 
 	// Returns the maximum zoom level on which the given bounds fit to the map
@@ -789,8 +778,8 @@ export class Map extends Evented {
 		let zoom = this._zoom || 0; // TODO: this._zoom should always be defined, right?
 
 		const
-			min = this.getMinZoom(),
-			max = this.getMaxZoom(),
+			min = this.options.minZoom,
+			max = this.options.maxZoom,
 			nw = bounds.getNorthWest(),
 			se = bounds.getSouthEast(),
 			size = this.getSize().subtract(padding),
@@ -1070,10 +1059,6 @@ export class Map extends Evented {
 		DomUtil.setPosition(this._mapPane, this._getMapPanePos().subtract(offset));
 	}
 
-	_getZoomSpan(): number {
-		return this.getMaxZoom() - this.getMinZoom();
-	}
-
 	_panInsideMaxBounds(): void {
 		if (!this._enforcingBounds) {
 			this.panInsideBounds(this.options.maxBounds);
@@ -1347,16 +1332,17 @@ export class Map extends Evented {
 	}
 
 	_limitZoom(zoom: number): number {
-		const
-			min = this.getMinZoom(),
-		    max = this.getMaxZoom(),
-		    snap = this.options.zoomSnap;
+		const {
+			minZoom,
+		    maxZoom,
+		    zoomSnap,
+		} = this.options;
 
-		if (snap) {
-			zoom = Math.round(zoom / snap) * snap;
+		if (zoomSnap) {
+			zoom = Math.round(zoom / zoomSnap) * zoomSnap;
 		}
 
-		return Math.max(min, Math.min(max, zoom));
+		return Math.max(minZoom, Math.min(maxZoom, zoom));
 	}
 
 	_onPanTransitionStep(): void {
@@ -1572,55 +1558,6 @@ export class Map extends Evented {
 			method.call(context, layer);
 		}
 		return this;
-	}
-
-	_addZoomLimit(layer: Layer): void {
-		// NOTE: isNaN() returns `true` if passed `undefined`, so it is safe to
-		// use non-null assertions for min/maxZoom here
-		if (!isNaN(layer.options.maxZoom!) || !isNaN(layer.options.minZoom!)) {
-			this._zoomBoundLayers[Util.stamp(layer)] = layer;
-			this._updateZoomLevels();
-		}
-	}
-
-	_removeZoomLimit(layer: Layer): void {
-		const id = Util.stamp(layer);
-
-		if (this._zoomBoundLayers[id]) {
-			delete this._zoomBoundLayers[id];
-			this._updateZoomLevels();
-		}
-	}
-
-	_updateZoomLevels(): void {
-		let
-			minZoom = Infinity,
-		    maxZoom = -Infinity;
-
-		const oldZoomSpan = this._getZoomSpan();
-
-		for (const {options} of Object.values(this._zoomBoundLayers)) {
-			minZoom = options.minZoom === undefined ? minZoom : Math.min(minZoom, options.minZoom);
-			maxZoom = options.maxZoom === undefined ? maxZoom : Math.max(maxZoom, options.maxZoom);
-		}
-
-		this._layersMaxZoom = maxZoom === -Infinity ? undefined : maxZoom;
-		this._layersMinZoom = minZoom === Infinity ? undefined : minZoom;
-
-		// @section Map state change events
-		// @event zoomlevelschange: Event
-		// Fired when the number of zoomlevels on the map is changed due
-		// to adding or removing a layer.
-		if (oldZoomSpan !== this._getZoomSpan()) {
-			this.fire('zoomlevelschange');
-		}
-
-		if (this.options.maxZoom === undefined && this._layersMaxZoom && this._zoom > this._layersMaxZoom) {
-			this.setZoom(this._layersMaxZoom);
-		}
-		if (this.options.minZoom === undefined && this._layersMinZoom && this._zoom < this._layersMinZoom) {
-			this.setZoom(this._layersMinZoom);
-		}
 	}
 
 	// Returns the instance of `Renderer` that should be used to render the given
