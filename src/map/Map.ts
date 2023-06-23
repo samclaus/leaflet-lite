@@ -1530,23 +1530,6 @@ export class Map extends Evented {
 		return Util.stamp(layer) in this._layers;
 	}
 
-	/**
-	 * Iterates over the layers of the map, optionally specifying context of the iterator function.
-	 * ```
-	 * map.eachLayer(function(layer){
-	 *     layer.bindTooltip('Hello');
-	 * });
-	 * ```
-	 */
-	eachLayer(method: (l: Layer) => void): this;
-	eachLayer<This>(method: (this: This, l: Layer) => void, context: This): this;
-	eachLayer(method: (l: Layer) => void, context?: any): this {
-		for (const layer of Object.values(this._layers)) {
-			method.call(context, layer);
-		}
-		return this;
-	}
-
 	// Returns the instance of `Renderer` that should be used to render the given
 	// `Path`. It will ensure that the `renderer` options of the map and paths
 	// are respected, and that the renderers do exist on the map.
