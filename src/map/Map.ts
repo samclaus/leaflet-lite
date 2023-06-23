@@ -62,13 +62,14 @@ export class Map extends Evented {
 	) {
 		super();
 
-		this.options = {
+		const resolvedOpts: MapOptions = this.options = {
 			crs: EPSG3857,
 			center: undefined,
 			zoom: undefined,
 			minZoom: undefined,
 			maxZoom: undefined,
 			layers: [],
+			handlers: Object.create(null),
 			maxBounds: undefined,
 			renderer: undefined,
 			zoomAnimationThreshold: 4,
@@ -78,7 +79,9 @@ export class Map extends Evented {
 			zoomSnap: 1,
 			zoomDelta: 1,
 			preferCanvas: false,
+			...options,
 		};
+
 		this._container = container;
 		this._targets[Util.stamp(container)] = this;
 		this._fadeAnimated = this.options.fadeAnimation;
@@ -129,7 +132,7 @@ export class Map extends Evented {
 		// Pane for `Tooltip`s.
 		this.createPane('tooltipPane');
 
-		if (!this.options.markerZoomAnimation) {
+		if (!resolvedOpts.markerZoomAnimation) {
 			markerPane.classList.add('leaflet-zoom-hide');
 		}
 
@@ -169,20 +172,17 @@ export class Map extends Evented {
 
 		this._resizeObserver.observe(this._container);
 
-		if (this.options.transform3DLimit) {
+		if (resolvedOpts.transform3DLimit) {
 			this.on('moveend', this._onMoveEnd);
 		}
-
-		if (options.maxBounds) {
-			this.setMaxBounds(options.maxBounds);
+		if (resolvedOpts.maxBounds) {
+			this.setMaxBounds(resolvedOpts.maxBounds);
 		}
-
-		if (options.zoom !== undefined) {
-			this._zoom = this._limitZoom(options.zoom);
+		if (resolvedOpts.zoom !== undefined) {
+			this._zoom = this._limitZoom(resolvedOpts.zoom);
 		}
-
-		if (options.center && options.zoom !== undefined) {
-			this.setView(options.center, options.zoom, { reset: true });
+		if (resolvedOpts.center && resolvedOpts.zoom !== undefined) {
+			this.setView(resolvedOpts.center, resolvedOpts.zoom, { reset: true });
 		}
 
 		// TODO: NEED TO ALLOW PASSING HANDLERS VIA OPTIONS, WHICH WILL BE TREE-SHAKING-FRIENDLY,
@@ -200,7 +200,7 @@ export class Map extends Evented {
 		// 		touchZoom: TouchZoom,
 		//	}
 		//
-		for (const [name, HandlerClass] of options.handlers) {
+		for (const [name, HandlerClass] of Object.entries(resolvedOpts.handlers)) {
 			// TODO: remove this dynamic property setting
 			const handler = (this as any)[name] = new HandlerClass(this);
 			this._handlers.push(handler);
@@ -208,7 +208,7 @@ export class Map extends Evented {
 		}
 
 		// don't animate on browsers without hardware-accelerated transitions or old Android
-		this._zoomAnimated = this.options.zoomAnimationThreshold > 0;
+		this._zoomAnimated = resolvedOpts.zoomAnimationThreshold > 0;
 
 		// zoom transitions run with the same duration for all layers, so if one of transitionend events
 		// happens after starting zoom animation (propagating to the map pane), we know that it ended globally
@@ -218,7 +218,7 @@ export class Map extends Evented {
 			DomEvent.on(this._proxy!, 'transitionend', this._catchTransitionEnd, this);
 		}
 
-		for (const layer of this.options.layers) {
+		for (const layer of resolvedOpts.layers) {
 			this.addLayer(layer);
 		}
 	}

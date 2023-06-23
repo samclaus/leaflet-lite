@@ -68,6 +68,10 @@ export interface MapOptions {
      */
     layers: Layer[];
     /**
+     * Handlers that should be added to the map initially.
+     */
+    handlers: Dict<Constructor<Handler>>;
+    /**
      * When this option is set, the map restricts the view to the given
      * geographical bounds, bouncing the user back if the user tries to pan
      * outside the view. To set the restriction dynamically, use
