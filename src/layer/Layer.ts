@@ -1,7 +1,7 @@
 import { Evented, Util, type HandlerMap } from '../core';
 import { DomEvent } from '../dom';
 import type { LatLng, LatLngBounds } from '../geog';
-import { Map } from '../map';
+import type { Map } from '../map';
 import { FeatureGroup } from './FeatureGroup.js';
 import type { LayerGroup } from './LayerGroup.js';
 import { Tooltip } from './Tooltip.js';

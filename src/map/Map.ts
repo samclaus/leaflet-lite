@@ -6,42 +6,7 @@ import { Bounds, Point } from '../geom';
 import { type Layer } from '../layer/Layer.js';
 import { Canvas, Path, Renderer, SVG } from '../layer/vector';
 import type { Handler } from './Handler.js';
-
-export type ZoomOptions = any;
-
-export type PanOptions = any;
-// {
-// 	// TODO
-
-// 	noMoveStart?: boolean;
-// 	animate?: boolean;
-// 	duration?: number;
-// 	easeLinearity?: number;
-// }
-
-export type ZoomPanOptions = any
-// {
-// 	zoom?: ZoomOptions | undefined;
-// 	pan?: boolean;
-// 	animate?: boolean | undefined;
-// 	debounceMoveend?: boolean;
-// 	reset?: boolean;
-// }
-
-export type FitBoundsOptions = any;
-// {
-// 	padding?: Point;
-// 	paddingTopLeft?: Point;
-// 	paddingBottomRight?: Point;
-// 	maxZoom?: number;
-// }
-
-export type ZoomAnimationEvent = any;
-// {
-// 	center: LatLng,
-// 	zoom: number,
-// 	noUpdate: boolean | undefined;
-// }
+import type { FitBoundsOptions, MapOptions, PanOptions, ZoomOptions, ZoomPanOptions } from './map-options';
 
 /**
  * The central class of the API — it is used to create a map on a page and manipulate it.
@@ -56,92 +21,7 @@ export type ZoomAnimationEvent = any;
  */
 export class Map extends Evented {
 
-	// TODO: these are the static/default options which get overridden
-	// for each instance by passing options to the constructor
-	options: any = {
-		// @section Map State Options
-		// @option crs: CRS = L.CRS.EPSG3857
-		// The [Coordinate Reference System](#crs) to use. Don't change this if you're not
-		// sure what it means.
-		crs: EPSG3857,
-
-		// @option center: LatLng = undefined
-		// Initial geographic center of the map
-		center: undefined,
-
-		// @option zoom: Number = undefined
-		// Initial map zoom level
-		zoom: undefined,
-
-		// @option minZoom: Number = *
-		// Minimum zoom level of the map.
-		// If not specified and at least one `GridLayer` or `TileLayer` is in the map,
-		// the lowest of their `minZoom` options will be used instead.
-		minZoom: undefined,
-
-		// @option maxZoom: Number = *
-		// Maximum zoom level of the map.
-		// If not specified and at least one `GridLayer` or `TileLayer` is in the map,
-		// the highest of their `maxZoom` options will be used instead.
-		maxZoom: undefined as (number | undefined),
-
-		// @option layers: Layer[] = []
-		// Array of layers that will be added to the map initially
-		layers: [],
-
-		// @option maxBounds: LatLngBounds = undefined
-		// When this option is set, the map restricts the view to the given
-		// geographical bounds, bouncing the user back if the user tries to pan
-		// outside the view. To set the restriction dynamically, use
-		// [`setMaxBounds`](#map-setmaxbounds) method.
-		maxBounds: undefined,
-
-		// @option renderer: Renderer = *
-		// The default method for drawing vector layers on the map. `L.SVG`
-		// or `L.Canvas` by default depending on browser support.
-		renderer: undefined,
-
-		/**
-		 * The map will not animate a zoom operation if the zoom delta is greater
-		 * than this value. Set to 0 to disable zoom animations entirely. 4 by
-		 * default.
-		 */
-		zoomAnimationThreshold: 4,
-
-		// @option fadeAnimation: Boolean = true
-		// Whether the tile fade animation is enabled. By default it's enabled
-		// in all browsers that support CSS Transitions except Android.
-		fadeAnimation: true,
-
-		// @option markerZoomAnimation: Boolean = true
-		// Whether markers animate their zoom with the zoom animation, if disabled
-		// they will disappear for the length of the animation. By default it's
-		// enabled in all browsers that support CSS Transitions except Android.
-		markerZoomAnimation: true,
-
-		// @option transform3DLimit: Number = 2^23
-		// Defines the maximum size of a CSS translation transform. The default
-		// value should not be changed unless a web browser positions layers in
-		// the wrong place after doing a large `panBy`.
-		transform3DLimit: 8388608, // Precision limit of a 32-bit float
-
-		// @section Interaction Options
-		// @option zoomSnap: Number = 1
-		// Forces the map's zoom level to always be a multiple of this, particularly
-		// right after a [`fitBounds()`](#map-fitbounds) or a pinch-zoom.
-		// By default, the zoom level snaps to the nearest integer; lower values
-		// (e.g. `0.5` or `0.1`) allow for greater granularity. A value of `0`
-		// means the zoom level will not be snapped after `fitBounds` or a pinch-zoom.
-		zoomSnap: 1,
-
-		// @option zoomDelta: Number = 1
-		// Controls how much the map's zoom level will change after a
-		// [`zoomIn()`](#map-zoomin), [`zoomOut()`](#map-zoomout), pressing `+`
-		// or `-` on the keyboard, or using the [zoom controls](#control-zoom).
-		// Values smaller than `1` (e.g. `0.5`) allow for greater granularity.
-		zoomDelta: 1,
-	};
-
+	options: MapOptions;
 	_handlers: Handler[] = [];
 	_targets: Dict<Evented> = Object.create(null);
 	_layers: { [leafletID: string]: Layer } = {};
@@ -167,13 +47,10 @@ export class Map extends Evented {
 	_resizeObserver = new ResizeObserver(this._onResize.bind(this));
 	_sizeTimer: number | undefined;
 	_pixelOrigin: Point | undefined;
-
 	_animatingZoom = false;
 	_animateToCenter: LatLng | undefined;
 	_animateToZoom = 0;
-
-	// Map drag handler declaration, used in a few places (Handlers get added as dynamic properties)
-	dragging?: any; // TODO: do NOT add handlers as properties directly on class at least
+	dragging?: any; // TODO: do NOT add handlers as properties directly on class at least (need this here to satisfy TypeScript because a lot of the code checks for the Drag handler instance on Map)
 
 	readonly _fadeAnimated: boolean;
 
@@ -181,12 +58,27 @@ export class Map extends Evented {
 
 	constructor(
 		container: HTMLElement,
-		options: any, // TODO
+		options?: Partial<MapOptions>,
 	) {
 		super();
 
-		options = Util.setOptions(this, options);
-
+		this.options = {
+			crs: EPSG3857,
+			center: undefined,
+			zoom: undefined,
+			minZoom: undefined,
+			maxZoom: undefined,
+			layers: [],
+			maxBounds: undefined,
+			renderer: undefined,
+			zoomAnimationThreshold: 4,
+			fadeAnimation: true,
+			markerZoomAnimation: true,
+			transform3DLimit: 8388608,
+			zoomSnap: 1,
+			zoomDelta: 1,
+			preferCanvas: false,
+		};
 		this._container = container;
 		this._targets[Util.stamp(container)] = this;
 		this._fadeAnimated = this.options.fadeAnimation;
@@ -1760,9 +1652,6 @@ export class Map extends Evented {
 	}
 
 	_createRenderer(options?: any): Renderer {
-		// @namespace Map; @option preferCanvas: Boolean = false
-		// Whether `Path`s should be rendered on a `Canvas` renderer.
-		// By default, all `Path`s are rendered in a `SVG` renderer.
 		return this.options.preferCanvas ? new Canvas(options) : new SVG(options);
 	}
 
