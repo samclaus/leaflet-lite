@@ -1,6 +1,6 @@
 import { BlanketOverlay, Layer, type BlanketOverlayOptions } from '..';
 import { Util } from '../../core';
-import { Map } from '../../map';
+import type { Map } from '../../map';
 import { CircleMarker } from './CircleMarker.js';
 import { Path } from './Path.js';
 import { Polyline } from './Polyline.js';

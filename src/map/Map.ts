@@ -4,7 +4,7 @@ import { LatLng, LatLngBounds } from '../geog';
 import { EPSG3857 } from '../geog/crs';
 import { Bounds, Point } from '../geom';
 import { type Layer } from '../layer/Layer.js';
-import { Canvas, Path, Renderer, SVG } from '../layer/vector';
+import { Canvas, SVG, type Path, type Renderer } from '../layer/vector';
 import type { Handler } from './Handler.js';
 import type { FitBoundsOptions, MapOptions, PanOptions, ZoomOptions, ZoomPanOptions } from './map-options';
 
@@ -92,8 +92,6 @@ export class Map extends Evented {
 	_animateToZoom = 0;
 	dragging?: any; // TODO: do NOT add handlers as properties directly on class at least (need this here to satisfy TypeScript because a lot of the code checks for the Drag handler instance on Map)
 
-	readonly _fadeAnimated: boolean;
-
 	_renderer: Renderer | undefined;
 
 	constructor(
@@ -124,7 +122,6 @@ export class Map extends Evented {
 
 		this._container = container;
 		this._targets[Util.stamp(container)] = this;
-		this._fadeAnimated = this.options.fadeAnimation;
 
 		DomEvent.on(container, 'scroll', this._onScroll, this);
 	
@@ -133,7 +130,7 @@ export class Map extends Evented {
 		if (Browser.touch) { classes.push('leaflet-touch'); }
 		if (Browser.retina) { classes.push('leaflet-retina'); }
 		if (Browser.safari) { classes.push('leaflet-safari'); }
-		if (this._fadeAnimated) { classes.push('leaflet-fade-anim'); }
+		if (resolvedOpts.fadeAnimation) { classes.push('leaflet-fade-anim'); }
 
 		container.classList.add(...classes);
 

@@ -871,7 +871,7 @@ export abstract class GridLayer extends Layer {
 		tile.loaded = Date.now();
 
 		// TODO: null safety
-		if (this._map!._fadeAnimated) {
+		if (this._map!.options.fadeAnimation) {
 			tile.el.style.opacity = 0 as any; // automatically coerced to string
 			cancelAnimationFrame(this._fadeFrame);
 			this._fadeFrame = requestAnimationFrame(() => this._updateOpacity());
@@ -897,7 +897,7 @@ export abstract class GridLayer extends Layer {
 			// Fired when the grid layer loaded all visible tiles.
 			this.fire('load');
 
-			if (!this._map!._fadeAnimated) { // TODO: null safety
+			if (!this._map!.options.fadeAnimation) { // TODO: null safety
 				requestAnimationFrame(() => this._pruneTiles());
 			} else {
 				// Wait a bit more than 0.2 secs (the duration of the tile fade-in)

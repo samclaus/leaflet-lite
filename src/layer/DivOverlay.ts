@@ -2,7 +2,7 @@ import { Util, type HandlerMap } from '../core';
 import { DomUtil } from '../dom';
 import { LatLng } from '../geog';
 import { Point } from '../geom';
-import { Map } from '../map';
+import type { Map } from '../map';
 import { FeatureGroup } from './FeatureGroup.js';
 import { Layer, type LayerOptions } from './Layer.js';
 
@@ -116,7 +116,7 @@ export abstract class DivOverlay extends Layer {
 			this._initLayout();
 		}
 
-		if (map._fadeAnimated) {
+		if (map.options.fadeAnimation) {
 			this._container.style.opacity = 0;
 		}
 
@@ -124,7 +124,7 @@ export abstract class DivOverlay extends Layer {
 		this.getPane()!.appendChild(this._container); // TODO: null safety
 		this.update();
 
-		if (map._fadeAnimated) {
+		if (map.options.fadeAnimation) {
 			this._container.style.opacity = 1;
 		}
 
@@ -139,7 +139,7 @@ export abstract class DivOverlay extends Layer {
 	}
 
 	onRemove(map: Map): void {
-		if (map._fadeAnimated) {
+		if (map.options.fadeAnimation) {
 			this._container.style.opacity = 0;
 			this._removeTimeout = setTimeout(() => this._container.remove(), 200);
 		} else {
