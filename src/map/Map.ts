@@ -19,6 +19,21 @@ import type { FitBoundsOptions, MapOptions, PanOptions, ZoomOptions, ZoomPanOpti
  * });
  * ```
  * 
+ * ## Panes
+ *
+ * Panes are DOM elements used to control the ordering of layers on the map. You
+ * can access panes using `map._panes`. New panes can be created with the
+ * [`map.createPane`](#map-createpane) method.
+ *
+ * Every map has the following default panes that differ only in zIndex.
+ *
+ * @pane map ('auto'): Pane that contains all other map panes
+ * @pane tile (200): Pane for `GridLayer`s and `TileLayer`s
+ * @pane overlay (400): Pane for vectors (`Path`s, like `Polyline`s and `Polygon`s),
+ * 						`ImageOverlay`s and `VideoOverlay`s
+ * @pane marker (600): Pane for `Icon`s of `Marker`s
+ * @pane tooltip (650): Pane for `Tooltip`s.
+ * 
  * @event click: MouseEvent
  * Fired when the user clicks (or taps) the map.
  * @event dblclick: MouseEvent
@@ -60,8 +75,8 @@ export class Map extends Evented {
 	_zoom!: number; // TODO: null safety?
 	_zoomAnimated: boolean;
 	_panAnim: PosAnimation | undefined;
-	_mapPane: HTMLElement;
 	_panes: Dict<HTMLElement> = Object.create(null);
+	_rootPane: HTMLElement;
 	_paneRenderers: Dict<Renderer> = Object.create(null);
 	_lastCenter: LatLng | undefined;
 	_loaded = false;
@@ -128,34 +143,14 @@ export class Map extends Evented {
 			container.style.position = 'relative';
 		}
 
-		// @section
-		//
-		// Panes are DOM elements used to control the ordering of layers on the map. You
-		// can access panes with [`map.getPane(name)`](#map-getpane) or `map._panes`. New
-		// panes can be created with the
-		// [`map.createPane`](#map-createpane) method.
-		//
-		// Every map has the following default panes that differ only in zIndex.
-		//
-		// @pane mapPane: HTMLElement = 'auto'
-		// Pane that contains all other map panes
+		this._rootPane = this.createPane('root', this._container);
+		DomUtil.setPosition(this._rootPane, new Point(0, 0));
 
-		this._mapPane = this.createPane('mapPane', this._container);
-		DomUtil.setPosition(this._mapPane, new Point(0, 0));
+		this.createPane('tile');
+		this.createPane('overlay');
+		this.createPane('tooltip');
 
-		// @pane tilePane: HTMLElement = 200
-		// Pane for `GridLayer`s and `TileLayer`s
-		this.createPane('tilePane');
-		// @pane overlayPane: HTMLElement = 400
-		// Pane for vectors (`Path`s, like `Polyline`s and `Polygon`s), `ImageOverlay`s and `VideoOverlay`s
-		this.createPane('overlayPane');
-		// NOTE: previously there was 'shadowPane' (500) here until Sam removed it
-		// @pane markerPane: HTMLElement = 600
-		// Pane for `Icon`s of `Marker`s
-		const markerPane = this.createPane('markerPane');
-		// @pane tooltipPane: HTMLElement = 650
-		// Pane for `Tooltip`s.
-		this.createPane('tooltipPane');
+		const markerPane = this.createPane('marker');
 
 		if (!resolvedOpts.markerZoomAnimation) {
 			markerPane.classList.add('leaflet-zoom-hide');
@@ -376,10 +371,10 @@ export class Map extends Evented {
 
 		// animate pan unless animate: false specified
 		if (options.animate !== false) {
-			this._mapPane.classList.add('leaflet-pan-anim');
+			this._rootPane.classList.add('leaflet-pan-anim');
 
 			const newPos = this._getMapPanePos().subtract(offset).round();
-			this._panAnim.run(this._mapPane, newPos, options.duration || 0.25, options.easeLinearity);
+			this._panAnim.run(this._rootPane, newPos, options.duration || 0.25, options.easeLinearity);
 		} else {
 			this._rawPanBy(offset);
 			this.fire('move').fire('moveend');
@@ -698,7 +693,7 @@ export class Map extends Evented {
 		}
 
 		this._stop();
-		this._mapPane.remove();
+		this._rootPane.remove();
 
 		if (this._resizeFrame) {
 			cancelAnimationFrame(this._resizeFrame);
@@ -730,17 +725,16 @@ export class Map extends Evented {
 
 	// @section Other Methods
 
-	// Creates a new [map pane](#map-pane) with the given name if it doesn't exist already,
-	// then returns it. The pane is created as a child of `container`, or
-	// as a child of the main map pane if not set.
-	createPane(name: string, container?: HTMLElement): HTMLElement {
-		const
-			className = `leaflet-pane${name ? ` leaflet-${name.replace('Pane', '')}-pane` : ''}`,
-		    pane = DomUtil.create('div', className, container || this._mapPane);
-
-		this._panes[name] = pane;
-
-		return pane;
+	/**
+	 * Creates a new pane (just a div) and appends it to the given parent, or else the
+	 * root pane if no parent is provided.
+	 */
+	createPane(name: string, container = this._rootPane): HTMLElement {
+		return this._panes[name] = DomUtil.create(
+			'div',
+			`leaflet-pane leaflet-${name}-pane`,
+			container,
+		);
 	}
 
 	// @section Methods for Getting Map State
@@ -832,13 +826,6 @@ export class Map extends Evented {
 	// If `zoom` is omitted, the map's current zoom level is used.
 	getPixelWorldBounds(zoom = this._zoom): Bounds | undefined {
 		return this.options.crs.getProjectedBounds(zoom);
-	}
-
-	// @section Other Methods
-
-	// Returns a [map pane](#map-pane), given its name or its HTML element (its identity).
-	getPane(pane: string | HTMLElement): HTMLElement | undefined {
-		return typeof pane === 'string' ? this._panes[pane] : pane;
 	}
 
 	// @section Conversion Methods
@@ -961,7 +948,7 @@ export class Map extends Evented {
 
 	// @section Map state change events
 	_resetView(center: LatLng, zoom: number, noMoveStart?: boolean): void {
-		DomUtil.setPosition(this._mapPane, new Point(0, 0));
+		DomUtil.setPosition(this._rootPane, new Point(0, 0));
 
 		const loading = !this._loaded;
 		this._loaded = true;
@@ -1056,7 +1043,7 @@ export class Map extends Evented {
 	}
 
 	_rawPanBy(offset: Point): void {
-		DomUtil.setPosition(this._mapPane, this._getMapPanePos().subtract(offset));
+		DomUtil.setPosition(this._rootPane, this._getMapPanePos().subtract(offset));
 	}
 
 	_panInsideMaxBounds(): void {
@@ -1228,7 +1215,7 @@ export class Map extends Evented {
 	// private methods for getting map state
 
 	_getMapPanePos(): Point {
-		return DomUtil.getPosition(this._mapPane);
+		return DomUtil.getPosition(this._rootPane);
 	}
 
 	_moved(): boolean {
@@ -1350,7 +1337,7 @@ export class Map extends Evented {
 	}
 
 	_onPanTransitionEnd(): void {
-		this._mapPane.classList.remove('leaflet-pan-anim');
+		this._rootPane.classList.remove('leaflet-pan-anim');
 		this.fire('moveend');
 	}
 
@@ -1371,7 +1358,7 @@ export class Map extends Evented {
 	_createAnimProxy(): void {
 		const proxy = DomUtil.create('div', 'leaflet-proxy leaflet-zoom-animated');
 		this._proxy = proxy;
-		this._mapPane.appendChild(proxy);
+		this._rootPane.appendChild(proxy);
 
 		this.on('zoomanim', function (e) {
 			const transform = this._proxy.style.transform;
@@ -1447,7 +1434,7 @@ export class Map extends Evented {
 	}
 
 	_animateZoom(center: LatLng, zoom: number, startAnim: boolean, noUpdate?: boolean): void {
-		if (!this._mapPane) { return; }
+		if (!this._rootPane) { return; }
 
 		if (startAnim) {
 			this._animatingZoom = true;
@@ -1456,7 +1443,7 @@ export class Map extends Evented {
 			this._animateToCenter = center;
 			this._animateToZoom = zoom;
 
-			this._mapPane.classList.add('leaflet-zoom-anim');
+			this._rootPane.classList.add('leaflet-zoom-anim');
 		}
 
 		// @section Other Events
@@ -1478,8 +1465,8 @@ export class Map extends Evented {
 	_onZoomTransitionEnd(): void {
 		if (!this._animatingZoom) { return; }
 
-		if (this._mapPane) {
-			this._mapPane.classList.remove('leaflet-zoom-anim');
+		if (this._rootPane) {
+			this._rootPane.classList.remove('leaflet-zoom-anim');
 		}
 
 		this._animatingZoom = false;
@@ -1580,12 +1567,12 @@ export class Map extends Evented {
 	}
 
 	_getPaneRenderer(name: string): Renderer | undefined {
-		if (name === 'overlayPane' || name === undefined) {
-			return undefined;
+		if (name === 'overlay') {
+			return;
 		}
 
 		// Fancy one-liner to 'create if not exists' and then return it
-		return (this._paneRenderers[name] ||= this._createRenderer({pane: name}));
+		return (this._paneRenderers[name] ||= this._createRenderer({ pane: name }));
 	}
 
 	_createRenderer(options?: any): Renderer {

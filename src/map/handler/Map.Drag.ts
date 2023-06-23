@@ -84,7 +84,7 @@ export class Drag extends Handler {
 			const map = this._map;
 
 			// TODO: null safety
-			this._draggable = new Draggable(map._mapPane!, map._container);
+			this._draggable = new Draggable(map._rootPane!, map._container);
 			this._draggable.on({
 				dragstart: this._onDragStart,
 				drag: this._onDrag,

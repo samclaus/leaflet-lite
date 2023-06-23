@@ -67,7 +67,7 @@ export interface GridLayerOptions extends LayerOptions {
 	 * tiles outside the CRS limits. False by default.
 	 */
 	noWrap: boolean;
-	/** Map pane where the grid layer will be added. 'tilePane' by default. */
+	/** Map pane where the grid layer will be added. 'tile' by default. */
 	pane: string;
 	/** A custom class name to assign to the tile layer. Empty by default. */
 	className: string;
@@ -187,7 +187,7 @@ export abstract class GridLayer extends Layer {
 			maxNativeZoom: undefined,
 			minNativeZoom: undefined,
 			noWrap: false,
-			pane: 'tilePane',
+			pane: 'tile',
 			className: '',
 			keepBuffer: 2
 		});

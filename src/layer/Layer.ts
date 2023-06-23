@@ -19,7 +19,7 @@ export interface LayerOptions {
 }
 
 export const DEFAULT_LAYER_OPTIONS: Readonly<LayerOptions> = {
-	pane: 'overlayPane',
+	pane: 'overlay',
 	bubblingMouseEvents: true,
 };
 
@@ -108,9 +108,9 @@ export abstract class Layer extends Evented {
 		return this;
 	}
 
-	// Returns the `HTMLElement` representing the named pane on the map. If `name` is omitted, returns the pane for this layer.
+	// Returns the `HTMLElement` representing the named pane on the map.
 	getPane(): HTMLElement | undefined {
-		return this._map?.getPane(this.options.pane);
+		return this._map?._panes[this.options.pane];
 	}
 
 	addInteractiveTarget(targetEl: HTMLElement): this {

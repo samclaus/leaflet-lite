@@ -3,7 +3,6 @@
 .leaflet-pane,
 .leaflet-tile,
 .leaflet-marker-icon,
-.leaflet-marker-shadow,
 .leaflet-tile-container,
 .leaflet-pane>svg,
 .leaflet-pane>canvas,
@@ -20,8 +19,7 @@
 }
 
 .leaflet-tile,
-.leaflet-marker-icon,
-.leaflet-marker-shadow {
+.leaflet-marker-icon {
 	user-select: none;
 	-webkit-user-drag: none;
 }
@@ -38,8 +36,7 @@
 	-webkit-transform-origin: 0 0;
 }
 
-.leaflet-marker-icon,
-.leaflet-marker-shadow {
+.leaflet-marker-icon {
 	display: block;
 }
 
@@ -51,7 +48,6 @@
 }
 
 .leaflet-container .leaflet-marker-pane img,
-.leaflet-container .leaflet-shadow-pane img,
 .leaflet-container .leaflet-tile-pane img,
 .leaflet-container img.leaflet-image-layer,
 .leaflet-container .leaflet-tile {
@@ -115,10 +111,6 @@
 	z-index: 400;
 }
 
-.leaflet-shadow-pane {
-	z-index: 500;
-}
-
 .leaflet-marker-pane {
 	z-index: 600;
 }
@@ -127,11 +119,11 @@
 	z-index: 650;
 }
 
-.leaflet-map-pane canvas {
+.leaflet-root-pane canvas {
 	z-index: 100;
 }
 
-.leaflet-map-pane svg {
+.leaflet-root-pane svg {
 	z-index: 200;
 }
 
@@ -183,7 +175,6 @@ svg.leaflet-zoom-animated {
 
 /* marker & overlays interactivity */
 .leaflet-marker-icon,
-.leaflet-marker-shadow,
 .leaflet-image-layer,
 .leaflet-pane>svg path,
 .leaflet-tile-container {

@@ -73,7 +73,7 @@ export class Tooltip extends DivOverlay {
 			this,
 			(!(latlngOrOptions instanceof LatLng) && latlngOrOptions) || optionsOrSource,
 			{
-				pane: 'tooltipPane',
+				pane: 'tooltip',
 				offset: new Point(0, 0),
 				direction: 'auto',
 				permanent: false,

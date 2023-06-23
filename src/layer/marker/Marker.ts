@@ -115,7 +115,7 @@ export class Marker extends Layer {
 			opacity: 1,
 			riseOnHover: false,
 			riseOffset: 250,
-			pane: 'markerPane',
+			pane: 'marker',
 			bubblingMouseEvents: false,
 			autoPanOnFocus: true,
 			draggable: false,

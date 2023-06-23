@@ -21,7 +21,7 @@ export class BoxZoom extends Handler {
 		super(map);
 
 		this._container = map._container;
-		this._pane = map._panes.overlayPane;
+		this._pane = map._panes.overlay;
 
 		map.on('unload', this._destroy, this);
 	}
