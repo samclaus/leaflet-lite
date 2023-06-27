@@ -14,7 +14,7 @@ import { getScale } from './DomUtil.js';
  */
 export function on<This>(
 	this: This,
-	el: HTMLElement,
+	el: EventTarget,
 	types: string,
 	handler: HandlerFn,
 	context?: any,
@@ -24,13 +24,13 @@ export function on<This>(
  */
 export function on<This>(
 	this: This,
-	el: HTMLElement,
+	el: EventTarget,
 	handlers: HandlerMap,
 	context?: any,
 ): This;
 export function on<This>(
 	this: This,
-	el: HTMLElement,
+	el: EventTarget,
 	typesOrHandlers: string | HandlerMap,
 	handlerOrCtx?: any,
 	context?: any,
@@ -59,7 +59,7 @@ const eventsKey = '_leaflet_events';
  */
 export function off<This>(
 	this: This,
-	el: HTMLElement,
+	el: EventTarget,
 	types: string,
 	handler: HandlerFn,
 	context?: any,
@@ -72,24 +72,24 @@ export function off<This>(
  */
 export function off<This>(
 	this: This,
-	el: HTMLElement,
+	el: EventTarget,
 	handlers: HandlerMap,
 	context?: any,
 ): This;
 /** Removes all previously added listeners of given types. */
 export function off<This>(
 	this: This,
-	el: HTMLElement,
+	el: EventTarget,
 	types: string,
 ): This;
-/** Removes all previously added listeners from given HTMLElement. */
+/** Removes all previously added listeners from given EventTarget. */
 export function off<This>(
 	this: This,
-	el: HTMLElement,
+	el: EventTarget,
 ): This;
 export function off(
 	this: any,
-	el: HTMLElement,
+	el: EventTarget,
 	typesOrHandlers?: string | HandlerMap,
 	handlerOrCtx?: any,
 	context?: any,
@@ -118,7 +118,7 @@ export function off(
 	return this;
 }
 
-function batchRemove(el: HTMLElement, filterFn?: (type: string) => any): void {
+function batchRemove(el: EventTarget, filterFn?: (type: string) => any): void {
 	const events = el[eventsKey];
 
 	if (!events) return;
@@ -143,7 +143,7 @@ function makeHandlerID(type: string, handler: HandlerFn, context: any): string {
 }
 
 function addOne(
-	el: HTMLElement,
+	el: EventTarget,
 	type: string,
 	fn: HandlerFn,
 	context?: any,
@@ -171,9 +171,9 @@ function addOne(
 			el.addEventListener(mouseSubst[type] || type, handler, { passive: false });
 
 		} else if (type === 'mouseenter' || type === 'mouseleave') {
-			handler = function (e) {
+			handler = function (e: MouseEvent) {
 				e = e || window.event;
-				if (isExternalTarget(el, e)) {
+				if (el instanceof Node && isExternalTarget(el, e)) {
 					originalHandler(e);
 				}
 			};
@@ -190,7 +190,7 @@ function addOne(
 }
 
 function removeOne(
-	el: HTMLElement,
+	el: EventTarget,
 	type: string,
 	fn: HandlerFn,
 	context?: any,
@@ -236,7 +236,7 @@ export function stopPropagation<This>(this: This, e: Event & { originalEvent?: a
 /**
  * Adds `stopPropagation` to the element's `'wheel'` events (plus browser variants).
  */
-export function disableScrollPropagation<This>(this: This, el: HTMLElement): This {
+export function disableScrollPropagation<This>(this: This, el: EventTarget): This {
 	addOne(el, 'wheel', stopPropagation);
 	return this;
 }
@@ -245,7 +245,7 @@ export function disableScrollPropagation<This>(this: This, el: HTMLElement): Thi
  * Adds `stopPropagation` to the element's `'click'`, `'dblclick'`, `'contextmenu'`,
  * `'mousedown'` and `'touchstart'` events (plus browser variants).
  */
-export function disableClickPropagation(el: HTMLElement): void {
+export function disableClickPropagation(el: EventTarget): void {
 	on(el, 'mousedown touchstart dblclick contextmenu', stopPropagation);
 	el._leaflet_disable_click = true;
 }
@@ -352,7 +352,7 @@ export function getWheelDelta(e: WheelEvent): number {
  * Check if element really left/entered the event target (for mouseenter/mouseleave).
  */
 export function isExternalTarget(
-	el: HTMLElement,
+	el: Node,
 	e: Event & { relatedTarget?: any },
 ): boolean {
 	let related = e.relatedTarget;

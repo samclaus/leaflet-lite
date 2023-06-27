@@ -81,9 +81,8 @@ export class TouchZoom extends Handler {
 
 		map._stop();
 
-		// TODO: improve/remove DOM event code and remove these typecasts
-		DomEvent.on(document as any, 'touchmove', this._onTouchMove, this);
-		DomEvent.on(document as any, 'touchend touchcancel', this._onTouchEnd, this);
+		DomEvent.on(document, 'touchmove', this._onTouchMove, this);
+		DomEvent.on(document, 'touchend touchcancel', this._onTouchEnd, this);
 		DomEvent.preventDefault(e);
 	}
 
@@ -142,9 +141,8 @@ export class TouchZoom extends Handler {
 		this._zooming = false;
 		cancelAnimationFrame(this._animFrame);
 
-		// TODO: improve/remove DOM event code and remove these typecasts
-		DomEvent.off(document as any, 'touchmove', this._onTouchMove, this);
-		DomEvent.off(document as any, 'touchend touchcancel', this._onTouchEnd, this);
+		DomEvent.off(document, 'touchmove', this._onTouchMove, this);
+		DomEvent.off(document, 'touchend touchcancel', this._onTouchEnd, this);
 
 		// Pinch updates GridLayers' levels only when zoomSnap is off, so zoomSnap becomes noUpdate.
 		if (this._map.options.zoomAnimationThreshold > 0) {

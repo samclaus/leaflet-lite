@@ -7,3 +7,4 @@ export * from './handler/Map.Keyboard.js';
 export * from './handler/Map.ScrollWheelZoom.js';
 export * from './handler/Map.TapHold.js';
 export * from './handler/Map.TouchZoom.js';
+export * from './map-options.js';

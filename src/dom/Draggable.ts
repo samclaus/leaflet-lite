@@ -128,9 +128,9 @@ export class Draggable extends Evented {
 		this._parentScale = DomUtil.getScale(sizedParent);
 
 		const mouseevent = e.type === 'mousedown';
-		// TODO: fix types
-		DomEvent.on(document as unknown as HTMLElement, mouseevent ? 'mousemove' : 'touchmove', this._onMove, this);
-		DomEvent.on(document as unknown as HTMLElement, mouseevent ? 'mouseup' : 'touchend touchcancel', this._onUp, this);
+
+		DomEvent.on(document, mouseevent ? 'mousemove' : 'touchmove', this._onMove, this);
+		DomEvent.on(document, mouseevent ? 'mouseup' : 'touchend touchcancel', this._onUp, this);
 	}
 
 	_onMove(e: MouseEvent | TouchEvent) {
@@ -223,9 +223,8 @@ export class Draggable extends Evented {
 			this._lastTarget = undefined;
 		}
 
-		// TODO: fix types
-		DomEvent.off(document as unknown as HTMLElement, 'mousemove touchmove', this._onMove, this);
-		DomEvent.off(document as unknown as HTMLElement, 'mouseup touchend touchcancel', this._onUp, this);
+		DomEvent.off(document, 'mousemove touchmove', this._onMove, this);
+		DomEvent.off(document, 'mouseup touchend touchcancel', this._onUp, this);
 
 		DomUtil.enableImageDrag();
 		DomUtil.enableTextSelection();

@@ -64,7 +64,7 @@ export interface DoubleTapHandlers {
 }
 
 const delay = 200;
-export function addDoubleTapListener(el: HTMLElement, handler: HandlerFn): DoubleTapHandlers {
+export function addDoubleTapListener(el: EventTarget, handler: HandlerFn): DoubleTapHandlers {
 	// Most browsers handle double tap natively
 	el.addEventListener('dblclick', handler);
 

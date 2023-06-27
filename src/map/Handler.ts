@@ -15,27 +15,18 @@ export abstract class Handler {
 	abstract addHooks(): void;
 	abstract removeHooks(): void;
 
-	// Enables the handler
-	enable(): this {
+	enable(): void {
 		if (!this._enabled) {
 			this._enabled = true;
 			this.addHooks();
 		}
-		return this;
 	}
 
-	// Disables the handler
-	disable(): this {
+	disable(): void {
 		if (this._enabled) {
 			this._enabled = false;
 			this.removeHooks();
 		}
-		return this;
-	}
-
-	// Returns `true` if the handler is enabled
-	enabled(): boolean {
-		return this._enabled;
 	}
 
 }

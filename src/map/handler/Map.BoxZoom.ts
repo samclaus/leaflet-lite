@@ -62,8 +62,7 @@ export class BoxZoom extends Handler {
 
 		this._startPoint = this._map.mouseEventToContainerPoint(e);
 
-		// TODO: refactor/remove DOM event code and make things more kosher
-		DomEvent.on(document as unknown as HTMLElement, {
+		DomEvent.on(document, {
 			contextmenu: DomEvent.stop,
 			mousemove: this._onMouseMove,
 			mouseup: this._onMouseUp,
@@ -100,8 +99,8 @@ export class BoxZoom extends Handler {
 
 		DomUtil.enableTextSelection();
 		DomUtil.enableImageDrag();
-		// TODO: refactor/remove DOM event code and make things more kosher
-		DomEvent.off(document as unknown as HTMLElement, {
+
+		DomEvent.off(document, {
 			contextmenu: DomEvent.stop,
 			mousemove: this._onMouseMove,
 			mouseup: this._onMouseUp,
