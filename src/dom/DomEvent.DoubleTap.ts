@@ -1,5 +1,26 @@
 import type { HandlerFn } from '../core';
-import * as DomEvent from './DomEvent.js';
+
+/**
+ * Compatibility polyfill for [`Event.composedPath()`](https://developer.mozilla.org/en-US/docs/Web/API/Event/composedPath).
+ * Returns an array containing the `HTMLElement`s that the given DOM event
+ * should propagate to (if not stopped).
+ */
+export function getPropagationPath(ev: Event): HTMLElement[] {
+	if (ev.composedPath) {
+		return ev.composedPath() as HTMLElement[];
+	}
+
+	const path = [];
+
+	let el = ev.target as HTMLElement | null;
+
+	while (el) {
+		path.push(el);
+		el = el.parentNode as HTMLElement | null;
+	}
+
+	return path;
+}
 
 /*
  * Extends the event handling code with double tap support for mobile browsers.
@@ -92,7 +113,7 @@ export function addDoubleTapListener(el: EventTarget, handler: HandlerFn): Doubl
 		// This ignores clicks on elements which are a label with a 'for'
 		// attribute (or children of such a label), but not children of
 		// a <input>.
-		const path = DomEvent.getPropagationPath(ev);
+		const path = getPropagationPath(ev);
 		if (path.some(el => el instanceof HTMLLabelElement && (el.attributes as any).for) &&
 			!path.some(el => (
 				el instanceof HTMLInputElement ||

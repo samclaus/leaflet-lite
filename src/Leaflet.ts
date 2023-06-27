@@ -8,4 +8,4 @@ export * from './layer/marker';
 export * from './layer/tile';
 export * from './layer/vector';
 export * from './map';
-
+export * from './map/handler/index.js';

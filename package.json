@@ -23,5 +23,8 @@
     "gis",
     "map"
   ],
-  "license": "BSD-2-Clause"
+  "license": "BSD-2-Clause",
+  "dependencies": {
+    "vite-plugin-circular-dependency": "^0.2.1"
+  }
 }

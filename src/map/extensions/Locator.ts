@@ -1,6 +1,6 @@
-import { Evented } from "../../core";
 import type { Map } from "..";
-import { LatLng } from "../../geog";
+import { Evented } from "../../core";
+import { LatLng, LatLngBounds } from "../../geog";
 
 export interface LocateOptions extends PositionOptions {
 	watch?: boolean;
@@ -116,7 +116,7 @@ export class Locator extends Evented {
 			lat = pos.coords.latitude,
 		    lng = pos.coords.longitude,
 		    latlng = new LatLng(lat, lng),
-		    bounds = latlng.toBounds(pos.coords.accuracy * 2),
+		    bounds = LatLngBounds.fromCenter(latlng, pos.coords.accuracy * 2),
 		    options = this._locateOptions;
 
 		if (options?.setView) {

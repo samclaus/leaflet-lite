@@ -1,6 +1,8 @@
 import { Point } from '../geom';
 import * as DomEvent from './DomEvent.js';
 
+export { getScale } from './get-scale.js';
+
 /*
  * @namespace DomUtil
  *
@@ -165,18 +167,4 @@ export function getSizedParentNode(element: HTMLElement): HTMLElement | undefine
 		element !== document.body
 	);
 	return element || undefined; // coerce 'null' to 'undefined'
-}
-
-// Computes the CSS scale currently applied on the element.
-// Returns an object with `x` and `y` members as horizontal and vertical scales respectively,
-// and `boundingClientRect` as the result of [`getBoundingClientRect()`](https://developer.mozilla.org/en-US/docs/Web/API/Element/getBoundingClientRect).
-// TODO: add explicit interface for return type
-export function getScale(element: HTMLElement) {
-	const rect = element.getBoundingClientRect(); // Read-only in old browsers.
-
-	return {
-		x: rect.width / element.offsetWidth || 1,
-		y: rect.height / element.offsetHeight || 1,
-		boundingClientRect: rect
-	};
 }

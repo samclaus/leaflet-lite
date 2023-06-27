@@ -28,6 +28,20 @@ import { LatLng } from './LatLng.js';
  */
 export class LatLngBounds {
 
+	/**
+	 * Returns a new `LatLngBounds` object in which each boundary is `sizeInMeters/2`
+	 * meters apart from the given center `LatLng`.
+	 */
+	static fromCenter(latlng: LatLng, sizeInMeters: number): LatLngBounds {
+		const latAccuracy = 180 * sizeInMeters / 40075017;
+		const lngAccuracy = latAccuracy / Math.cos((Math.PI / 180) * latlng.lat);
+
+		return new LatLngBounds(
+			new LatLng(latlng.lat - latAccuracy, latlng.lng - lngAccuracy),
+			new LatLng(latlng.lat + latAccuracy, latlng.lng + lngAccuracy),
+		);
+	}
+
 	_southWest!: LatLng; // assigned by extend() call in constructor
 	_northEast!: LatLng; // assigned by extend() call in constructor
 

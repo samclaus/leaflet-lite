@@ -2,7 +2,7 @@ import { Browser, Util, type HandlerFn, type HandlerMap } from '../core';
 import { Point } from '../geom';
 import { addDoubleTapListener, removeDoubleTapListener, type DoubleTapHandlers } from './DomEvent.DoubleTap.js';
 import { addPointerListener, removePointerListener } from './DomEvent.Pointer.js';
-import { getScale } from './DomUtil.js';
+import { getScale } from './get-scale.js';
 
 // This file contains utility functions to work with native DOM events, used by Leaflet internally.
 
@@ -270,28 +270,6 @@ export function stop<This>(this: This, e: Event): This {
 	preventDefault(e);
 	stopPropagation(e);
 	return this;
-}
-
-/**
- * Compatibility polyfill for [`Event.composedPath()`](https://developer.mozilla.org/en-US/docs/Web/API/Event/composedPath).
- * Returns an array containing the `HTMLElement`s that the given DOM event
- * should propagate to (if not stopped).
- */
-export function getPropagationPath(ev: Event): HTMLElement[] {
-	if (ev.composedPath) {
-		return ev.composedPath() as HTMLElement[];
-	}
-
-	const path = [];
-
-	let el = ev.target as HTMLElement | null;
-
-	while (el) {
-		path.push(el);
-		el = el.parentNode as HTMLElement | null;
-	}
-
-	return path;
 }
 
 export interface MouseEventLike {

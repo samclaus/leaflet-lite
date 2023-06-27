@@ -1,5 +1,4 @@
 import { Util } from '../core';
-import { LatLngBounds } from './LatLngBounds.js';
 
 /**
  * Represents a geographical point with a certain latitude and longitude,
@@ -20,17 +19,6 @@ export class LatLng {
 			Math.abs(this.lng - other.lng),
 		);
 		return margin <= maxMargin;
-	}
-
-	// Returns a new `LatLngBounds` object in which each boundary is `sizeInMeters/2` meters apart from the `LatLng`.
-	toBounds(sizeInMeters: number): LatLngBounds {
-		const latAccuracy = 180 * sizeInMeters / 40075017;
-		const lngAccuracy = latAccuracy / Math.cos((Math.PI / 180) * this.lat);
-
-		return new LatLngBounds(
-			new LatLng(this.lat - latAccuracy, this.lng - lngAccuracy),
-			new LatLng(this.lat + latAccuracy, this.lng + lngAccuracy),
-		);
 	}
 
 	clone(): LatLng {
