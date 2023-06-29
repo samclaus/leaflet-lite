@@ -254,23 +254,18 @@ export abstract class DivOverlay extends Layer {
 			this._source = source;
 		}
 
+		latlng ||= (
+			source.getCenter?.() ||
+			source.getLatLng?.() ||
+			source.getBounds?.()?.getCenter()
+		);
+	
 		if (!latlng) {
-			if (source.getCenter) {
-				latlng = source.getCenter();
-			} else if (source.getLatLng) {
-				latlng = source.getLatLng();
-			} else if (source.getBounds) {
-				latlng = source.getBounds().getCenter();
-			} else {
-				throw new Error('Unable to get source layer LatLng.');
-			}
+			throw new Error('Unable to get source layer LatLng.');
 		}
-		this.setLatLng(latlng!); // TODO: null safety
 
-		if (this._map) {
-			// update the overlay (content, layout, etc...)
-			this.update();
-		}
+		this.setLatLng(latlng);
+		this.update(); // update the overlay (content, layout, etc...)
 
 		return true;
 	}
