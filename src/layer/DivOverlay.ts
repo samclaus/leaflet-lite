@@ -3,7 +3,6 @@ import { DomUtil } from '../dom';
 import { LatLng } from '../geog';
 import { Point } from '../geom';
 import type { Map } from '../map';
-import { FeatureGroup } from './FeatureGroup.js';
 import { Layer, type LayerOptions } from './Layer.js';
 
 export interface DivOverlayOptions extends LayerOptions {
@@ -238,18 +237,18 @@ export abstract class DivOverlay extends Layer {
 	// prepare bound overlay to open: update latlng pos / content source (for FeatureGroup)
 	_prepareOpen(latlng?: LatLng): boolean {
 		let source = this._source;
+
 		if (!source._map) { return false; }
 
-		if (source instanceof FeatureGroup) {
-			source = null;
-			const layers = this._source._layers;
-			for (const id in layers) {
-				if (layers[id]._map) {
-					source = layers[id];
-					break;
-				}
-			}
-			if (!source) { return false; } // Unable to get source layer.
+		// TODO: this code is all coupled, base classes should not know about higher-level classes
+		if (source._isFeatureGroup) {
+			// Find the first layer in the feature group that is registered with a map
+			source = Object
+				.values<any>(source._layers)
+				.find(layer => layer._map);
+
+			// None of the feature group layers were registered with a map
+			if (!source) { return false; }
 
 			// set overlay source to this layer
 			this._source = source;
@@ -276,11 +275,13 @@ export abstract class DivOverlay extends Layer {
 		return true;
 	}
 
-	_updateContent() {
+	_updateContent(): void {
 		if (!this._content) { return; }
 
 		const node = this._contentNode!; // TODO: null safety
-		const content = (typeof this._content === 'function') ? this._content(this._source || this) : this._content;
+		const content = (typeof this._content === 'function')
+			? this._content(this._source || this)
+			: this._content;
 
 		if (typeof content === 'string') {
 			node.innerHTML = content;

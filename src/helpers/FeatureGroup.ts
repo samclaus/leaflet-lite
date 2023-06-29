@@ -1,7 +1,7 @@
 import { LatLngBounds } from '../geog';
-import type { Layer } from './Layer.js';
+import type { Layer } from '../layer';
+import type { PathOptions } from '../layer/vector';
 import { LayerGroup } from './LayerGroup.js';
-import type { PathOptions } from './vector';
 
 /**
  * Extended `LayerGroup` that makes it easier to do the same thing to all its member layers:
@@ -19,6 +19,12 @@ import type { PathOptions } from './vector';
  * ```
  */
 export class FeatureGroup extends LayerGroup {
+
+	constructor(layers: Layer[], options?: any) {
+		super(layers, options);
+
+		this._isFeatureGroup = true;
+	}
 
 	addLayer(layer: Layer): this {
 		if (this.hasLayer(layer)) {

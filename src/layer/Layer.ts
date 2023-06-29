@@ -2,8 +2,6 @@ import { Evented, Util, type HandlerMap } from '../core';
 import { DomEvent } from '../dom';
 import type { LatLng, LatLngBounds } from '../geog';
 import type { Map } from '../map';
-import { FeatureGroup } from './FeatureGroup.js';
-import type { LayerGroup } from './LayerGroup.js';
 import { Tooltip } from './Tooltip.js';
 
 export interface LayerOptions {
@@ -16,6 +14,20 @@ export interface LayerOptions {
 	 * TODO: document this.
 	 */
 	bubblingMouseEvents: boolean;
+}
+
+/**
+ * Common interface implemented by Map and LayerGroup.
+ * 
+ * @deprecated TODO: Leaflet had a ton of circular dependencies originally, well,
+ * not necessarily since they dynamically extended classes--but anyways, I
+ * need to flesh out a TypeScript-friendly inheritance/composability pattern
+ * for all the functionality and then get rid of these potentially less than
+ * ideal fixes.
+ */
+export interface LayerContainer {
+	addLayer(layer: Layer): void;
+	removeLayer(layer: Layer): void;
 }
 
 export const DEFAULT_LAYER_OPTIONS: Readonly<LayerOptions> = {
@@ -90,8 +102,8 @@ export abstract class Layer extends Evented {
 	/**
 	 * Adds the layer to the given map or layer group.
 	 */
-	addTo(map: Map | LayerGroup): this {
-		map.addLayer(this);
+	addTo(container: LayerContainer): this {
+		container.addLayer(this);
 		return this;
 	}
 
@@ -101,9 +113,9 @@ export abstract class Layer extends Evented {
 	}
 
 	// Removes the layer from the given map or `LayerGroup`
-	removeFrom(map: Map | LayerGroup | undefined): this {
-		if (map) {
-			map.removeLayer(this);
+	removeFrom(container: LayerContainer | undefined): this {
+		if (container) {
+			container.removeLayer(this);
 		}
 		return this;
 	}
@@ -182,7 +194,7 @@ export abstract class Layer extends Evented {
 		this._initTooltipInteractions();
 
 		// TODO: null safety
-		if (this._tooltip!.options.permanent && this._map && this._map.hasLayer(this)) {
+		if (this._tooltip!.options.permanent && this._map?.hasLayer(this)) {
 			this.openTooltip();
 		}
 
@@ -229,10 +241,16 @@ export abstract class Layer extends Evented {
 		this._tooltipHandlersAdded = !remove;
 	}
 
+	/**
+	 * @deprecated TODO: this is just a hideous hack because some of the code in here is not
+	 * truly abstract and needs to know about subclasses, which caused circular dependencies.
+	 */
+	_isFeatureGroup?: boolean;
+
 	// Opens the bound tooltip at the specified `latlng` or at the default tooltip anchor if no `latlng` is passed.
 	openTooltip(latlng?: LatLng): this {
 		if (this._tooltip) {
-			if (!(this instanceof FeatureGroup)) {
+			if (!this._isFeatureGroup) {
 				this._tooltip._source = this;
 			}
 			if (this._tooltip._prepareOpen(latlng)) {

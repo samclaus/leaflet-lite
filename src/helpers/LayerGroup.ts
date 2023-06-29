@@ -1,6 +1,6 @@
 import { Util } from '../core';
+import { Layer } from '../layer';
 import type { Map } from '../map';
-import { Layer } from './Layer.js';
 
 /**
  * Used to group several layers and handle them as one. If you add it to the map,
