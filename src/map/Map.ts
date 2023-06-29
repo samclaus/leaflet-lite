@@ -3,7 +3,7 @@ import { DomEvent, DomUtil, PosAnimation } from '../dom';
 import { LatLng, LatLngBounds } from '../geog';
 import { EPSG3857 } from '../geog/crs';
 import { Bounds, Point } from '../geom';
-import { type Layer } from '../layer/Layer.js';
+import { type Layer, type LayerContainer } from '../layer/Layer.js';
 import { Canvas, SVG, type Path, type Renderer } from '../layer/vector';
 import type { Handler } from './Handler.js';
 import type { FitBoundsOptions, MapOptions, PanOptions, ZoomOptions, ZoomPanOptions } from './map-options';
@@ -62,7 +62,7 @@ import type { FitBoundsOptions, MapOptions, PanOptions, ZoomOptions, ZoomPanOpti
  * @event keyup: KeyboardEvent
  * Fired when the user releases a key from the keyboard while the map is focused.
  */
-export class Map extends Evented {
+export class Map extends Evented implements LayerContainer {
 
 	options: MapOptions;
 	_handlers: Handler[] = [];

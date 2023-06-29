@@ -29,6 +29,9 @@ export interface DivOverlayOptions extends LayerOptions {
 
 /**
  * Base model for L.Tooltip. Inherit from it for custom overlays like plugins.
+ * 
+ * @event contentupdate: Event
+ * Fired when the content of the overlay is updated
  */
 export abstract class DivOverlay extends Layer {
 
@@ -234,14 +237,14 @@ export abstract class DivOverlay extends Layer {
 		return this;
 	}
 
-	// prepare bound overlay to open: update latlng pos / content source (for FeatureGroup)
+	// prepare bound overlay to open: update latlng pos / content source (for LayerGroup)
 	_prepareOpen(latlng?: LatLng): boolean {
 		let source = this._source;
 
 		if (!source._map) { return false; }
 
 		// TODO: this code is all coupled, base classes should not know about higher-level classes
-		if (source._isFeatureGroup) {
+		if (source._isLayerGroup) {
 			// Find the first layer in the feature group that is registered with a map
 			source = Object
 				.values<any>(source._layers)
@@ -288,10 +291,6 @@ export abstract class DivOverlay extends Layer {
 			node.appendChild(content);
 		}
 
-		// @namespace DivOverlay
-		// @section DivOverlay events
-		// @event contentupdate: Event
-		// Fired when the content of the overlay is updated
 		this.fire('contentupdate');
 	}
 

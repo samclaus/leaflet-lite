@@ -3,14 +3,13 @@
 // import { Util } from '../core';
 // import { LatLng } from '../geog';
 // import { GeogUtil } from '../geog/util';
-// import { FeatureGroup } from './FeatureGroup.js';
 // import { LayerGroup } from './LayerGroup.js';
 // import { Marker } from './marker';
 // import { CircleMarker, Polygon, Polyline } from './vector';
 
 // /**
 //  * Represents a GeoJSON object or an array of GeoJSON objects. Allows you to parse
-//  * GeoJSON data and display it on the map. Extends `FeatureGroup`.
+//  * GeoJSON data and display it on the map. Extends `LayerGroup`.
 //  *
 //  * ```js
 //  * L.geoJSON(data, {
@@ -20,7 +19,7 @@
 //  * }).addTo(map);
 //  * ```
 //  */
-// export const GeoJSON = FeatureGroup.extend({
+// export const GeoJSON = LayerGroup.extend({
 
 // 	/* @section
 // 	 * @aka GeoJSON options
@@ -177,7 +176,7 @@
 // 			latlng = _coordsToLatLng(coords[i]);
 // 			layers.push(_pointToLayer(pointToLayer, geojson, latlng, options));
 // 		}
-// 		return new FeatureGroup(layers);
+// 		return new LayerGroup(layers);
 
 // 	case 'LineString':
 // 	case 'MultiLineString':
@@ -201,7 +200,7 @@
 // 				layers.push(geoLayer);
 // 			}
 // 		}
-// 		return new FeatureGroup(layers);
+// 		return new LayerGroup(layers);
 
 // 	case 'FeatureCollection':
 // 		for (i = 0, len = geometry.features.length; i < len; i++) {
@@ -211,7 +210,7 @@
 // 				layers.push(featureLayer);
 // 			}
 // 		}
-// 		return new FeatureGroup(layers);
+// 		return new LayerGroup(layers);
 
 // 	default:
 // 		throw new Error('Invalid GeoJSON object.');

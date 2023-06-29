@@ -245,12 +245,12 @@ export abstract class Layer extends Evented {
 	 * @deprecated TODO: this is just a hideous hack because some of the code in here is not
 	 * truly abstract and needs to know about subclasses, which caused circular dependencies.
 	 */
-	_isFeatureGroup?: boolean;
+	_isLayerGroup?: boolean;
 
 	// Opens the bound tooltip at the specified `latlng` or at the default tooltip anchor if no `latlng` is passed.
 	openTooltip(latlng?: LatLng): this {
 		if (this._tooltip) {
-			if (!this._isFeatureGroup) {
+			if (!this._isLayerGroup) {
 				this._tooltip._source = this;
 			}
 			if (this._tooltip._prepareOpen(latlng)) {
