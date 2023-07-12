@@ -152,7 +152,7 @@ export class TileLayer extends GridLayer {
 	// Called only internally, overrides GridLayer's [`createTile()`](#gridlayer-createtile)
 	// to return an `<img>` HTML element with the appropriate image URL given `coords`. The `done`
 	// callback is called when the tile has been loaded.
-	createTile(coords: Point, done?: DoneFn): HTMLImageElement {
+	createTile(coords: Point, done: DoneFn = Util.falseFn): HTMLImageElement {
 		const tile = document.createElement('img');
 
 		DomEvent.on(tile, 'load', this._tileOnLoad.bind(this, done, tile));

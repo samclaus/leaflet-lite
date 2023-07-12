@@ -79,7 +79,7 @@ export interface GridLayerOptions extends LayerOptions {
 }
 
 /** @deprecated TODO: figure out the types for the various 'done' callback parameters throughout codebase */
-export type DoneFn = any;
+export type DoneFn = (err: any, tile: HTMLElement) => void;
 
 export interface TileModel {
 	el: HTMLElement;
@@ -195,7 +195,7 @@ export abstract class GridLayer extends Layer {
 
 	// Returns the `HTMLElement` corresponding to the given `coords`. If the `done` callback
 	// is specified, it must be called when the tile has finished loading and drawing.
-	abstract createTile(_coords: Point, done?: DoneFn): HTMLImageElement;
+	abstract createTile(_coords: Point, done?: DoneFn): HTMLElement;
 
 	_abortLoading?(): void;
 
@@ -852,7 +852,7 @@ export abstract class GridLayer extends Layer {
 		});
 	}
 
-	_tileReady(coords: Point, err: unknown /* TODO */, _tile?: HTMLImageElement): void {
+	_tileReady(coords: Point, err: unknown /* TODO */, _tile?: HTMLElement): void {
 		if (err) {
 			// @event tileerror: TileErrorEvent
 			// Fired when there is an error loading a tile.

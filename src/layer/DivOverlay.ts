@@ -213,6 +213,7 @@ export abstract class DivOverlay extends Layer {
 		if (this._zoomAnimated) {
 			events.zoomanim = this._animateZoom;
 		}
+
 		return events;
 	}
 
