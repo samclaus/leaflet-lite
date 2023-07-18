@@ -1,4 +1,5 @@
-import { Handler, Map } from '..';
+import type { Map } from '..';
+import type { DisposeFn } from '../../core/Disposable';
 
 export interface DoubleClickZoomOptions {
 	/**
@@ -8,42 +9,23 @@ export interface DoubleClickZoomOptions {
 	centered: boolean;
 }
 
-/**
- * L.Handler.DoubleClickZoom is used to enable double-click zoom on the map, enabled by default.
- */
-export class DoubleClickZoom extends Handler {
-
-	_centered: boolean;
-
-	constructor(
-		map: Map,
-		{ centered = false }: Partial<DoubleClickZoomOptions> = {},
-	) {
-		super(map);
-
-		this._centered = centered;
-	}
-
-	addHooks(): void {
-		this._map.on('dblclick', this._onDoubleClick, this);
-	}
-
-	removeHooks(): void {
-		this._map.off('dblclick', this._onDoubleClick, this);
-	}
-
-	_onDoubleClick(e: any): void { // TODO: type the parameter
+export function enableDoubleClickZoom(map: Map, options?: Partial<DoubleClickZoomOptions>): DisposeFn {
+	function onDoubleClick(e: any): void { // TODO: type the parameter
 		const
-			map = this._map,
 		    oldZoom = map._zoom,
 		    delta = map.options.zoomDelta,
 		    zoom = e.originalEvent.shiftKey ? oldZoom - delta : oldZoom + delta;
 
-		if (this._centered) {
+		if (options?.centered) {
 			map.setZoom(zoom);
 		} else {
 			map.setZoomAround(e.containerPoint, zoom);
 		}
 	}
 
+	map.on('dblclick', onDoubleClick);
+
+	return function(): void {
+		map.off('dblclick', onDoubleClick);
+	};
 }
