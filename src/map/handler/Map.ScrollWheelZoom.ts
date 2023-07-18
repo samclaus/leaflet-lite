@@ -1,4 +1,5 @@
-import { Handler, Map } from '..';
+import type { Map } from '..';
+import type { DisposeFn } from '../../core';
 import { DomEvent } from '../../dom';
 import { Point } from '../../geom';
 
@@ -22,85 +23,63 @@ export interface ScrollWheelZoomOptions {
 }
 
 /**
- * L.Handler.ScrollWheelZoom is used by L.Map to enable mouse scroll wheel zoom on the map.
+ * Listen on the map for 'wheel' events and zoom it accordingly.
  */
-export class ScrollWheelZoom extends Handler {
+export function enableScrollWheelZoom(map: Map, options: Partial<ScrollWheelZoomOptions> = {}): DisposeFn {
+	const {
+		debounceTime = 40,
+		pxPerZoomLevel = 60,
+		centered = false,
+	} = options;
 
-	_delta = 0;
-	_lastMousePos = new Point(0, 0);
-	_startTime = 0;
-	_timer: number | undefined;
-	_debounceTime: number;
-	_pxPerZoomLevel: number;
-	_centered: boolean;
+	let
+		delta = 0,
+		startTime = 0,
+		lastMousePos = new Point(0, 0),
+		timer: number | undefined;
 
-	constructor(
-		map: Map,
-		{
-			debounceTime = 40,
-			pxPerZoomLevel = 60,
-			centered = false,
-
-		}: Partial<ScrollWheelZoomOptions> = {},
-	) {
-		super(map);
-
-		this._debounceTime = debounceTime;
-		this._pxPerZoomLevel = pxPerZoomLevel;
-		this._centered = centered;
-	}
-
-	addHooks(): void {
-		DomEvent.on(this._map._container, 'wheel', this._onWheelScroll, this);
-
-		this._delta = 0;
-	}
-
-	removeHooks(): void {
-		DomEvent.off(this._map._container, 'wheel', this._onWheelScroll, this);
-	}
-
-	_onWheelScroll(e: WheelEvent): void {
-		const delta = DomEvent.getWheelDelta(e);
-		const debounce = this._debounceTime;
-
-		this._delta += delta;
-		this._lastMousePos = this._map.mouseEventToContainerPoint(e);
-		this._startTime ||= Date.now();
-
-		const left = Math.max(debounce - (Date.now() - this._startTime), 0);
-
-		clearTimeout(this._timer);
-		this._timer = setTimeout(this._performZoom.bind(this), left);
-
-		DomEvent.stop(e);
-	}
-
-	_performZoom(): void {
+	function performZoom(): void {
 		const
-			map = this._map,
-		    zoom = map._zoom,
-		    snap = this._map.options.zoomSnap || 0;
+			zoom = map._zoom,
+			snap = map.options.zoomSnap || 0;
 
 		map._stop(); // stop panning and fly animations if any
 
 		// map the delta with a sigmoid function to -4..4 range leaning on -1..1
 		const
-			d2 = this._delta / (this._pxPerZoomLevel * 4),
-		    d3 = 4 * Math.log(2 / (1 + Math.exp(-Math.abs(d2)))) / Math.LN2,
-		    d4 = snap ? Math.ceil(d3 / snap) * snap : d3,
-		    delta = map._limitZoom(zoom + (this._delta > 0 ? d4 : -d4)) - zoom;
+			d2 = delta / (pxPerZoomLevel * 4),
+			d3 = 4 * Math.log(2 / (1 + Math.exp(-Math.abs(d2)))) / Math.LN2,
+			d4 = snap ? Math.ceil(d3 / snap) * snap : d3,
+			niceDelta = map._limitZoom(zoom + (delta > 0 ? d4 : -d4)) - zoom;
 
-		this._delta = 0;
-		this._startTime = 0;
+		delta = 0;
+		startTime = 0;
 
-		if (!delta) { return; }
+		if (!niceDelta) { return; }
 
-		if (this._centered) {
-			map.setZoom(zoom + delta);
+		if (centered) {
+			map.setZoom(zoom + niceDelta);
 		} else {
-			map.setZoomAround(this._lastMousePos, zoom + delta);
+			map.setZoomAround(lastMousePos, zoom + niceDelta);
 		}
 	}
 
+	function onWheelScroll(e: WheelEvent): void {
+		delta += DomEvent.getWheelDelta(e);
+		lastMousePos = map.mouseEventToContainerPoint(e);
+		startTime ||= Date.now();
+
+		const left = Math.max(debounceTime - (Date.now() - startTime), 0);
+
+		clearTimeout(timer);
+		timer = setTimeout(performZoom, left);
+
+		DomEvent.stop(e);
+	}
+
+	DomEvent.on(map._container, 'wheel', onWheelScroll);
+	
+	return function(): void {
+		DomEvent.off(map._container, 'wheel', onWheelScroll);
+	};
 }
