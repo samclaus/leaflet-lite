@@ -1,5 +1,16 @@
 
 /**
+ * A DisposeFn is a function that can be called to clean up resources that
+ * some code has acquired, such as event listeners and timers.
+ * 
+ * It is safe to call a DisposeFn more than once, but it will not have any
+ * effect after being called the first time.
+ */
+export interface DisposeFn {
+    (): void;
+}
+
+/**
  * Disposable is an interface implemented by objects that add event
  * handlers, make requests on the network, etc. and need to be cleaned
  * up.
