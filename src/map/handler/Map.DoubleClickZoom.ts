@@ -1,5 +1,5 @@
 import type { Map } from '..';
-import type { DisposeFn } from '../../core/Disposable';
+import type { DisposeFn } from '../../core';
 
 export interface DoubleClickZoomOptions {
 	/**
@@ -9,6 +9,9 @@ export interface DoubleClickZoomOptions {
 	centered: boolean;
 }
 
+/**
+ * Listen on the map for 'dblclick' events and zoom it accordingly.
+ */
 export function enableDoubleClickZoom(map: Map, options?: Partial<DoubleClickZoomOptions>): DisposeFn {
 	function onDoubleClick(e: any): void { // TODO: type the parameter
 		const
