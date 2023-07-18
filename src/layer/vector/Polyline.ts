@@ -25,7 +25,9 @@ export interface PolylineOptions extends PathOptions {
  * 	[34.04, -118.2]
  * ];
  *
- * var polyline = L.polyline(latlngs, {color: 'red'}).addTo(map);
+ * const polyline = L.polyline(latlngs, {color: 'red'});
+ * 
+ * map.addLayer(polyline);
  *
  * // zoom the map to the polyline
  * map.fitBounds(polyline.getBounds());

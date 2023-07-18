@@ -6,7 +6,9 @@ import * as DomUtil from './DomUtil.js';
  * Used internally for panning animations, utilizing CSS Transitions for modern browsers and a timer fallback for IE6-9.
  *
  * ```js
- * var myPositionMarker = L.marker([48.864716, 2.294694]).addTo(map);
+ * var myPositionMarker = L.marker([48.864716, 2.294694]);
+ * 
+ * map.addLayer(myPositionMarker);
  *
  * myPositionMarker.on("click", function() {
  * 	var pos = map.latLngToLayerPoint(myPositionMarker.getLatLng());

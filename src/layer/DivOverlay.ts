@@ -20,11 +20,8 @@ export interface DivOverlayOptions extends LayerOptions {
 	className: string | undefined;
 	/**
 	 * Sets the HTML content of the overlay while initializing.
-	 * If a function is passed the source layer will be passed
-	 * to the function. The function should return a string or
-	 * element to be used in the overlay. Empty string by default.
 	 */
-	content: string | HTMLElement | ((layer: Layer) => string | HTMLElement);
+	content: string | HTMLElement;
 }
 
 /**
@@ -39,9 +36,9 @@ export abstract class DivOverlay extends Layer {
 
 	_latlng: LatLng | undefined;
 	_source: any; // TODO
-	_content: any; // TODO
-	_container: any; // TODO
-	_contentNode: HTMLElement | undefined;
+	_content: string | HTMLElement;
+	_container = DomUtil.create('div');
+	_contentNode = this._container;
 	_removeTimeout: number | undefined;
 
 	constructor(latlng?: LatLng, options?: Partial<DivOverlayOptions>)
@@ -64,9 +61,8 @@ export abstract class DivOverlay extends Layer {
 			Util.setOptions(this, latlngOrOptions, optionDefaults);
 			this._source = optionsOrSource;
 		}
-		if (this.options.content) {
-			this._content = this.options.content;
-		}
+
+		this._content = this.options.content;
 	}
 
 	abstract _initLayout(): void;
@@ -77,13 +73,10 @@ export abstract class DivOverlay extends Layer {
 
 	// Adds the overlay to the map.
 	openOn(map: Map = this._source._map): this {
-		if (!map.hasLayer(this)) {
-			map.addLayer(this);
-		}
+		map.addLayer(this);
 		return this;
 	}
 
-	// Closes the overlay. Alternative to `layer.closeTooltip()`.
 	close(): this {
 		if (this._map) {
 			this._map.removeLayer(this);
@@ -93,7 +86,6 @@ export abstract class DivOverlay extends Layer {
 
 	// Opens or closes the overlay bound to layer depending on its current state.
 	// Argument may be omitted only for overlay bound to layer.
-	// Alternative to `.toggleTooltip()`.
 	toggle(layer?: Layer): this {
 		if (this._map) {
 			this.close();
@@ -119,7 +111,7 @@ export abstract class DivOverlay extends Layer {
 		}
 
 		if (map.options.fadeAnimation) {
-			this._container.style.opacity = 0;
+			this._container.style.opacity = 0 as any; // will coerce to string
 		}
 
 		clearTimeout(this._removeTimeout);
@@ -127,7 +119,7 @@ export abstract class DivOverlay extends Layer {
 		this.update();
 
 		if (map.options.fadeAnimation) {
-			this._container.style.opacity = 1;
+			this._container.style.opacity = 1 as any; // will coerce to string
 		}
 
 		this.bringToFront();
@@ -142,7 +134,7 @@ export abstract class DivOverlay extends Layer {
 
 	onRemove(map: Map): void {
 		if (map.options.fadeAnimation) {
-			this._container.style.opacity = 0;
+			this._container.style.opacity = 0 as any; // will coerce to string
 			this._removeTimeout = setTimeout(() => this._container.remove(), 200);
 		} else {
 			this._container.remove();
@@ -171,14 +163,8 @@ export abstract class DivOverlay extends Layer {
 		return this;
 	}
 
-	// Returns the content of the overlay.
-	getContent(): string | HTMLElement | Function {
-		return this._content;
-	}
-
-	// Sets the HTML content of the overlay. If a function is passed the source layer will be passed to the function.
-	// The function should return a `String` or `HTMLElement` to be used in the overlay.
-	setContent(content: string | HTMLElement | Function): this {
+	// Sets the HTML content of the overlay.
+	setContent(content: string | HTMLElement): this {
 		this._content = content;
 		this.update();
 		return this;
@@ -219,7 +205,7 @@ export abstract class DivOverlay extends Layer {
 
 	// Returns `true` when the overlay is visible on the map.
 	isOpen(): boolean {
-		return !!this._map && this._map.hasLayer(this);
+		return !!(this._map?.hasLayer(this));
 	}
 
 	// Brings this overlay in front of other overlays (in the same map pane).
@@ -275,20 +261,14 @@ export abstract class DivOverlay extends Layer {
 	}
 
 	_updateContent(): void {
-		if (!this._content) { return; }
-
-		const node = this._contentNode!; // TODO: null safety
-		const content = (typeof this._content === 'function')
-			? this._content(this._source || this)
-			: this._content;
+		const
+			node = this._contentNode,
+			content = this._content;
 
 		if (typeof content === 'string') {
 			node.innerHTML = content;
 		} else {
-			while (node.hasChildNodes()) {
-				// TODO: just check firstChild as loop condition and remove non-null assertion?
-				node.removeChild(node.firstChild!);
-			}
+			DomUtil.removeAllChildren(node);
 			node.appendChild(content);
 		}
 

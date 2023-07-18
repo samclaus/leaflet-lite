@@ -3,7 +3,7 @@ import { DomEvent, DomUtil, PosAnimation } from '../dom';
 import { LatLng, LatLngBounds } from '../geog';
 import { EPSG3857 } from '../geog/crs';
 import { Bounds, Point } from '../geom';
-import { type Layer, type LayerContainer } from '../layer/Layer.js';
+import { type Layer } from '../layer/Layer.js';
 import { Canvas, SVG, type Path, type Renderer } from '../layer/vector';
 import type { Handler } from './Handler.js';
 import type { FitBoundsOptions, MapOptions, PanOptions, ZoomOptions, ZoomPanOptions } from './map-options';
@@ -62,7 +62,7 @@ import type { FitBoundsOptions, MapOptions, PanOptions, ZoomOptions, ZoomPanOpti
  * @event keyup: KeyboardEvent
  * Fired when the user releases a key from the keyboard while the map is focused.
  */
-export class Map extends Evented implements LayerContainer {
+export class Map extends Evented {
 
 	options: MapOptions;
 	_handlers: Handler[] = [];
@@ -669,8 +669,13 @@ export class Map extends Evented implements LayerContainer {
 		// that do not produce a character value.
 		// @event keyup: KeyboardEvent
 		// Fired when the user releases a key from the keyboard while the map is focused.
-		DomEvent.on(this._container, 'click dblclick mousedown mouseup ' +
-			'mouseover mouseout mousemove contextmenu keypress keydown keyup', this._handleDOMEvent, this);
+		DomEvent.on(
+			this._container,
+			'click dblclick mousedown mouseup mouseover mouseout ' +
+			'mousemove contextmenu keypress keydown keyup',
+			this._handleDOMEvent,
+			this,
+		);
 
 		this._resizeObserver.disconnect();
 
@@ -708,8 +713,9 @@ export class Map extends Evented implements LayerContainer {
 			this.fire('unload');
 		}
 
+		// IMPORTANT: collect all map keys in an array before deleting them
 		for (const layer of Object.values(this._layers)) {
-			layer.remove();
+			this.removeLayer(layer);
 		}
 
 		for (const pane of Object.values(this._panes)) {
@@ -1076,32 +1082,50 @@ export class Map extends Evented implements LayerContainer {
 		}
 	}
 
-	_findEventTargets(e: any, type: string): any[] {
-		let targets = [],
-		    target,
-		    src = e.target || e.srcElement,
-		    dragging = false;
-		const isHover = type === 'mouseout' || type === 'mouseover';
+	_findEventTargets(e: any, type: string): Evented[] {
+		const
+			targets: Evented[] = [],
+			isHover = type === 'mouseout' || type === 'mouseover';
+
+		let src = e.target || e.srcElement;
+		let dragging = false;
 
 		while (src) {
-			target = this._targets[Util.stamp(src)];
-			if (target && (type === 'click' || type === 'preclick') && this._draggableMoved(target)) {
+			const target = this._targets[Util.stamp(src)];
+
+			if (
+				target &&
+				(type === 'click' || type === 'preclick') &&
+				this._draggableMoved(target)
+			) {
 				// Prevent firing click after you just dragged an object.
 				dragging = true;
 				break;
 			}
 
 			if (target && target.listens(type, true)) {
-				if (isHover && !DomEvent.isExternalTarget(src, e)) { break; }
+				if (isHover && !DomEvent.isExternalTarget(src, e)) {
+					break;
+				}
+
 				targets.push(target);
-				if (isHover) { break; }
+
+				if (isHover) {
+					break;
+				}
 			}
-			if (src === this._container) { break; }
+
+			if (src === this._container) {
+				break;
+			}
+
 			src = src.parentNode;
 		}
+
 		if (!targets.length && !dragging && !isHover && this.listens(type, true)) {
-			targets = [this];
+			targets.push(this);
 		}
+
 		return targets;
 	}
 
@@ -1152,7 +1176,7 @@ export class Map extends Evented implements LayerContainer {
 		}
 
 		// Find the layer the event is propagating from and its parents.
-		let targets = this._findEventTargets(e, type);
+		let targets: any[] = this._findEventTargets(e, type);
 
 		if (canvasTargets) {
 			const filtered = []; // pick only targets with listeners
@@ -1487,14 +1511,34 @@ export class Map extends Evented implements LayerContainer {
 	addLayer(layer: Layer): Map {
 		const id = Util.stamp(layer);
 
+		// Do nothing if the layer is already registered
 		if (id in this._layers) { return this; }
 
 		this._layers[id] = layer;
 
-		layer._mapToAdd = this;
 		layer.beforeAdd?.(this);
 
-		this.whenReady(layer._layerAdd, layer);
+		this.whenReady(() => {
+			// Make sure the layer is still registered by the time we are ready
+			if (id in this._layers) {
+				layer._map = this;
+				layer._zoomAnimated = this._zoomAnimated;
+
+				if (layer.getEvents) {
+					const events = layer.getEvents();
+					
+					this.on(events, layer);
+					layer.on('remove', () => {
+						this.off(events, layer);
+					}, this, true);
+				}
+
+				layer.onAdd(this);
+				layer.fire('add');
+
+				this.fire('layeradd', { layer });
+			}
+		});
 
 		return this;
 	}
@@ -1517,7 +1561,6 @@ export class Map extends Evented implements LayerContainer {
 		}
 
 		layer._map = undefined;
-		layer._mapToAdd = undefined;
 
 		return this;
 	}

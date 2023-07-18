@@ -19,10 +19,12 @@ export interface DivIconOptions extends IconOptions {
  * element instead of an image. Inherits from `Icon` but ignores the `iconUrl` option.
  *
  * ```js
- * var myIcon = L.divIcon({className: 'my-div-icon'});
+ * const myIcon = L.divIcon({className: 'my-div-icon'});
  * // you can set .my-div-icon styles in CSS
  *
- * L.marker([50.505, 30.57], {icon: myIcon}).addTo(map);
+ * const marker = L.marker([50.505, 30.57], {icon: myIcon});
+ * 
+ * map.addLayer(marker);
  * ```
  *
  * By default, it has a 'leaflet-div-icon' CSS class and is styled as a little white square with a shadow.

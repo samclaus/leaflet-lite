@@ -64,7 +64,9 @@ export interface TileLayerOptions extends GridLayerOptions {
  *
  * ```js
  * // REMEMBER: your application would need to attribute Open Street Map for this example!
- * L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png?{foo}').addTo(map);
+ * map.addLayer(
+ *     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png?{foo}'),
+ * );
  * ```
  *
  * A string of the following form:

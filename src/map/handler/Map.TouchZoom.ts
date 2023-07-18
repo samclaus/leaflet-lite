@@ -37,7 +37,7 @@ export class TouchZoom extends Handler {
 
 	constructor(
 		map: Map,
-		options: Partial<TouchZoomOptions>,
+		options?: Partial<TouchZoomOptions>,
 	) {
 		super(map);
 

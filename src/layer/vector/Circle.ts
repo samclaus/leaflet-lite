@@ -10,7 +10,9 @@ import { Path, type PathOptions } from './Path.js';
  * It's an approximation and starts to diverge from a real circle closer to poles (due to projection distortion).
  *
  * ```js
- * L.circle([50.5, 30.5], {radius: 200}).addTo(map);
+ * const circ = L.circle([50.5, 30.5], {radius: 200});
+ * 
+ * map.addLayer(circ);
  * ```
  */
 export class Circle extends CircleMarker {

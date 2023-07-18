@@ -9,13 +9,16 @@ export interface ScrollWheelZoomOptions {
 	 * once per 40 ms.
 	 */
 	debounceTime: number;
-
 	/**
 	 * How many scroll pixels (as reported by [DomEvent.getWheelDelta](#domevent-getwheeldelta))
 	 * mean a change of one full zoom level. Smaller values will make wheel-zooming
 	 * faster (and vice versa). Default is 60.
 	 */
 	pxPerZoomLevel: number;
+	/**
+	 * Should the map be zoomed at the center regardless of where the mouse was? Default is false.
+	 */
+	centered: boolean;
 }
 
 /**
@@ -29,18 +32,22 @@ export class ScrollWheelZoom extends Handler {
 	_timer: number | undefined;
 	_debounceTime: number;
 	_pxPerZoomLevel: number;
+	_centered: boolean;
 
 	constructor(
 		map: Map,
 		{
 			debounceTime = 40,
 			pxPerZoomLevel = 60,
+			centered = false,
+
 		}: Partial<ScrollWheelZoomOptions> = {},
 	) {
 		super(map);
 
 		this._debounceTime = debounceTime;
 		this._pxPerZoomLevel = pxPerZoomLevel;
+		this._centered = centered;
 	}
 
 	addHooks(): void {
@@ -55,7 +62,7 @@ export class ScrollWheelZoom extends Handler {
 
 	_onWheelScroll(e: WheelEvent): void {
 		const delta = DomEvent.getWheelDelta(e);
-		const debounce = this._map.options.wheelDebounceTime;
+		const debounce = this._debounceTime;
 
 		this._delta += delta;
 		this._lastMousePos = this._map.mouseEventToContainerPoint(e);
@@ -79,7 +86,7 @@ export class ScrollWheelZoom extends Handler {
 
 		// map the delta with a sigmoid function to -4..4 range leaning on -1..1
 		const
-			d2 = this._delta / (this._map.options.wheelPxPerZoomLevel * 4),
+			d2 = this._delta / (this._pxPerZoomLevel * 4),
 		    d3 = 4 * Math.log(2 / (1 + Math.exp(-Math.abs(d2)))) / Math.LN2,
 		    d4 = snap ? Math.ceil(d3 / snap) * snap : d3,
 		    delta = map._limitZoom(zoom + (this._delta > 0 ? d4 : -d4)) - zoom;
@@ -89,7 +96,7 @@ export class ScrollWheelZoom extends Handler {
 
 		if (!delta) { return; }
 
-		if (map.options.scrollWheelZoom === 'center') {
+		if (this._centered) {
 			map.setZoom(zoom + delta);
 		} else {
 			map.setZoomAround(this._lastMousePos, zoom + delta);

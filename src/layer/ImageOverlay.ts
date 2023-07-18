@@ -51,9 +51,12 @@ export interface ImageOverlayOptions extends LayerOptions {
  * Used to load and display a single image over specific bounds of the map. Extends `Layer`.
  *
  * ```js
- * var imageUrl = 'https://maps.lib.utexas.edu/maps/historical/newark_nj_1922.jpg',
- * 	imageBounds = [[40.712216, -74.22655], [40.773941, -74.12544]];
- * L.imageOverlay(imageUrl, imageBounds).addTo(map);
+ * const
+ *     imageUrl = 'https://maps.lib.utexas.edu/maps/historical/newark_nj_1922.jpg',
+ * 	   imageBounds = [[40.712216, -74.22655], [40.773941, -74.12544]],
+ *     overlay = L.imageOverlay(imageUrl, imageBounds);
+ * 
+ * map.addLayer(overlay);
  * ```
  */
 export class ImageOverlay extends Layer {

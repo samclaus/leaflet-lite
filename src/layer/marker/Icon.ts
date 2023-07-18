@@ -35,13 +35,15 @@ export interface IconOptions {
  * Represents an icon to provide when creating a marker.
  *
  * ```js
- * var myIcon = L.icon({
+ * const myIcon = L.icon({
  *     iconUrl: 'my-icon.png',
  *     iconSize: [38, 95],
  *     iconAnchor: [22, 94],
  * });
  *
- * L.marker([50.505, 30.57], {icon: myIcon}).addTo(map);
+ * const marker = L.marker([50.505, 30.57], {icon: myIcon});
+ * 
+ * map.addLayer(marker);
  * ```
  *
  * Use the `defaultIcon()` factory to instantiate the icon Leaflet uses for markers by default.

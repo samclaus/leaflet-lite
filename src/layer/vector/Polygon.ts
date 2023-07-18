@@ -10,9 +10,10 @@ import { Polyline, type PolylineOptions } from './Polyline.js';
  *
  * ```js
  * // create a red polygon from an array of LatLng points
- * var latlngs = [[37, -109.05],[41, -109.03],[41, -102.05],[37, -102.04]];
- *
- * var polygon = L.polygon(latlngs, {color: 'red'}).addTo(map);
+ * const latlngs = [[37, -109.05],[41, -109.03],[41, -102.05],[37, -102.04]];
+ * const polygon = L.polygon(latlngs, {color: 'red'});
+ * 
+ * map.addLayer(polygon);
  *
  * // zoom the map to the polygon
  * map.fitBounds(polygon.getBounds());

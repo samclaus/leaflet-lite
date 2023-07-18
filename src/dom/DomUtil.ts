@@ -37,6 +37,22 @@ export function create(tagName: string, className?: string, container?: HTMLElem
 	return el;
 }
 
+/**
+ * Remove all child nodes from an element. This includes text nodes, HTML comments,
+ * SVG elements, regular DOM elements, EVERYTHING!
+ */
+export function removeAllChildren(node: Node): void {
+	// Taken from https://stackoverflow.com/a/3955238
+	// Basically checking 'firstChild' is almost certainly the fastest way
+	// to see if it still has children, and remove the LAST child is
+	// generally faster than removing first child, depending on the data
+	// structures each DOM implementation uses (i.e. not forcing the browser
+	// to shift every element of an array)
+	while (node.firstChild) {
+		node.removeChild(node.lastChild!);
+	}
+}
+
 // Makes `el` the last child of its parent, so it renders in front of the other children.
 export function toFront(el: HTMLElement): void {
 	const parent = el.parentNode;

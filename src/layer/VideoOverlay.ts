@@ -38,9 +38,12 @@ export interface VideoOverlayOptions extends ImageOverlayOptions {
  * HTML element.
  *
  * ```js
- * var videoUrl = 'https://www.mapbox.com/bites/00188/patricia_nasa.webm',
- * 	videoBounds = [[ 32, -130], [ 13, -100]];
- * L.videoOverlay(videoUrl, videoBounds ).addTo(map);
+ * const
+ *     videoUrl = 'https://www.mapbox.com/bites/00188/patricia_nasa.webm',
+ * 	   videoBounds = [[ 32, -130], [ 13, -100]],
+ *     videoOverlay = L.videoOverlay(videoUrl, videoBounds);
+ * 
+ * map.addLayer(videoOverlay);
  * ```
  */
 export class VideoOverlay extends ImageOverlay {

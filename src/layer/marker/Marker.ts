@@ -88,7 +88,7 @@ export interface MarkerOptions extends LayerOptions {
  * L.Marker is used to display clickable/draggable icons on the map. Extends `Layer`.
  *
  * ```js
- * L.marker([50.5, 30.5]).addTo(map);
+ * map.addLayer(L.marker([50.5, 30.5]));
  * ```
  */
 export class Marker extends Layer {

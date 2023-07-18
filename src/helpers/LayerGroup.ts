@@ -1,6 +1,6 @@
 import { Util } from '../core';
 import { LatLngBounds } from '../geog';
-import { DEFAULT_LAYER_OPTIONS, Layer, type LayerContainer } from '../layer';
+import { DEFAULT_LAYER_OPTIONS, Layer } from '../layer';
 import type { PathOptions } from '../layer/vector';
 import type { Map } from '../map';
 
@@ -16,11 +16,12 @@ import type { Map } from '../map';
  *  - Has `layeradd` and `layerremove` events
  *
  * ```js
- * new LayerGroup([marker1, marker2])
+ * const lg = new LayerGroup([marker1, marker2])
  * 	.addLayer(polyline)
  * 	.bindTooltip('Hello world!')
- * 	.on('click', function() { alert('Clicked on a member of the group!'); })
- * 	.addTo(map);
+ * 	.on('click', function() { alert('Clicked on a member of the group!'); });
+ * 
+ * map.addLayer(lg);
  * ```
  * @event layeradd: LayerEvent
  * Fired when a layer is added to this `LayerGroup`
@@ -28,7 +29,7 @@ import type { Map } from '../map';
  * @event layerremove: LayerEvent
  * Fired when a layer is removed from this `LayerGroup`
  */
-export class LayerGroup extends Layer implements LayerContainer {
+export class LayerGroup extends Layer {
 
 	_layers: { [leafletID: string]: Layer } = {};
 
@@ -52,18 +53,28 @@ export class LayerGroup extends Layer implements LayerContainer {
 		this.eachLayer(map.removeLayer, map);
 	}
 
+	_addFocusListeners(): void {
+		this.eachLayer(this._addFocusListenersOnLayer, this);
+	}
+
+	_setAriaDescribedBy(): void {
+		this.eachLayer(this._setAriaDescribedByOnLayer, this);
+	}
+
 	/**
 	 * Adds the given layer to the group. Does nothing if the layer is already
 	 * a member of this group.
 	 */
 	addLayer(layer: Layer): this {
-		if (this.hasLayer(layer)) {
+		const id = Util.stamp(layer);
+
+		if (id in this._layers) {
 			return this;
 		}
 
 		layer.addEventParent(this);
 
-		this._layers[Util.stamp(layer)] = layer;
+		this._layers[id] = layer;
 
 		if (this._map) {
 			this._map.addLayer(layer);

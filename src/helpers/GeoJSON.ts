@@ -12,11 +12,13 @@
 //  * GeoJSON data and display it on the map. Extends `LayerGroup`.
 //  *
 //  * ```js
-//  * L.geoJSON(data, {
-//  * 	style: function (feature) {
-//  * 		return {color: feature.properties.color};
-//  * 	}
-//  * }).addTo(map);
+//  * map.addLayer(
+//  *     L.geoJSON(data, {
+//  *     	style: function (feature) {
+//  *     		return {color: feature.properties.color};
+//  *     	}
+//  *     }),
+//  * );
 //  * ```
 //  */
 // export const GeoJSON = LayerGroup.extend({

@@ -12,7 +12,9 @@ import { ImageOverlay } from './ImageOverlay.js';
  * svgElement.setAttribute('viewBox', "0 0 200 200");
  * svgElement.innerHTML = '<rect width="200" height="200"/><rect x="75" y="23" width="50" height="50" style="fill:red"/><rect x="75" y="123" width="50" height="50" style="fill:#0013ff"/>';
  * var svgElementBounds = [ [ 32, -130 ], [ 13, -100 ] ];
- * L.svgOverlay(svgElement, svgElementBounds).addTo(map);
+ * var svgOverlay = L.svgOverlay(svgElement, svgElementBounds);
+ * 
+ * map.addLayer(svgOverlay);
  * ```
  */
 export class SVGOverlay extends ImageOverlay {

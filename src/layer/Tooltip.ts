@@ -40,15 +40,19 @@ export interface TooltipOptions extends DivOverlayOptions {
  * A tooltip can be also standalone:
  *
  * ```js
- * var tooltip = L.tooltip()
+ * const tooltip = L.tooltip()
  * 	.setLatLng(latlng)
- * 	.setContent('Hello world!<br />This is a nice tooltip.')
- * 	.addTo(map);
+ * 	.setContent('Hello world!<br />This is a nice tooltip.');
+ * 
+ * map.addLayer(tooltip);
  * ```
  * or
  * ```js
- * var tooltip = L.tooltip(latlng, {content: 'Hello world!<br />This is a nice tooltip.'})
- * 	.addTo(map);
+ * const tooltip = L.tooltip(latlng, {
+ *     content: 'Hello world!<br />This is a nice tooltip.',
+ * });
+ * 
+ * map.addLayer(tooltip);
  * ```
  *
  *
@@ -211,7 +215,7 @@ export class Tooltip extends DivOverlay {
 		this.options.opacity = opacity;
 
 		if (this._container) {
-			this._container.style.opacity = opacity;
+			this._container.style.opacity = opacity as any; // will be coerced to string
 		}
 	}
 
