@@ -141,7 +141,7 @@ export class Marker extends Layer {
 	onRemove(map: Map): void {
 		if (this.dragging?._enabled) {
 			this.options.draggable = true;
-			this.dragging.removeHooks();
+			this.dragging.disable();
 		}
 		
 		this.dragging = undefined;

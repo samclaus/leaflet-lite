@@ -1,12 +1,20 @@
-import { Handler, Map } from '..';
-import { DomEvent } from '../../dom';
-import { Point } from '../../geom';
+import { DomEvent } from '../dom';
+import { Point } from '../geom';
+import type { Map } from '../map';
+import { BehaviorBase } from './_behavior-base';
 
 export interface KeyboardOptions {
 	/**
 	 * Number of pixels to pan when pressing an arrow key. Default is 80.
 	 */
 	panDelta: number;
+
+	// TODO refactor, move to CRS
+	// @option worldCopyJump: Boolean = false
+	// With this option enabled, the map tracks when you pan to another "copy"
+	// of the world and seamlessly jumps to the original one so that all overlays
+	// like markers and vector layers are still visible.
+	worldCopyJump: boolean;
 }
 
 const keyCodes = {
@@ -19,26 +27,28 @@ const keyCodes = {
 } as const;
 
 /**
- * L.Map.Keyboard is handling keyboard interaction with the map, enabled by default.
+ * Enables panning/zooming the map via keyboard. Listens for `keydown` events on the document
+ * root only when the map is focused, so there is little to no risk of interfering with other
+ * keyboard shortcuts or component behavior.
  */
-export class Keyboard extends Handler {
+export class Keyboard extends BehaviorBase {
 
 	_focused = false;
 	_panKeys: Dict<Point> = Object.create(null);
 	_zoomKeys: Dict<number> = Object.create(null);
+	_worldCopyJump: boolean;
 
 	constructor(
 		map: Map,
-		{ panDelta = 80 }: Partial<KeyboardOptions> = {},
+		{ panDelta = 80, worldCopyJump = false }: Partial<KeyboardOptions> = {},
 	) {
 		super(map);
 
+		this._worldCopyJump = worldCopyJump;
 		this._setPanDelta(panDelta);
 		this._setZoomDelta(map.options.zoomDelta);
-	}
 
-	addHooks(): void {
-		const container = this._map._container;
+		const container = map._container;
 
 		// make the container focusable by tabbing
 		if (container.tabIndex <= 0) {
@@ -51,14 +61,22 @@ export class Keyboard extends Handler {
 			pointerdown: this._onPointerDown
 		}, this);
 
-		this._map.on({
-			focus: this._addHooks,
-			blur: this._removeHooks
+		map.on({
+			focus: this._addKeydownListener,
+			blur: this._removeKeydownListener
 		}, this);
 	}
 
-	removeHooks(): void {
-		this._removeHooks();
+	_addKeydownListener(): void {
+		DomEvent.on(document, 'keydown', this._onKeyDown, this);
+	}
+
+	_removeKeydownListener(): void {
+		DomEvent.off(document, 'keydown', this._onKeyDown, this);
+	}
+
+	_removeHooks(): void {
+		this._removeKeydownListener();
 
 		DomEvent.off(this._map._container, {
 			focus: this._onFocus,
@@ -67,8 +85,8 @@ export class Keyboard extends Handler {
 		}, this);
 
 		this._map.off({
-			focus: this._addHooks,
-			blur: this._removeHooks
+			focus: this._addKeydownListener,
+			blur: this._removeKeydownListener
 		}, this);
 	}
 
@@ -132,19 +150,13 @@ export class Keyboard extends Handler {
 		}
 	}
 
-	_addHooks() {
-		DomEvent.on(document, 'keydown', this._onKeyDown, this);
-	}
-
-	_removeHooks() {
-		DomEvent.off(document, 'keydown', this._onKeyDown, this);
-	}
-
 	_onKeyDown(e: KeyboardEvent): void {
 		if (e.altKey || e.ctrlKey || e.metaKey) { return; }
 
-		const key = e.code,
-		     map = this._map;
+		const
+			key = e.code,
+			map = this._map;
+
 		let offset;
 
 		if (key in this._panKeys) {
@@ -159,7 +171,7 @@ export class Keyboard extends Handler {
 					offset = map._limitOffset(offset, map.options.maxBounds);
 				}
 
-				if (map.options.worldCopyJump) {
+				if (this._worldCopyJump) {
 					const newLatLng = map.wrapLatLng(map.unproject(map.project(map.getCenter()).add(offset)));
 					map.panTo(newLatLng);
 				} else {
@@ -169,7 +181,7 @@ export class Keyboard extends Handler {
 		} else if (key in this._zoomKeys) {
 			map.setZoom(map._zoom + (e.shiftKey ? 3 : 1) * this._zoomKeys[key]);
 		} else {
-			return;
+			return; // Don't stop event propagation or prevent it's default behavior
 		}
 
 		DomEvent.stop(e);

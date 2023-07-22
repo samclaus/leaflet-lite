@@ -1,13 +1,13 @@
-import { Handler, Map } from '..';
-import { DomEvent, DomUtil } from '../../dom';
-import { LatLngBounds } from '../../geog';
-import { Bounds, type Point } from '../../geom';
+import { DomEvent, DomUtil } from '../dom';
+import { LatLngBounds } from '../geog';
+import { Bounds, type Point } from '../geom';
+import type { Map } from '../map';
+import { BehaviorBase } from './_behavior-base';
 
 /**
- * L.Handler.BoxZoom is used to add shift-drag zoom interaction to the map
- * (zoom to a selected bounding box).
+ * Adds shift-drag zoom interaction to the map (zoom to a selected bounding box).
  */
-export class BoxZoom extends Handler {
+export class BoxZoom extends BehaviorBase {
 
 	_container: HTMLElement;
 	_pane: any; // TODO: type?
@@ -23,20 +23,14 @@ export class BoxZoom extends Handler {
 		this._container = map._container;
 		this._pane = map._panes.overlay;
 
-		map.on('unload', this._destroy, this);
-	}
-
-	addHooks(): void {
 		DomEvent.on(this._container, 'mousedown', this._onMouseDown, this);
 	}
 
-	removeHooks(): void {
-		DomEvent.off(this._container, 'mousedown', this._onMouseDown, this);
-	}
-
-	_destroy(): void {
+	_removeHooks(): void {
 		this._pane.remove();
 		this._pane = undefined;
+
+		DomEvent.off(this._container, 'mousedown', this._onMouseDown, this);
 	}
 
 	_resetState(): void {

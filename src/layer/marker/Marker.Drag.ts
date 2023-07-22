@@ -1,7 +1,7 @@
 import { DomUtil, Draggable } from '../../dom';
 import type { LatLng } from '../../geog';
 import { Bounds, Point } from '../../geom';
-import { Handler, type Map } from '../../map';
+import type { Map } from '../../map';
 import { Marker } from './Marker.js';
 
 /**
@@ -17,20 +17,21 @@ import { Marker } from './Marker.js';
  * Marker dragging handler (by both mouse and touch). Only valid when the marker is on the map (Otherwise set [`marker.options.draggable`](#marker-draggable)).
  */
 
-export class MarkerDrag extends Handler {
+export class MarkerDrag {
 
 	_oldLatLng: LatLng | undefined;
 	_panFrame = 0;
 	_draggable: Draggable | undefined;
+	_enabled = false;
 
 	constructor(
-		map: Map,
+		public _map: Map,
 		public _marker: Marker,
-	) {
-		super(map);
-	}
+	) {}
 
-	addHooks(): void {
+	enable(): void {
+		if (this._enabled) { return; }
+
 		const icon = this._marker._icon!; // TODO: null safety
 
 		this._draggable ||= new Draggable(icon, icon, true);
@@ -42,9 +43,13 @@ export class MarkerDrag extends Handler {
 		}, this).enable();
 
 		icon.classList.add('leaflet-marker-draggable');
+
+		this._enabled = true;
 	}
 
-	removeHooks(): void {
+	disable(): void {
+		if (!this._enabled) { return; }
+
 		this._draggable!.off({
 			dragstart: this._onDragStart,
 			predrag: this._onPreDrag,
@@ -55,6 +60,8 @@ export class MarkerDrag extends Handler {
 		if (this._marker._icon) {
 			this._marker._icon.classList.remove('leaflet-marker-draggable');
 		}
+
+		this._enabled = false;
 	}
 
 	moved(): boolean {

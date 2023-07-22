@@ -1,7 +1,8 @@
-import { Handler, type Map } from '..';
-import { DomEvent } from '../../dom';
-import type { LatLng } from '../../geog';
-import type { Point } from '../../geom';
+import { DomEvent } from '../dom';
+import type { LatLng } from '../geog';
+import type { Point } from '../geom';
+import type { Map } from '../map';
+import { BehaviorBase } from './_behavior-base';
 
 export interface TouchZoomOptions {
 	/**
@@ -20,7 +21,7 @@ export interface TouchZoomOptions {
 /**
  * L.Handler.TouchZoom is used by L.Map to add pinch zoom on supported mobile browsers.
  */
-export class TouchZoom extends Handler {
+export class TouchZoom extends BehaviorBase {
 
 	_moved = false;
 	_zooming = false;
@@ -46,19 +47,17 @@ export class TouchZoom extends Handler {
 			bounceAtZoomLimits: true,
 			...options,
 		};
+
+		map._container.classList.add('leaflet-touch-zoom');
+		DomEvent.on(map._container, 'touchstart', this._onTouchStart, this);
 	}
 
-	addHooks() {
-		this._map._container.classList.add('leaflet-touch-zoom');
-		DomEvent.on(this._map._container, 'touchstart', this._onTouchStart, this);
-	}
-
-	removeHooks() {
+	_removeHooks(): void {
 		this._map._container.classList.remove('leaflet-touch-zoom');
 		DomEvent.off(this._map._container, 'touchstart', this._onTouchStart, this);
 	}
 
-	_onTouchStart(e: TouchEvent) {
+	_onTouchStart(e: TouchEvent): void {
 		const map = this._map;
 
 		if (!e.touches || e.touches.length !== 2 || map._animatingZoom || this._zooming) { return; }
@@ -86,7 +85,7 @@ export class TouchZoom extends Handler {
 		DomEvent.preventDefault(e);
 	}
 
-	_onTouchMove(e: TouchEvent) {
+	_onTouchMove(e: TouchEvent): void {
 		if (!e.touches || e.touches.length !== 2 || !this._zooming) { return; }
 
 		const
@@ -132,7 +131,7 @@ export class TouchZoom extends Handler {
 		DomEvent.preventDefault(e);
 	}
 
-	_onTouchEnd() {
+	_onTouchEnd(): void {
 		if (!this._moved || !this._zooming) {
 			this._zooming = false;
 			return;

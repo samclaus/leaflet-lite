@@ -1,7 +1,7 @@
-import type { Map } from '..';
-import type { DisposeFn } from '../../core';
-import { DomEvent } from '../../dom';
-import { Point } from '../../geom';
+import type { DisposeFn } from '../core';
+import { DomEvent } from '../dom';
+import { Point } from '../geom';
+import type { Map } from '../map';
 
 export interface ScrollWheelZoomOptions {
 	/**
@@ -23,7 +23,7 @@ export interface ScrollWheelZoomOptions {
 }
 
 /**
- * Listen on the map for 'wheel' events and zoom it accordingly.
+ * Listens on the map for 'wheel' events and zoom it accordingly.
  */
 export function enableScrollWheelZoom(map: Map, options: Partial<ScrollWheelZoomOptions> = {}): DisposeFn {
 	const {
@@ -77,9 +77,12 @@ export function enableScrollWheelZoom(map: Map, options: Partial<ScrollWheelZoom
 		DomEvent.stop(e);
 	}
 
-	DomEvent.on(map._container, 'wheel', onWheelScroll);
-	
-	return function(): void {
+	function disableScrollWheelZoom(): void {
 		DomEvent.off(map._container, 'wheel', onWheelScroll);
-	};
+	}
+
+	DomEvent.on(map._container, 'wheel', onWheelScroll);
+	map.on('unload', disableScrollWheelZoom, undefined, true);
+	
+	return disableScrollWheelZoom;
 }

@@ -1,7 +1,8 @@
-import { Handler, type Map } from '..';
-import { Draggable } from '../../dom';
-import { LatLng, type LatLngBounds } from '../../geog';
-import { Bounds, Point } from '../../geom';
+import { Draggable } from '../dom';
+import { LatLng, type LatLngBounds } from '../geog';
+import { Bounds, Point } from '../geom';
+import type { Map } from '../map';
+import { BehaviorBase } from './_behavior-base';
 
 export interface DragOptions {
 	// @option dragging: Boolean = true
@@ -44,14 +45,14 @@ export interface DragOptions {
 }
 
 /**
- * L.Handler.MapDrag is used to make the map draggable (with panning inertia), enabled by default.
+ * Makes the map draggable (with panning inertia) via mouse or touch.
  */
-export class Drag extends Handler {
+export class Drag extends BehaviorBase {
 
-	_draggable: Draggable | undefined;
+	_draggable: Draggable;
 	_viscosity: number | undefined;
-	_positions: Point[] = [];
-	_times: number[] = [];
+	_positions: Point[];
+	_times: number[];
 	_offsetLimit: Bounds | undefined;
 	_absPos: Point | undefined;
 	_lastTime: number | undefined;
@@ -77,37 +78,31 @@ export class Drag extends Handler {
 			maxBoundsViscosity: 0.0,
 			...options,
 		};
-	}
 
-	addHooks(): void {
-		if (!this._draggable) {
-			const map = this._map;
-
-			// TODO: null safety
-			this._draggable = new Draggable(map._rootPane!, map._container);
-			this._draggable.on({
-				dragstart: this._onDragStart,
-				drag: this._onDrag,
-				dragend: this._onDragEnd,
-				predrag: this._onPreDragLimit,
-			}, this);
-
-			if (this.options.worldCopyJump) {
-				this._draggable.on('predrag', this._onPreDragWrap, this);
-
-				map.on('zoomend', this._onZoomEnd, this);
-				map.whenReady(this._onZoomEnd, this);
-			}
-		}
-		this._map._container.classList.add('leaflet-grab', 'leaflet-touch-drag');
-		this._draggable.enable();
 		this._positions = [];
 		this._times = [];
+		this._draggable = new Draggable(map._rootPane!, map._container); // TODO: null safety
+		this._draggable.on({
+			dragstart: this._onDragStart,
+			drag: this._onDrag,
+			dragend: this._onDragEnd,
+			predrag: this._onPreDragLimit,
+		}, this);
+
+		if (this.options.worldCopyJump) {
+			this._draggable.on('predrag', this._onPreDragWrap, this);
+
+			map.on('zoomend', this._onZoomEnd, this);
+			map.whenReady(this._onZoomEnd, this);
+		}
+
+		map._container.classList.add('leaflet-grab', 'leaflet-touch-drag');
+		this._draggable.enable();
 	}
 
-	removeHooks(): void {
+	_removeHooks(): void {
 		this._map._container.classList.remove('leaflet-grab', 'leaflet-touch-drag');
-		this._draggable!.disable(); // TODO: null safety?
+		this._draggable.disable();
 	}
 
 	moved(): boolean {

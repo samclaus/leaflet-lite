@@ -1,5 +1,5 @@
-import type { Map } from '..';
-import type { DisposeFn } from '../../core';
+import type { DisposeFn } from '../core';
+import type { Map } from '../map';
 
 export interface DoubleClickZoomOptions {
 	/**
@@ -10,7 +10,7 @@ export interface DoubleClickZoomOptions {
 }
 
 /**
- * Listen on the map for 'dblclick' events and zoom it accordingly.
+ * Listens on the map for 'dblclick' events and zoom it accordingly.
  */
 export function enableDoubleClickZoom(map: Map, options?: Partial<DoubleClickZoomOptions>): DisposeFn {
 	function onDoubleClick(e: any): void { // TODO: type the parameter
@@ -26,9 +26,12 @@ export function enableDoubleClickZoom(map: Map, options?: Partial<DoubleClickZoo
 		}
 	}
 
-	map.on('dblclick', onDoubleClick);
-
-	return function(): void {
+	function disableDoubleClickZoom(): void {
 		map.off('dblclick', onDoubleClick);
-	};
+	}
+
+	map.on('dblclick', onDoubleClick);
+	map.on('unload', disableDoubleClickZoom, undefined, true);
+
+	return disableDoubleClickZoom;
 }

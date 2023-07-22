@@ -1,6 +1,6 @@
-import type { Map } from "..";
-import { Evented } from "../../core";
-import { LatLng, LatLngBounds } from "../../geog";
+import { Evented } from "../core";
+import { LatLng, LatLngBounds } from "../geog";
+import type { Map } from "../map";
 
 export interface LocateOptions extends PositionOptions {
 	watch?: boolean;

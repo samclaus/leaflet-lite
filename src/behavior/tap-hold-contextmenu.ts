@@ -1,6 +1,7 @@
-import { Handler, Map } from '..';
-import { DomEvent } from '../../dom';
-import { Point } from '../../geom';
+import { DomEvent } from '../dom';
+import { Point } from '../geom';
+import type { Map } from '../map';
+import { BehaviorBase } from './_behavior-base';
 
 const tapHoldDelay = 600;
 
@@ -12,9 +13,14 @@ export interface TapHoldOptions {
 	tolerance: number;
 }
 
+function _cancelClickPrevent(): void {
+	DomEvent.off(document, 'touchend', DomEvent.preventDefault);
+	DomEvent.off(document, 'touchend touchcancel', _cancelClickPrevent);
+}
+
 /**
- * L.Map.TapHold is used to simulate `contextmenu` event on long hold,
- * which otherwise is not fired by mobile Safari.
+ * Simulates `contextmenu` event on long hold, which otherwise
+ * is not fired by mobile Safari.
  * 
  * Use the following code to check if running on mobile Safari:
  * 
@@ -26,7 +32,7 @@ export interface TapHoldOptions {
  * }
  * ```
  */
-export class TapHold extends Handler {
+export class TapHold extends BehaviorBase {
 
 	_holdTimeout: number | undefined;
 	_startPos!: Point; // TODO: null safety
@@ -40,13 +46,11 @@ export class TapHold extends Handler {
 		super(map);
 
 		this._tolerance = tolerance;
+
+		DomEvent.on(map._container, 'touchstart', this._onDown, this);
 	}
 
-	addHooks(): void {
-		DomEvent.on(this._map._container, 'touchstart', this._onDown, this);
-	}
-
-	removeHooks(): void {
+	_removeHooks(): void {
 		DomEvent.off(this._map._container, 'touchstart', this._onDown, this);
 	}
 
@@ -66,18 +70,13 @@ export class TapHold extends Handler {
 
 			// prevent simulated mouse events https://w3c.github.io/touch-events/#mouse-events
 			DomEvent.on(document, 'touchend', DomEvent.preventDefault);
-			DomEvent.on(document, 'touchend touchcancel', this._cancelClickPrevent);
+			DomEvent.on(document, 'touchend touchcancel', _cancelClickPrevent);
 			this._simulateEvent('contextmenu', first);
 		}), tapHoldDelay);
 
 		DomEvent.on(document, 'touchend touchcancel contextmenu', this._cancel, this);
 		DomEvent.on(document, 'touchmove', this._onMove, this);
 	}
-
-	_cancelClickPrevent = function _cancelClickPrevent(): void {
-		DomEvent.off(document, 'touchend', DomEvent.preventDefault);
-		DomEvent.off(document, 'touchend touchcancel', _cancelClickPrevent);
-	};
 
 	_cancel(): void {
 		clearTimeout(this._holdTimeout);

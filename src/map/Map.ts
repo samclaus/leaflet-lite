@@ -5,7 +5,6 @@ import { EPSG3857 } from '../geog/crs';
 import { Bounds, Point } from '../geom';
 import { type Layer } from '../layer/Layer.js';
 import { Canvas, SVG, type Path, type Renderer } from '../layer/vector';
-import type { Handler } from './Handler.js';
 import type { FitBoundsOptions, MapOptions, PanOptions, ZoomOptions, ZoomPanOptions } from './map-options';
 
 /**
@@ -65,7 +64,6 @@ import type { FitBoundsOptions, MapOptions, PanOptions, ZoomOptions, ZoomPanOpti
 export class Map extends Evented {
 
 	options: MapOptions;
-	_handlers: Handler[] = [];
 	_targets: Dict<Evented> = Object.create(null);
 	_layers: { [leafletID: string]: Layer } = {};
 	_container: HTMLElement;
@@ -90,6 +88,7 @@ export class Map extends Evented {
 	_animatingZoom = false;
 	_animateToCenter: LatLng | undefined;
 	_animateToZoom = 0;
+
 	dragging?: any; // TODO: do NOT add handlers as properties directly on class at least (need this here to satisfy TypeScript because a lot of the code checks for the Drag handler instance on Map)
 
 	_renderer: Renderer | undefined;
@@ -106,10 +105,7 @@ export class Map extends Evented {
 			zoom: undefined,
 			minZoom: 0,
 			maxZoom: Infinity,
-			layers: [],
-			handlers: Object.create(null),
 			maxBounds: undefined,
-			renderer: undefined,
 			zoomAnimationThreshold: 4,
 			fadeAnimation: true,
 			markerZoomAnimation: true,
@@ -175,28 +171,6 @@ export class Map extends Evented {
 			this.setView(resolvedOpts.center, resolvedOpts.zoom, { reset: true });
 		}
 
-		// TODO: NEED TO ALLOW PASSING HANDLERS VIA OPTIONS, WHICH WILL BE TREE-SHAKING-FRIENDLY,
-		// RATHER THAN BUNDLING ALL OF THE HANDLERS (BOX ZOOM, ETC) EVERY TIME AND HAVING THEM
-		// ADD JANKY INIT HOOKS TO MAP CLASS (used to have a call to this.callInitHooks() here);
-		// TO REPRODUCE EXISTING PREVIOUS AUTOMATIC BEHAVIOR, PASS:
-		//
-		//	handlers: {
-		// 		boxZoom: BoxZoom,
-		// 		doubleClickZoom: DoubleClickZoom,
-		// 		dragging: Drag,
-		// 		keyboard: Keyboard,
-		// 		scrollWheelZoom: ScrollWheelZoom,
-		// 		tapHold: TapHold,
-		// 		touchZoom: TouchZoom,
-		//	}
-		//
-		for (const [name, HandlerClass] of Object.entries(resolvedOpts.handlers)) {
-			// TODO: remove this dynamic property setting
-			const handler = (this as any)[name] = new HandlerClass(this);
-			this._handlers.push(handler);
-			handler.enable();
-		}
-
 		// don't animate on browsers without hardware-accelerated transitions or old Android
 		this._zoomAnimated = resolvedOpts.zoomAnimationThreshold > 0;
 
@@ -206,10 +180,6 @@ export class Map extends Evented {
 			this._createAnimProxy();
 			// TODO: null safety
 			DomEvent.on(this._proxy!, 'transitionend', this._catchTransitionEnd, this);
-		}
-
-		for (const layer of resolvedOpts.layers) {
-			this.addLayer(layer);
 		}
 	}
 
@@ -527,7 +497,7 @@ export class Map extends Evented {
 
 	// Pans the map to the closest view that would lie inside the given bounds (if
 	// it's not already), controlling the animation using the options specific, if any.
-	panInsideBounds(bounds: LatLngBounds, options?: PanOptions): this {
+	panInsideBounds(bounds?: LatLngBounds, options?: PanOptions): this {
 		this._enforcingBounds = true;
 
 		const
@@ -702,16 +672,10 @@ export class Map extends Evented {
 			this._resizeFrame = 0;
 		}
 
-		for (let i = 0, len = this._handlers.length; i < len; i++) {
-			this._handlers[i].disable();
-		}
-
-		if (this._loaded) {
-			// @section Map state change events
-			// @event unload: Event
-			// Fired when the map is destroyed with [remove](#map-remove) method.
-			this.fire('unload');
-		}
+		// @section Map state change events
+		// @event unload: Event
+		// Fired when the map is destroyed with [remove](#map-remove) method.
+		this.fire('unload');
 
 		// IMPORTANT: collect all map keys in an array before deleting them
 		for (const layer of Object.values(this._layers)) {
@@ -1577,7 +1541,6 @@ export class Map extends Evented {
 		const renderer: Renderer = (
 			layer.options.renderer ||
 			this._getPaneRenderer(layer.options.pane) ||
-			this.options.renderer ||
 
 			// Last choice: use the map's main/default renderer, creating it first
 			// if necessary

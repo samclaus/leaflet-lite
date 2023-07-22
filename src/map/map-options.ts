@@ -1,4 +1,4 @@
-import type { LatLng } from "../geog";
+import type { LatLng, LatLngBounds } from "../geog";
 import type { CRS } from "../geog/crs";
 
 export type ZoomOptions = any;
@@ -60,25 +60,12 @@ export interface MapOptions {
      */
     maxZoom: number;
     /**
-     * Array of layers that will be added to the map initially.
-     */
-    layers: Layer[];
-    /**
-     * Handlers that should be added to the map initially.
-     */
-    handlers: Dict<Constructor<Handler>>;
-    /**
      * When this option is set, the map restricts the view to the given
      * geographical bounds, bouncing the user back if the user tries to pan
      * outside the view. To set the restriction dynamically, use
      * [`setMaxBounds`](#map-setmaxbounds) method.
      */
     maxBounds: LatLngBounds | undefined;
-    /**
-     * The default method for drawing vector layers on the map. `L.SVG`
-     * or `L.Canvas` by default depending on browser support.
-     */
-    renderer: Renderer;
     /**
      * The map will not animate a zoom operation if the zoom delta is greater
      * than this value. Set to 0 to disable zoom animations entirely. 4 by
