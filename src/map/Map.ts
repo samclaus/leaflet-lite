@@ -89,7 +89,22 @@ export class Map extends Evented {
 	_animateToCenter: LatLng | undefined;
 	_animateToZoom = 0;
 
-	dragging?: any; // TODO: do NOT add handlers as properties directly on class at least (need this here to satisfy TypeScript because a lot of the code checks for the Drag handler instance on Map)
+	/**
+	 * @deprecated TODO: this is a relic left over from Leaflet where some of the code depends on
+	 * having access to the drag-to-pan behavior class instance, so all such "handlers" registered
+	 * themselves as properties on the map. I need to investigate WHY the instance was being accessed
+	 * and provide a generic API on the map so any code can safely check if the map is currently
+	 * panning, etc.
+	 */
+	dragging?: any;
+	/**
+	 * @deprecated TODO: this is a relic left over from Leaflet where some of the code depends on
+	 * having access to the box zoom behavior class instance, so all such "handlers" registered
+	 * themselves as properties on the map. I need to investigate WHY the instance was being accessed
+	 * and provide a generic API on the map so any code can safely check if the map is currently
+	 * being zoomed, etc.
+	 */
+	boxZoom?: any;
 
 	_renderer: Renderer | undefined;
 
@@ -1179,8 +1194,11 @@ export class Map extends Evented {
 	}
 
 	_draggableMoved(obj: any): boolean {
+		// TODO: this code currently depends on the drag-to-pan and box zoom behavior
+		// instances, which is problematic because those are supposed to be higher-level
+		// features which are completely decoupled from the core code.
 		obj = obj.dragging?.enabled() ? obj : this;
-		return obj.dragging?.moved() || !!((this as any).boxZoom?._moved);
+		return obj.dragging?.moved() || !!(this.boxZoom?._moved);
 	}
 
 	// @section Other Methods
