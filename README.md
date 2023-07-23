@@ -1,3 +1,11 @@
+Leaflet _Lite_ is a fork of the popular JS mapping library, [Leaflet](https://github.com/Leaflet/Leaflet), but driven by my own opinions/priorities. I have made extensive changes to the code, but much of it still derives very directly from the original library. That said, please take a moment to read the Ukrainian-call-to-action from the Leaflet team before proceeding to the Leaflet _Lite_ information further down!
+
+- [Ukraine needs your help](#ukraine-needs-your-help)
+- [Goals](#goals)
+- [Documentation](#documentation)
+
+## Ukraine needs your help
+
 Leaflet was created 11 years ago by [Volodymyr Agafonkin](https://agafonkin.com), a Ukrainian citizen living in Kyiv.
 
 Russian bombs are now falling over Volodymyr's hometown. His family, his friends, his neighbours, thousands and thousands of absolutely wonderful people, are either seeking refuge or fighting for their lives.
@@ -19,37 +27,36 @@ If you support the actions of the Russian government (even after reading all thi
 Yours truly,<br>
 Leaflet maintainers.
 
----
+## Goals
 
-<img width="600" src="https://rawgit.com/Leaflet/Leaflet/main/src/images/logo.svg" alt="Leaflet" />
+Before reading the project goals, please note that some of them may be shared by the Leaflet maintainers. I
+forked Leaflet after commit [245baccc23ea8c876591c388247c8572f6f94c42](https://github.com/samclaus/leaflet-lite/tree/245baccc23ea8c876591c388247c8572f6f94c42), which was published on May 24th, 2023. It is
+possible that our projects will converge and I am happy to contribute code back into Leaflet.
 
-Leaflet is the leading open-source JavaScript library for **mobile-friendly interactive maps**.
-Weighing just about 42 KB of gzipped JS plus 4 KB of gzipped CSS code, it has all the mapping [features][] most developers ever need.
+- **Be an 85% solution for most mapping needs&mdash;no fancy 3D WebGL!**
+- **Tiny bundle size (goal is 20KB minified OR LESS for most use-cases)**
+- **Better runtime performance**
+- **Smaller, easier-to-understand codebase and API (written in strict TypeScript)**
+- **Thorough documentation that explains how everything works under-the-hood**
+- **Hopefully I can eventually get permission to release code to public domain**
 
-Leaflet is designed with *simplicity*, *performance* and *usability* in mind.
-It works efficiently across all major desktop and mobile platforms out of the box,
-taking advantage of modern browser features while being accessible on older ones too.
-It can be extended with a huge amount of [plugins][],
-has a beautiful, easy to use and [well-documented][] API
-and a simple, readable [source code][] that is a joy to [contribute][] to.
+In order to achieve the above goals, I am willing to **SACRIFICE BROWSER SUPPORT**. I only care about
+supporting, say, 90% of browsers, and I certainly don't care about supporting Internet Explorer.
 
-For more info, docs and tutorials, check out the [official website][].<br>
-For **Leaflet downloads** (including the built main version), check out the [download page][].
+That caveat aside, I think most of the goals can be accomplished without any serious drawbacks. Here is why:
 
-We're happy to meet new contributors.
-If you want to **get involved** with Leaflet development, check out the [contribution guide][contribute].
-Let's make the best mapping library that will ever exist,
-and push the limits of what's possible with online maps!
+- **Leaflet always supported multiple ways to do the same thing.** You could use `layer.addTo(map)` or `map.addLayer(layer)`. Such features cluttered the codebase with 'convenience' methods that obscured the core/important code and increased bundle size because JavaScript classes cannot be easily tree-shaken for unused methods (to my knowledge). The same stylistic options applied to data types: you could pass `new Point(15, 20)` or `[15, 20]` or `{ x: 15, y: 20 }` to the same functions. This made the internal code quite messy because every API had to obsessively call conversion functions like `toPoint` which would take the above inputs and then always return a proper `Point` instance. Not only do polymorphic functions (functions which accept multiple types of data) seriously hurt JavaScript performance, but all of those `toPoint` (and similar) calls add up when it comes to JavaScript bundle size. Last but not least, these myriad choices actually make the library harder to use for paranoid people like myself because I then have to go double check to make sure that the alternative methods _actually_ do the exact same things in the exact same order. Programming often requires attention to the smallest details.
 
-[![CI](https://github.com/Leaflet/Leaflet/actions/workflows/main.yml/badge.svg)](https://github.com/Leaflet/Leaflet/actions/workflows/main.yml)
+- **Leaflet was not organized in an easily tree-shakeable way.** Even if you say, create a map with `new Map({ drag: false })`, most/all JavaScript bundlers will not be able to guarantee that all of the drag-to-pan implementation code is unused, so your application will still be pulling in that part of Leaflet. Instead of having boolean options to enable/disable such features, Leaflet _Lite_ will require you to import a separate function or class, such as `enableDragToPan(myMap, options)`, and that code will be completely left out of your application if you do not explicitly import and use it. In addition to behaviors like box-zoom and drag-to-pan, the `Map` class in Leaflet had to be aware of vector rendering layers like the `Canvas` and `SVG` classes so that it could instantiate them as necessary if you, say, added a polyline to your map. In Leaflet _Lite_, you will be responsible for importing either `SVG` or `Canvas` (depending on which makes sense for your use case), registering it with the map, and then keeping a reference so you can directly add polylines to your `SVG`/`Canvas` instance. This way, you only import what you use. Use neither, and none of the vector rendering code will be bundled with your application. Period.
 
- [contributors]: https://github.com/Leaflet/Leaflet/graphs/contributors
- [features]: http://leafletjs.com/#features
- [plugins]: http://leafletjs.com/plugins.html
- [well-documented]: http://leafletjs.com/reference.html "Leaflet API reference"
- [source code]: https://github.com/Leaflet/Leaflet "Leaflet GitHub repository"
- [hosted on GitHub]: http://github.com/Leaflet/Leaflet
- [contribute]: https://github.com/Leaflet/Leaflet/blob/main/CONTRIBUTING.md "A guide to contributing to Leaflet"
- [official website]: http://leafletjs.com
- [download page]: http://leafletjs.com/download.html
+- **Leaflet implemented everything as classes with extensions in mind.** This meant that some of the classes even broke up some of their internal methods into _multiple_ methods, presumably so that the code would be more reusable by custom subclasses created by users of Leaflet. I would rather provide a dirt simple 85% solution that covers the majority of use-cases and provide extensive documentation so that anyone needing a custom solution can roll their own easily enough and feel confident that it will work well.
 
+- **Leaflet contained some redundant code.** For example, Leaflet contained `Point` and `Bound` classes for storing/manipulating XY(Z) pixel coordinates, and separate `LatLng` and `LatLngBounds` classes for manipulating XY(Z) geographic coordinates. These classes are near-identical look-alikes, and I figure they are probably only there to help programmers be more explicit about what type of coordinates they are passing to any given API. That said, I think good function/variable names can make the code clear enough, and then we can just pass 2/3 item (depending on whether there is a Z coordinate) number arrays around everywhere. On a related note, it was very odd that Leaflet had a `LatLng` class where you pass in the latitude before the longitude because longitude is basically like an X-coordinate for the Earth. This switcheroo seems like a possible source of confusion.
+
+The above criticisms of Leaflet are not intended to be an insult to the project. I didn't know shit about GIS software (and I still know relatively little) before Leaflet served as an excellent learning resource.
+
+## Documentation
+
+| :construction: **UNDER CONSTRUCTION** :construction: |
+|:--------------------------------------|
+| Leaflet _Lite_ is currently a work-in-progress. No documentation is available yet and the API is highly unstable as I move things around and settle on a good-enough structure. I am using it for my own transit app so it is a serious project, but I don't see it being stable until October 2023 at the earliest! |
