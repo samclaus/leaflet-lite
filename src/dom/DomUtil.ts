@@ -160,8 +160,9 @@ export function preventOutline(element: HTMLElement): void {
 	DomEvent.on(window as unknown as HTMLElement, 'keydown', restoreOutline);
 }
 
-// @function restoreOutline()
-// Cancels the effects of a previous [`L.DomUtil.preventOutline`](#domutil-preventoutline).
+/**
+ * Cancels the effects of a previous [`L.DomUtil.preventOutline`](#domutil-preventoutline).
+ */
 export function restoreOutline(): void {
 	if (!_outlineElement) { return; }
 	_outlineElement.style.outlineStyle = _outlineStyle!;

@@ -1,4 +1,3 @@
-export { version } from '../package.json';
 export * from './behavior';
 export * from './core';
 export * from './dom';

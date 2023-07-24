@@ -34,12 +34,12 @@ export class SVG extends Renderer {
 	_rootGroup: SVGGElement | undefined;
 
 	_initContainer(): void {
-		this._container = create('svg');
+		this._container = create('svg') as any; // TODO: fix types
 
 		// makes it possible to click through svg root; we'll reset it back in individual paths
 		this._container!.setAttribute('pointer-events', 'none');
 
-		this._rootGroup = create('g');
+		this._rootGroup = create('g') as any; // TODO: fix types
 		this._container!.appendChild(this._rootGroup!);
 	}
 

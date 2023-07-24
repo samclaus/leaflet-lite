@@ -8,12 +8,20 @@
     "vite": "^4.3.9"
   },
   "files": [
-    "dist",
-    "src",
-    "CHANGELOG.md"
+    "dist"
   ],
+  "type": "module",
+  "main": "./dist/leaflet-lite.umd.cjs",
+  "module": "./dist/leaflet-lite.js",
+  "exports": {
+    ".": {
+      "import": "./dist/leaflet-lite.js",
+      "require": "./dist/leaflet-lite.umd.cjs"
+    }
+  },
   "scripts": {
-    "dev": "vite"
+    "dev": "vite",
+    "build": "vite build && tsc"
   },
   "repository": {
     "type": "git",

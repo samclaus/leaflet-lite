@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import circularDependency from 'vite-plugin-circular-dependency';
+import { resolve } from 'path';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -8,4 +9,11 @@ export default defineConfig({
         // building for production via 'vite build', not in dev mode
         circularDependency({}),
     ],
+    build: {
+        lib: {
+            entry: resolve(__dirname, 'src/Leaflet.ts'),
+            name: 'L',
+            fileName: 'leaflet-lite',
+        },
+    },
 });

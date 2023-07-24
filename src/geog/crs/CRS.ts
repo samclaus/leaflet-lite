@@ -4,18 +4,18 @@ import { Util } from '../../core';
 import { Bounds, type Point, type Transformation } from '../../geom';
 import { type Projection } from '../projection';
 
-interface HasProjection {
+export interface HasProjection {
 	projection: Projection;
 }
 
-interface CRSLike extends HasProjection {
+export interface CRSLike extends HasProjection {
 	transformation: Transformation;
 	infinite?: boolean;
 
 	scale(zoom: number): number;
 }
 
-interface HasWrappingProperties {
+export interface HasWrappingProperties {
 	/**
 	 * An array of two numbers defining whether the longitude (horizontal) coordinate
 	 * axis wraps around a given range and how. Defaults to `[-180, 180]` in most
@@ -28,7 +28,7 @@ interface HasWrappingProperties {
 	wrapLat?: readonly [number, number];
 }
 
-interface CanWrapLatLng {
+export interface CanWrapLatLng {
 	/**
 	 * Returns a `LatLng` where lat and lng has been wrapped according to the
 	 * CRS's `wrapLat` and `wrapLng` properties, if they are outside the CRS's bounds.

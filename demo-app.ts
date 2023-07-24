@@ -5,7 +5,7 @@ import { BoxZoom, enableDoubleClickZoom, Drag, LatLng, Map, TileLayer, TouchZoom
 // Initialize the map
 const map = new Map(document.body)
     .addLayer(new TileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png'))
-    .setView(new LatLng(51.505, -0.09), 13);
+    .setView(new LatLng(29.64126400008693, -82.34559052037075), 13);
 
 // Add behaviors
 new Drag(map);
