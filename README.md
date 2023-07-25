@@ -35,6 +35,7 @@ Note that some of the goals of this project are, in essence, pretty similar to t
 
 - **Be an 85% solution for most mapping needs&mdash;no fancy 3D WebGL!**
 - **Tiny bundle size (goal is 20KB minified OR LESS for most use-cases)**
+- **Zero dependencies (removes concern about quality of other libraries)**
 - **Better runtime performance**
 - **Smaller, easier-to-understand codebase and API (written in strict TypeScript)**
 - **Thorough documentation that explains how everything works under-the-hood**
