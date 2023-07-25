@@ -4,17 +4,9 @@ import { DomEvent, DomUtil } from '../../dom';
 import { LatLng } from '../../geog';
 import { Point } from '../../geom';
 import type { Map, ZoomAnimationEvent } from '../../map';
-import type { Icon } from './Icon.js';
-import { MarkerDrag } from './Marker.Drag.js';
-import { defaultIcon } from './default-icon.js';
+import type { Icon } from './Icon';
 
 export interface MarkerOptions extends LayerOptions {
-	/**
-	 * Icon instance to use for rendering the marker.
-	 * See [Icon documentation](#L.Icon) for details on how to customize the marker icon.
-	 * If not specified, an icon is created using `defaultIcon()`.
-	 */
-	icon: Icon;
 	/**
 	 * Whether the user can interact with this marker, e.g., by dragging. True by default.
 	 */
@@ -25,63 +17,22 @@ export interface MarkerOptions extends LayerOptions {
 	 */
 	keyboard: boolean;
 	/**
-	 * Text for the browser tooltip that appear on marker hover (no tooltip by default).
-	 * [Useful for accessibility](https://leafletjs.com/examples/accessibility/#markers-must-be-labelled).
-	 */
-	title: string;
-	/**
-	 * Text for the `alt` attribute of the icon image.
-	 * [Useful for accessibility](https://leafletjs.com/examples/accessibility/#markers-must-be-labelled).
-	 */
-	alt: string;
-	/**
 	 * By default, marker images zIndex is set automatically based on its latitude. Use
 	 * this option if you want to put the marker on top of all others (or below), specifying
 	 * a high value like `1000` (or high negative value, respectively).
 	 */
 	zIndexOffset: number;
 	/**
-	 * The opacity of the marker, in range [0, 1]. 1 by default.
+	 * If greater than 0, the marker's z-index will be raised by this amount when hovered, so
+	 * that it shows on top of other markers. 0 by default.
 	 */
-	opacity: number;
-	/**
-	 * If true, the marker will get on top of others when you hover the mouse over it. False
-	 * by default.
-	 * 
-	 * @deprecated TODO: just set riseOffset to 0 (and make 0 the default) to disable rising.
-	 */
-	riseOnHover: boolean;
-	/**
-	 * The z-index offset used for the `riseOnHover` feature. 250 by default.
-	 */
-	riseOffset: number;
+	riseOnHoverOffset: number;
 	/**
 	 * When true, the map will pan whenever the marker is focused (via
 	 * e.g. pressing `tab` on the keyboard) to ensure the marker is
 	 * visible within the map's bounds. True by default.
 	 */
 	autoPanOnFocus: boolean;
-	/**
-	 * Whether the marker is draggable with mouse/touch or not. False by default.
-	 */
-	draggable: boolean;
-	/**
-	 * Whether to pan the map when dragging this marker near its edge or not.
-	 * False by default.
-	 * 
-	 * @deprecated TODO: merge this with autoPanPadding option, and just don't
-	 * pass a point to disable auto panning.
-	 */
-	autoPan: boolean;
-	/**
-	 * Distance (in pixels to the left/right and to the top/bottom) of the
-	 * map edge to start panning the map. (50, 50) by default.
-	 */
-	autoPanPadding: Point;
-	/**
-	 * Number of pixels the map should pan by. TODO: each second? 10 by default.
-	 */
-	autoPanSpeed: number;
 }
 
 /**
@@ -95,62 +46,91 @@ export class Marker extends Layer {
 
 	declare options: MarkerOptions;
 
-	_icon: HTMLElement | undefined;
 	_zIndex = 0; // TODO: safe to make it a number from the get-go?
-	dragging: MarkerDrag | undefined;
+	_icon: HTMLElement;
 
 	constructor(
 		public _latlng: LatLng,
-		options?: any,
+		public _iconInfo: Icon,
+		options?: Partial<MarkerOptions>,
 	) {
 		super();
 
 		Util.setOptions(this, options, {
-			icon: defaultIcon(),
 			interactive: true,
 			keyboard: true,
-			title: '',
-			alt: 'Marker',
 			zIndexOffset: 0,
-			opacity: 1,
-			riseOnHover: false,
-			riseOffset: 250,
+			riseOnHoverOffset: 0,
 			pane: 'marker',
 			bubblingMouseEvents: false,
 			autoPanOnFocus: true,
-			draggable: false,
-			autoPan: false,
-			autoPanPadding: new Point(50, 50),
-			autoPanSpeed: 10
 		});
+
+		this._icon = _iconInfo.el;
 	}
 
 	onAdd(map: Map): this {
+		// TODO: _zoomAnimated is set by the map whenever it adds the layer--this whole dance
+		// is kinda janky and concerning.
 		this._zoomAnimated &&= map.options.markerZoomAnimation;
 
 		if (this._zoomAnimated) {
 			map.on('zoomanim', this._animateZoom, this);
 		}
 
-		this._initIcon();
+		const
+			options = this.options,
+			icon = this._icon;
+
+		// TODO: need to remove later?
+		icon.classList.add(`leaflet-zoom-${this._zoomAnimated ? 'animated' : 'hide'}`);
+
+		if (options.keyboard) {
+			icon.tabIndex = 0;
+			icon.setAttribute('role', 'button');
+		}
+
+		if (options.riseOnHoverOffset > 0) {
+			this.on({
+				mouseover: this._bringToFront,
+				mouseout: this._resetZIndex
+			});
+		}
+
+		if (this.options.autoPanOnFocus) {
+			DomEvent.on(icon, 'focus', this._panOnFocus, this);
+		}
+
+		this.getPane()!.appendChild(icon);
+		
+		if (options.interactive) {
+			icon.classList.add('leaflet-interactive');
+			this.addInteractiveTarget(icon);
+		}
+
 		this.update();
 
 		return this;
 	}
 
 	onRemove(map: Map): void {
-		if (this.dragging?._enabled) {
-			this.options.draggable = true;
-			this.dragging.disable();
-		}
-		
-		this.dragging = undefined;
-
 		if (this._zoomAnimated) {
 			map.off('zoomanim', this._animateZoom, this);
 		}
 
-		this._removeIcon();
+		if (this.options.riseOnHoverOffset > 0) {
+			this.off({
+				mouseover: this._bringToFront,
+				mouseout: this._resetZIndex
+			});
+		}
+
+		if (this.options.autoPanOnFocus) {
+			DomEvent.off(this._icon, 'focus', this._panOnFocus, this);
+		}
+
+		this._icon.remove();
+		this.removeInteractiveTarget(this._icon);
 	}
 
 	getEvents(): HandlerMap {
@@ -183,126 +163,23 @@ export class Marker extends Layer {
 		return this.update();
 	}
 
-	// Returns the current icon used by the marker
-	getIcon(): Icon {
-		return this.options.icon;
-	}
-
-	// Changes the marker icon.
-	setIcon(icon: Icon): this {
-		this.options.icon = icon;
-
-		if (this._map) {
-			this._initIcon();
-			this.update();
-		}
-
-		return this;
-	}
-
 	getElement(): HTMLElement {
-		return this._icon!; // TODO: null safety
+		return this._icon;
 	}
 
 	update(): this {
-		if (this._icon && this._map) {
+		if (this._map) {
 			const pos = this._map.latLngToLayerPoint(this._latlng).round();
 			this._setPos(pos);
 		}
-
 		return this;
 	}
 
-	_initIcon(): void {
-		const
-			options = this.options,
-		    classToAdd = `leaflet-zoom-${this._zoomAnimated ? 'animated' : 'hide'}`,
-			icon = options.icon.createIcon(this._icon as any); // TODO: better types?
-
-		let addIcon = false;
-
-		// if we're not reusing the icon, remove the old one and init new one
-		if (icon !== this._icon) {
-			if (this._icon) {
-				this._removeIcon();
-			}
-			addIcon = true;
-
-			if (options.title) {
-				icon.title = options.title;
-			}
-
-			if (icon.tagName === 'IMG') {
-				icon.alt = options.alt || '';
-			}
-		}
-
-		icon.classList.add(classToAdd);
-
-		if (options.keyboard) {
-			icon.tabIndex = 0;
-			icon.setAttribute('role', 'button');
-		}
-
-		this._icon = icon;
-
-		if (options.riseOnHover) {
-			this.on({
-				mouseover: this._bringToFront,
-				mouseout: this._resetZIndex
-			});
-		}
-
-		if (this.options.autoPanOnFocus) {
-			DomEvent.on(icon, 'focus', this._panOnFocus, this);
-		}
-
-		if (options.opacity < 1) {
-			this._updateOpacity();
-		}
-
-		if (addIcon) {
-			// TODO: null safety?
-			this.getPane()!.appendChild(this._icon!);
-		}
-
-		this._initInteraction();
-	}
-
-	_removeIcon(): void {
-		if (this.options.riseOnHover) {
-			this.off({
-				mouseover: this._bringToFront,
-				mouseout: this._resetZIndex
-			});
-		}
-
-		if (this.options.autoPanOnFocus) {
-			// TODO: null safety
-			DomEvent.off(this._icon!, 'focus', this._panOnFocus, this);
-		}
-
-		if (this._icon) {
-			this._icon.remove();
-			this.removeInteractiveTarget(this._icon);
-			this._icon = undefined;
-		}
-	}
-
 	_setPos(pos: Point): void {
-		if (this._icon) {
-			DomUtil.setPosition(this._icon, pos);
-		}
+		DomUtil.setPosition(this._icon, pos);
 
 		this._zIndex = pos.y + this.options.zIndexOffset;
 		this._resetZIndex();
-	}
-
-	_updateZIndex(offset: number): void {
-		if (this._icon) {
-			// Make TypeScript shut up here--number automatically gets converted to string
-			this._icon.style.zIndex = (this._zIndex + offset) as any;
-		}
 	}
 
 	_animateZoom(ev: ZoomAnimationEvent): void {
@@ -317,51 +194,13 @@ export class Marker extends Layer {
 		}
 	}
 
-	_initInteraction(): void {
-		if (!this.options.interactive) { return; }
-
-		if (this._icon) {
-			this._icon.classList.add('leaflet-interactive');
-			this.addInteractiveTarget(this._icon);
-		}
-
-		if (this._map) {
-			let draggable = this.options.draggable;
-
-			if (this.dragging) {
-				draggable = this.dragging._enabled;
-				this.dragging.disable();
-			}
-
-			this.dragging = new MarkerDrag(this._map, this);
-
-			if (draggable) {
-				this.dragging.enable();
-			}
-		}
-	}
-
-	// Changes the opacity of the marker.
-	setOpacity(opacity: number): this {
-		this.options.opacity = opacity;
-
-		if (this._map) {
-			this._updateOpacity();
-		}
-
-		return this;
-	}
-
-	_updateOpacity(): void {
-		const opacity = this.options.opacity;
-
-		if (this._icon) {
-			this._icon.style.opacity = opacity as any; // will be coerced to string
-		}
+	_updateZIndex(offset: number): void {
+		// Make TypeScript shut up here--number automatically gets converted to string
+		this._icon.style.zIndex = (this._zIndex + offset) as any;
 	}
 
 	_bringToFront(): void {
-		this._updateZIndex(this.options.riseOffset);
+		this._updateZIndex(this.options.riseOnHoverOffset);
 	}
 
 	_resetZIndex(): void {
@@ -369,23 +208,16 @@ export class Marker extends Layer {
 	}
 
 	_panOnFocus(): void {
-		const map = this._map;
-
-		if (!map) { return; }
-
 		const
-			iconOpts = this.options.icon.options,
-			size = iconOpts.iconSize || new Point(0, 0),
-			anchor = iconOpts.iconAnchor || new Point(0, 0);
+			map = this._map,
+			{ size, anchor } = this._iconInfo;
 
-		map.panInside(this._latlng, {
-			paddingTopLeft: anchor,
-			paddingBottomRight: size.subtract(anchor)
-		});
-	}
-
-	_getTooltipAnchor(): Point | undefined {
-		return this.options.icon.options.tooltipAnchor;
+		if (map) {
+			map.panInside(this._latlng, {
+				paddingTopLeft: anchor,
+				paddingBottomRight: size.subtract(anchor),
+			});
+		}
 	}
 
 }

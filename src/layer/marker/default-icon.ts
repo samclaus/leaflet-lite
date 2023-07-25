@@ -28,10 +28,15 @@ function stripUrl(path: string): string {
 }
 
 export function defaultIcon(imagePath = getDefaultImagePath()): Icon {
-	return new Icon({
-		iconUrl: imagePath + 'marker-icon.png',
-		iconSize: new Point(25, 41),
-		iconAnchor: new Point(12, 41),
-		tooltipAnchor: new Point(16, -28),
-	});
+	const el = new Image(25, 41);
+	
+	el.src = imagePath + 'marker-icon.png';
+	el.alt = 'Blue map marker';
+	el.className = 'leaflet-marker-icon';
+	el.style.width  = '25px';
+	el.style.height = '41px';
+	el.style.marginLeft = '-12px';
+	el.style.marginTop  = '-41px';
+
+	return new Icon(el, new Point(25, 41), new Point(12, 41));
 }

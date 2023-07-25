@@ -219,14 +219,6 @@ svg.leaflet-image-layer.leaflet-interactive path {
 	background-image: url(images/marker-icon.png);
 }
 
-/* div icon */
-
-.leaflet-div-icon {
-	background: #fff;
-	border: 1px solid #666;
-}
-
-
 /* Tooltip */
 /* Base styles for the element that has a tooltip */
 .leaflet-tooltip {
