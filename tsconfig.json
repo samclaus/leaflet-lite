@@ -1,7 +1,7 @@
 {
     "$schema": "https://json.schemastore.org/tsconfig",
     "compilerOptions": {
-        "moduleResolution": "node",
+        "moduleResolution": "bundler",
         "target": "ESNext",
         "module": "ESNext",
         "useDefineForClassFields": true,
@@ -24,11 +24,11 @@
         "rootDir": "src",
         "outDir": "dist",
         "declaration": true,
-        "emitDeclarationOnly": true
+        "emitDeclarationOnly": true,
+        "types": ["vite/client"]
     },
     "include": [
-        "src/**/*.d.ts",
-        "src/**/*.ts"
+        "src"
     ],
     "exclude": [
         "src/control"

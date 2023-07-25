@@ -1197,6 +1197,7 @@ export class Map extends Evented {
 		// TODO: this code currently depends on the drag-to-pan and box zoom behavior
 		// instances, which is problematic because those are supposed to be higher-level
 		// features which are completely decoupled from the core code.
+		// TODO: this is also broken for marker dragging
 		obj = obj.dragging?.enabled() ? obj : this;
 		return obj.dragging?.moved() || !!(this.boxZoom?._moved);
 	}

@@ -1,36 +1,26 @@
-import { DomUtil } from '../../dom';
 import { Point } from '../../geom';
 import { Icon } from './Icon.js';
 
-let defaultImagePath: string | undefined;
-
-function getDefaultImagePath(): string {
-	return defaultImagePath ||= detectDefaultImagePath();
-}
-
-function detectDefaultImagePath(): string {
-	const el = DomUtil.create('div', 'leaflet-default-icon-path', document.body);
-	const path = stripUrl(getComputedStyle(el).backgroundImage);
-
-	document.body.removeChild(el);
-	if (path) { return path; }
-	const link = document.querySelector('link[href$="leaflet.css"]') as HTMLLinkElement;
-	if (!link) { return ''; }
-	return link.href.substring(0, link.href.length - 'leaflet.css'.length - 1);
-}
-
-function stripUrl(path: string): string {
-	function strip(str: string, re: RegExp, idx: number): string {
-		return re.exec(str)?.[idx] || '';
-	}
-	path = strip(path, /^url\((['"])?(.+)\1\)$/, 2);
-	return path && strip(path, /^(.*)marker-icon\.png$/, 1);
-}
-
-export function defaultIcon(imagePath = getDefaultImagePath()): Icon {
+/**
+ * Given the path to where you are hosting the blue marker icon which comes
+ * with the Leaflet Lite NPM package as `/assets/marker.svg`, returns a
+ * correctly configured marker icon ready for use.
+ * 
+ * ```js
+ * import { defaultIcon } from 'leaflet-lite';
+ * 
+ * // If using Vite to bundle your JavaScript/TypeScript and assets, you can
+ * // simply import the SVG file into your code and Vite will give you the
+ * // runtime URL as a string: https://vitejs.dev/guide/features.html#static-assets
+ * import blueMarkerURL from 'leaflet-lite/assets/marker.svg';
+ * 
+ * defaultIcon(blueMarkerURL);
+ * ```
+ */
+export function defaultIcon(imgSrc: string): Icon {
 	const el = new Image(25, 41);
 	
-	el.src = imagePath + 'marker-icon.png';
+	el.src = imgSrc;
 	el.alt = 'Blue map marker';
 	el.className = 'leaflet-marker-icon';
 	el.style.width  = '25px';
