@@ -128,6 +128,7 @@ export class Map extends Evented {
 			zoomSnap: 1,
 			zoomDelta: 1,
 			preferCanvas: false,
+			renderer: undefined,
 			...options,
 		};
 
@@ -1561,6 +1562,7 @@ export class Map extends Evented {
 		const renderer: Renderer = (
 			layer.options.renderer ||
 			this._getPaneRenderer(layer.options.pane) ||
+			this.options.renderer ||
 
 			// Last choice: use the map's main/default renderer, creating it first
 			// if necessary

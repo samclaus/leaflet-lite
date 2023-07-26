@@ -1,5 +1,6 @@
 import type { LatLng, LatLngBounds } from "../geog";
 import type { CRS } from "../geog/crs";
+import type { Renderer } from "../layer/vector/Renderer.js";
 
 export type ZoomOptions = any;
 
@@ -110,4 +111,9 @@ export interface MapOptions {
      * By default (false), all `Path`s are rendered in a `SVG` renderer.
      */
     preferCanvas: boolean;
+    /**
+     * @deprecated TODO: need to just be explicit about interacting with vector layers
+     * and not require map to know anything about them.
+     */
+    renderer: Renderer | undefined;
 }
