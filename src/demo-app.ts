@@ -21,6 +21,14 @@ new Locator(map).locate({ setView: true, maxZoom: 16 }).on('locationfound', ev =
     const marker = new Marker(ev.latlng, defaultIcon(defaultMarkerURL));
     new MarkerDrag(map, marker, true);
 
+    marker._icon.style.transformOrigin = 'bottom';
+
+    requestAnimationFrame(function updateRotation(time: DOMHighResTimeStamp): void {
+        requestAnimationFrame(updateRotation);
+
+        marker.setRotation((time % 2160) / 6);
+    });
+
     map.addLayer(new Circle(ev.latlng, { radius: ev.accuracy }))
     map.addLayer(marker);
 });
