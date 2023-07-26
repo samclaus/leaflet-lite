@@ -1,5 +1,5 @@
 import './demo-app.css';
-import './src/leaflet.css';
+import './leaflet.css';
 import { BoxZoom, enableDoubleClickZoom, Drag, LatLng, Map, TileLayer, TouchZoom, enableScrollWheelZoom, Keyboard, TapHold, Locator, Marker, defaultIcon, MarkerDrag } from './Leaflet.js';
 import defaultMarkerURL from '../assets/marker.svg';
 
