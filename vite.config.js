@@ -15,5 +15,16 @@ export default defineConfig({
             name: 'L',
             fileName: 'leaflet-lite',
         },
+        rollupOptions: {
+            output: {
+                assetFileNames: assetInfo => {
+                    // From https://stackoverflow.com/questions/68992086/how-can-i-assign-a-custom-css-file-name-when-building-a-vite-application
+                    if (assetInfo.name === 'style.css') {
+                        return 'leaflet-lite.css';
+                    }
+                    return assetInfo.name;
+                },
+            },
+        },
     },
 });

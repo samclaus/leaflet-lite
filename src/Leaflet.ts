@@ -9,3 +9,5 @@ export * from './layer/marker';
 export * from './layer/tile';
 export * from './layer/vector';
 export * from './map';
+
+import './leaflet.css';
