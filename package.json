@@ -9,6 +9,7 @@
     "vite-plugin-circular-dependency": "^0.2.1"
   },
   "files": [
+    "assets",
     "dist"
   ],
   "type": "module",
@@ -20,6 +21,7 @@
       "require": "./dist/leaflet-lite.umd.cjs"
     }
   },
+  "types": "./dist/Leaflet.d.ts",
   "scripts": {
     "dev": "vite",
     "build": "vite build && tsc"
