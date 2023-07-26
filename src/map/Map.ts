@@ -3,8 +3,8 @@ import { DomEvent, DomUtil, PosAnimation } from '../dom';
 import { LatLng, LatLngBounds } from '../geog';
 import { EPSG3857 } from '../geog/crs';
 import { Bounds, Point } from '../geom';
-import { type Layer } from '../layer/Layer.js';
-import { Canvas, SVG, type Path, type Renderer } from '../layer/vector';
+import type { Layer } from '../layer/Layer.js';
+import type { Path, Renderer } from '../layer/vector';
 import type { FitBoundsOptions, MapOptions, PanOptions, ZoomOptions, ZoomPanOptions } from './map-options';
 
 /**
@@ -53,9 +53,9 @@ import type { FitBoundsOptions, MapOptions, PanOptions, ZoomOptions, ZoomPanOpti
  * this event. Also fired on mobile when the user holds a single touch
  * for a second (also called long press).
  * @event keypress: KeyboardEvent
- * Fired when the user presses a key from the keyboard that produces a character value whil *e map is focused.
+ * Fired when the user presses a key from the keyboard that produces a character value while map is focused.
  * @event keydown: KeyboardEvent
- * Fired when the user presses a key from the keyboard while the map is focused. Unlike th *eypress` event,
+ * Fired when the user presses a key from the keyboard while the map is focused. Unlike theypress` event,
  * the `keydown` event is fired for keys that produce a character value and for keys
  * that do not produce a character value.
  * @event keyup: KeyboardEvent
@@ -110,6 +110,11 @@ export class Map extends Evented {
 
 	constructor(
 		container: HTMLElement,
+		/**
+		 * @deprecated TODO: need to just be explicit about interacting with vector layers
+		 * and not require map to know anything about them.
+		 */
+		public _defaultRenderer: Renderer,
 		options?: Partial<MapOptions>,
 	) {
 		super();
@@ -127,8 +132,6 @@ export class Map extends Evented {
 			transform3DLimit: 8388608,
 			zoomSnap: 1,
 			zoomDelta: 1,
-			preferCanvas: false,
-			renderer: undefined,
 			...options,
 		};
 
@@ -1559,32 +1562,9 @@ export class Map extends Evented {
 	// `Path`. It will ensure that the `renderer` options of the map and paths
 	// are respected, and that the renderers do exist on the map.
 	getRenderer(layer: Path): Renderer {
-		const renderer: Renderer = (
-			layer.options.renderer ||
-			this._getPaneRenderer(layer.options.pane) ||
-			this.options.renderer ||
-
-			// Last choice: use the map's main/default renderer, creating it first
-			// if necessary
-			(this._renderer ||= this._createRenderer())
-		);
-
+		const renderer = layer.options.renderer || this._defaultRenderer;
 		this.addLayer(renderer);
-
 		return renderer;
-	}
-
-	_getPaneRenderer(name: string): Renderer | undefined {
-		if (name === 'overlay') {
-			return;
-		}
-
-		// Fancy one-liner to 'create if not exists' and then return it
-		return (this._paneRenderers[name] ||= this._createRenderer({ pane: name }));
-	}
-
-	_createRenderer(options?: any): Renderer {
-		return this.options.preferCanvas ? new Canvas(options) : new SVG(options);
 	}
 
 }
