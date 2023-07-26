@@ -1,6 +1,6 @@
 {
   "name": "leaflet-lite",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "homepage": "https://leafletjs.com/",
   "description": "Fork of LeafletJS with different trade-offs.",
   "devDependencies": {
