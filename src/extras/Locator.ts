@@ -113,9 +113,8 @@ export class Locator extends Evented {
 		if (!map._container._leaflet_id) { return; }
 
 		const
-			lat = pos.coords.latitude,
-		    lng = pos.coords.longitude,
-		    latlng = new LatLng(lat, lng),
+			coords = pos.coords,
+		    latlng = new LatLng(coords.latitude, coords.longitude),
 		    bounds = LatLngBounds.fromCenter(latlng, pos.coords.accuracy * 2),
 		    options = this._locateOptions;
 
@@ -130,7 +129,8 @@ export class Locator extends Evented {
 		this.fire('locationfound', {
 			latlng,
 			bounds,
-			timestamp: pos.timestamp
+			accuracy: coords.accuracy,
+			timestamp: pos.timestamp,
 		});
 	}
 
