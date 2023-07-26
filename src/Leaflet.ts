@@ -1,3 +1,4 @@
+export * from './animation';
 export * from './behavior';
 export * from './core';
 export * from './dom';
