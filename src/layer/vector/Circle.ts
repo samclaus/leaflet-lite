@@ -22,7 +22,7 @@ export class Circle extends CircleMarker {
 
 	constructor(
 		latlng: LatLng,
-		options?: CircleMarkerOptions,
+		options?: Partial<CircleMarkerOptions>,
 	) {
 		super(latlng, options);
 
