@@ -75,7 +75,6 @@ export class Map extends Evented {
 	_panAnim: PosAnimation | undefined;
 	_panes: Dict<HTMLElement> = Object.create(null);
 	_rootPane: HTMLElement;
-	_paneRenderers: Dict<Renderer> = Object.create(null);
 	_lastCenter: LatLng | undefined;
 	_loaded = false;
 	_enforcingBounds = false;
