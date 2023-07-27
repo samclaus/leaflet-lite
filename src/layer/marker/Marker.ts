@@ -33,10 +33,6 @@ export interface MarkerOptions extends LayerOptions {
 	 * visible within the map's bounds. True by default.
 	 */
 	autoPanOnFocus: boolean;
-	/**
-	 * 2D rotation of the marker, in degrees. 0 by default.
-	 */
-	rotation: number;
 }
 
 /**
@@ -53,6 +49,11 @@ export class Marker extends Layer {
 	_zIndex = 0; // TODO: safe to make it a number from the get-go?
 	_icon: HTMLElement;
 
+	/**
+	 * 2D rotation of the marker, in degrees. 0 by default.
+	 */
+	_rotation = 0;
+
 	constructor(
 		public _latlng: LatLng,
 		public _iconInfo: Icon,
@@ -68,7 +69,6 @@ export class Marker extends Layer {
 			pane: 'marker',
 			bubblingMouseEvents: false,
 			autoPanOnFocus: true,
-			rotation: 0,
 		});
 
 		this._icon = _iconInfo.el;
@@ -169,7 +169,7 @@ export class Marker extends Layer {
 	}
 
 	setRotation(degrees: number): this {
-		this.options.rotation = degrees;
+		this._rotation = degrees;
 		return this.update();
 	}
 
@@ -188,7 +188,7 @@ export class Marker extends Layer {
 	_setPos(pos: Point): void {
 		DomUtil.setPosition(this._icon, pos);
 
-		this._icon.style.transform += ` rotateZ(${this.options.rotation}deg)`;
+		this._icon.style.transform += ` rotateZ(${this._rotation}deg)`;
 		this._zIndex = pos.y + this.options.zIndexOffset;
 		this._resetZIndex();
 	}
