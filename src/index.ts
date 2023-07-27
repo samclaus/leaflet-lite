@@ -11,4 +11,4 @@ export * from './layer/tile';
 export * from './layer/vector';
 export * from './map';
 
-import './leaflet.css';
+import './critical-styles.css';

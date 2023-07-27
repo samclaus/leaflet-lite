@@ -1,7 +1,6 @@
-import './demo-app.css';
-import './leaflet.css';
-import { BoxZoom, enableDoubleClickZoom, Drag, LatLng, Map, TileLayer, TouchZoom, enableScrollWheelZoom, Keyboard, TapHold, Locator, Marker, defaultIcon, MarkerDrag, SVG, Circle } from './Leaflet.js';
+import { BoxZoom, Circle, Drag, Keyboard, LatLng, Locator, Map, Marker, MarkerDrag, SVG, TapHold, TileLayer, TouchZoom, defaultIcon, enableDoubleClickZoom, enableScrollWheelZoom } from '.';
 import defaultMarkerURL from '../assets/marker.svg';
+import './demo-app.css';
 
 // Initialize the map
 const map = new Map(document.body, new SVG(), {

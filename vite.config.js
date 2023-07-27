@@ -11,7 +11,7 @@ export default defineConfig({
     ],
     build: {
         lib: {
-            entry: resolve(__dirname, 'src/Leaflet.ts'),
+            entry: resolve(__dirname, 'src/index.ts'),
             name: 'L',
             fileName: 'leaflet-lite',
         },
