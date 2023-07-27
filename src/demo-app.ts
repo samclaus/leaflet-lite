@@ -4,7 +4,10 @@ import { BoxZoom, enableDoubleClickZoom, Drag, LatLng, Map, TileLayer, TouchZoom
 import defaultMarkerURL from '../assets/marker.svg';
 
 // Initialize the map
-const map = new Map(document.body, new SVG())
+const map = new Map(document.body, new SVG(), {
+    minZoom: 0,
+    maxZoom: 18,
+})
     .addLayer(new TileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png'))
     .setView(new LatLng(29.64126400008693, -82.34559052037075), 13);
 
