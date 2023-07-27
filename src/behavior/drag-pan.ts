@@ -5,11 +5,6 @@ import type { Map } from '../map';
 import { BehaviorBase } from './_behavior-base';
 
 export interface DragOptions {
-	// @option dragging: Boolean = true
-	// Whether the map is draggable with mouse/touch or not.
-	dragging: boolean;
-
-	// @section Panning Inertia Options
 	// @option inertia: Boolean = *
 	// If enabled, panning of the map will have an inertia effect where
 	// the map builds momentum while dragging and continues moving in
@@ -74,7 +69,6 @@ export class Drag extends BehaviorBase {
 		map.dragging = this;
 
 		this.options = {
-			dragging: true,
 			inertia: true,
 			inertiaDeceleration: 3400,
 			inertiaMaxSpeed: Infinity,
@@ -111,11 +105,11 @@ export class Drag extends BehaviorBase {
 	}
 
 	moved(): boolean {
-		return !!this._draggable?._moved;
+		return this._draggable._moved;
 	}
 
 	moving(): boolean {
-		return !!this._draggable?._moving;
+		return this._draggable._moving;
 	}
 
 	_onDragStart(): void {
@@ -149,7 +143,7 @@ export class Drag extends BehaviorBase {
 		if (this.options.inertia) {
 			const
 				time = this._lastTime = Date.now(),
-			    pos = this._lastPos = this._absPos || this._draggable!._newPos!; // TODO: null safety
+			    pos = this._lastPos = this._absPos || this._draggable._newPos!; // TODO: null safety
 
 			this._positions.push(pos);
 			this._times.push(time);
@@ -186,7 +180,7 @@ export class Drag extends BehaviorBase {
 		if (!this._viscosity || !this._offsetLimit) { return; }
 
 		const
-			draggable = this._draggable!, // TODO: null safety
+			draggable = this._draggable,
 			offset = draggable._newPos!.subtract(draggable._startPos!),
 			limit = this._offsetLimit;
 
@@ -201,7 +195,7 @@ export class Drag extends BehaviorBase {
 	_onPreDragWrap(): void {
 		// TODO refactor to be able to adjust map pane position after zoom
 		const
-			draggable = this._draggable!, // TODO: null safety
+			draggable = this._draggable,
 			worldWidth = this._worldWidth,
 		    halfWidth = Math.round(worldWidth / 2),
 		    dx = this._initialWorldOffset,
