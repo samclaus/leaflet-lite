@@ -19,7 +19,9 @@
     ".": {
       "import": "./dist/leaflet-lite.js",
       "require": "./dist/leaflet-lite.umd.cjs"
-    }
+    },
+    "./styles": "./dist/leaflet-lite.css",
+    "./assets/*": "./assets/*"
   },
   "types": "./dist/index.d.ts",
   "scripts": {
