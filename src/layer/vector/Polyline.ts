@@ -1,7 +1,8 @@
+import { Util } from '../../core';
 import { LatLng, LatLngBounds } from '../../geog';
 import { GeogUtil } from '../../geog/util';
 import { Bounds, GeomUtil, Point } from '../../geom';
-import { DEFAULT_PATH_OPTIONS, Path, type PathOptions } from './Path.js';
+import { Path, type PathOptions } from './Path.js';
 
 export interface PolylineOptions extends PathOptions {
 	// @option smoothFactor: Number = 1.0
@@ -49,7 +50,8 @@ export interface PolylineOptions extends PathOptions {
  */
 export class Polyline extends Path {
 
-	options: PolylineOptions;
+	declare options: PolylineOptions;
+
 	_parts: Point[][] = [];
 	_rings!: any[]; // TODO
 	_latlngs!: LatLng[] | LatLng[][]; // initialized via _setLatLngs() call in constructor
@@ -62,12 +64,11 @@ export class Polyline extends Path {
 	) {
 		super();
 
-		this.options = {
-			...DEFAULT_PATH_OPTIONS,
+		Util.setOptions(this, options, {
 			smoothFactor: 1.0,
 			noClip: false,
-			...options,
-		};
+		})
+
 		this._setLatLngs(latlngs);
 	}
 

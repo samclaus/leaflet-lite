@@ -1,6 +1,6 @@
 import { Util } from '../core';
 import { LatLngBounds } from '../geog';
-import { DEFAULT_LAYER_OPTIONS, Layer } from '../layer';
+import { Layer } from '../layer';
 import type { PathOptions } from '../layer/vector';
 import type { Map } from '../map';
 
@@ -36,7 +36,7 @@ export class LayerGroup extends Layer {
 	constructor(layers: Layer[], options?: any) {
 		super();
 
-		Util.setOptions(this, options, DEFAULT_LAYER_OPTIONS);
+		Util.setOptions(this, options);
 
 		this._isLayerGroup = true;
 

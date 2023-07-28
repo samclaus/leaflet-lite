@@ -1,6 +1,7 @@
+import { Util } from '../../core';
 import type { LatLng } from '../../geog';
 import { Bounds, Point } from '../../geom';
-import { DEFAULT_PATH_OPTIONS, Path, type PathOptions } from './Path.js';
+import { Path, type PathOptions } from './Path.js';
 
 export interface CircleMarkerOptions extends PathOptions {
 	// @option radius: Number = 10
@@ -13,7 +14,8 @@ export interface CircleMarkerOptions extends PathOptions {
  */
 export class CircleMarker extends Path {
 
-	options: CircleMarkerOptions;
+	declare options: CircleMarkerOptions;
+
 	_radius: number;
 	_radiusY: number = NaN; // needed for Circle inheritance
 	_point: Point | undefined;
@@ -24,12 +26,11 @@ export class CircleMarker extends Path {
 	) {
 		super();
 
-		this.options = {
-			...DEFAULT_PATH_OPTIONS,
+		Util.setOptions(this, options, {
 			fill: true,
 			radius: 10,
-			...options,
-		};
+		});
+
 		this._radius = this.options.radius;
 	}
 

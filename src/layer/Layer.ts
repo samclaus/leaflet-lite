@@ -15,11 +15,6 @@ export interface LayerOptions {
 	bubblingMouseEvents: boolean;
 }
 
-export const DEFAULT_LAYER_OPTIONS: Readonly<LayerOptions> = {
-	pane: 'overlay',
-	bubblingMouseEvents: true,
-};
-
 /**
  * A set of methods from the Layer base class that all Leaflet layers use.
  * Inherits all methods, options and events from `L.Evented`.
@@ -38,7 +33,10 @@ export const DEFAULT_LAYER_OPTIONS: Readonly<LayerOptions> = {
  */
 export abstract class Layer extends Evented {
 
-	options = DEFAULT_LAYER_OPTIONS;
+	options: LayerOptions = {
+		pane: 'overlay',
+		bubblingMouseEvents: true,
+	};
 	_map: Map | undefined;
 	_zoomAnimated = false;
 

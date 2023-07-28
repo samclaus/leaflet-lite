@@ -38,9 +38,11 @@ export abstract class Renderer extends BlanketOverlay {
 	_layers: { [leafletID: number]: Layer } = {};
 
 	constructor(options?: Partial<RendererOptions>) {
-		super(options);
+		super();
 
-		Util.setOptions(this, { ...options, continuous: false });
+		Util.setOptions(this, options, {
+			continuous: false,
+		});
 		Util.stamp(this);
 	}
 

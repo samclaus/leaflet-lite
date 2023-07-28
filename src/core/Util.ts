@@ -103,7 +103,7 @@ export function setOptions<Options>(
 	defaults?: Partial<Options>,
 ): Options {
 	if (!Object.hasOwn(obj, 'options')) {
-		obj.options = obj.options ? Object.create(obj.options) : {};
+		obj.options = {} as any;
 	}
 	return Object.assign(obj.options as any, defaults, options);
 }

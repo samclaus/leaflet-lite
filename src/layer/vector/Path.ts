@@ -1,7 +1,8 @@
-import { DEFAULT_LAYER_OPTIONS, Layer, type LayerOptions } from '..';
+import { Layer, type LayerOptions } from '..';
+import { Util } from '../../core';
 import type { Bounds, Point } from '../../geom';
 import type { Map } from '../../map';
-import type { Renderer } from "./Renderer";
+import type { Renderer } from './Renderer.js';
 
 export interface PathOptions extends LayerOptions {
 	// @option stroke: Boolean = true
@@ -78,26 +79,6 @@ export interface RenderOrderNode {
 	next: RenderOrderNode | undefined;
 }
 
-export const DEFAULT_PATH_OPTIONS: Readonly<PathOptions> = {
-	...DEFAULT_LAYER_OPTIONS,
-	stroke: true,
-	color: '#3388ff',
-	weight: 3,
-	opacity: 1,
-	lineCap: 'round',
-	lineJoin: 'round',
-	dashArray: undefined,
-	dashOffset: undefined,
-	fill: false,
-	fillColor: undefined,
-	fillOpacity: 0.2,
-	fillRule: 'evenodd',
-	interactive: true,
-	bubblingMouseEvents: true,
-	className: undefined,
-	renderer: undefined,
-};
-
 /**
  * An abstract class that contains options and constants shared between vector
  * overlays (Polygon, Polyline, Circle). Do not use it directly. Extends `Layer`.
@@ -112,6 +93,29 @@ export abstract class Path extends Layer {
 
 	/** @deprecated TODO: figure out better way to manage render order for Canvas */
 	_order?: RenderOrderNode;
+
+	constructor(options?: Partial<PathOptions>) {
+		super();
+
+		Util.setOptions(this, options, {
+			stroke: true,
+			color: '#3388ff',
+			weight: 3,
+			opacity: 1,
+			lineCap: 'round',
+			lineJoin: 'round',
+			dashArray: undefined,
+			dashOffset: undefined,
+			fill: false,
+			fillColor: undefined,
+			fillOpacity: 0.2,
+			fillRule: 'evenodd',
+			interactive: true,
+			bubblingMouseEvents: true,
+			className: undefined,
+			renderer: undefined,
+		});
+	}
 
 	abstract _updateBounds(): void;
 	abstract _updatePath(): void;
