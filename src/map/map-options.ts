@@ -37,6 +37,12 @@ export type ZoomAnimationEvent = any;
 // 	noUpdate: boolean | undefined;
 // }
 
+export interface InvalidateSizeOptions {
+    animate?: boolean;
+    pan?: boolean;
+    debounceMoveend?: boolean;
+}
+
 export interface MapOptions {
     /**
      * The [Coordinate Reference System](#crs) to use. Don't change this if you're not

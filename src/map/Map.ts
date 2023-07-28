@@ -5,7 +5,7 @@ import { EPSG3857 } from '../geog/crs';
 import { Bounds, Point } from '../geom';
 import type { Layer } from '../layer/Layer.js';
 import type { Path, Renderer } from '../layer/vector';
-import type { FitBoundsOptions, MapOptions, PanOptions, ZoomOptions, ZoomPanOptions } from './map-options';
+import type { FitBoundsOptions, InvalidateSizeOptions, MapOptions, PanOptions, ZoomOptions, ZoomPanOptions } from './map-options';
 
 /**
  * The central class of the API — it is used to create a map on a page and manipulate it.
@@ -67,7 +67,6 @@ export class Map extends Evented {
 	_targets: Dict<Evented> = Object.create(null);
 	_layers: { [leafletID: string]: Layer } = {};
 	_container: HTMLElement;
-	_proxy: HTMLElement | undefined; // animation proxy element
 	_size: Point | undefined;
 	_sizeChanged = true;
 	_zoom!: number; // TODO: null safety?
@@ -78,14 +77,21 @@ export class Map extends Evented {
 	_lastCenter: LatLng | undefined;
 	_loaded = false;
 	_enforcingBounds = false;
-	_resizeFrame = 0;
 	_tempFireZoomEvent = false;
-	_resizeObserver = new ResizeObserver(this._onResize.bind(this));
-	_sizeTimer: number | undefined;
 	_pixelOrigin: Point | undefined;
 	_animatingZoom = false;
 	_animateToCenter: LatLng | undefined;
 	_animateToZoom = 0;
+
+	// Auto-resizing stuff
+	_resizeFrame = 0;
+	_resizeMoveendTimer: number | undefined;
+	_resizeObserver = new ResizeObserver((): void => {
+		cancelAnimationFrame(this._resizeFrame);
+		this._resizeFrame = requestAnimationFrame(
+			() => this.invalidateSize({ debounceMoveend: true }),
+		);
+	});
 
 	/**
 	 * @deprecated TODO: the map DOES need some sort of centralized animation state, but it needs to
@@ -189,6 +195,8 @@ export class Map extends Evented {
 		if (resolvedOpts.zoom !== undefined) {
 			this._zoom = this._limitZoom(resolvedOpts.zoom);
 		}
+
+		// 
 		if (resolvedOpts.center && resolvedOpts.zoom !== undefined) {
 			this.setView(resolvedOpts.center, resolvedOpts.zoom, { reset: true });
 		}
@@ -199,12 +207,43 @@ export class Map extends Evented {
 		// zoom transitions run with the same duration for all layers, so if one of transitionend events
 		// happens after starting zoom animation (propagating to the map pane), we know that it ended globally
 		if (this._zoomAnimated) {
-			this._createAnimProxy();
-			// TODO: null safety
-			DomEvent.on(this._proxy!, 'transitionend', this._catchTransitionEnd, this);
+			const animProxy = DomUtil.create('div', 'leaflet-proxy leaflet-zoom-animated');
+			this._rootPane.appendChild(animProxy);
+
+			this.on('zoomanim', (e: any): void => {
+				const transform = animProxy.style.transform;
+
+				DomUtil.setTransform(animProxy, this.project(e.center, e.zoom), this.getZoomScale(e.zoom, 1));
+
+				// workaround for case when transform is the same and so transitionend event is not fired
+				if (transform === animProxy.style.transform && this._animatingZoom) {
+					this._onZoomTransitionEnd();
+				}
+			});
+			this.on('load moveend', (): void => {
+				const
+					c = this.getCenter(),
+					z = this._zoom;
+
+				DomUtil.setTransform(animProxy, this.project(c, z), this.getZoomScale(z, 1));
+			});
+
+			const catchTransitionEnd = (e: TransitionEvent): void => {
+				if (this._animatingZoom && e.propertyName.includes('transform')) {
+					this._onZoomTransitionEnd();
+				}
+			};
+
+			DomEvent.on(animProxy, 'transitionend', catchTransitionEnd);
+
+			// Handle all cleanup within a closure here so we do not need to add class properties
+			// to reference the proxy element later
+			this.on('unload', (): void => {
+				DomEvent.off(animProxy, 'transitionend', catchTransitionEnd);
+				animProxy.remove();
+			});
 		}
 	}
-
 
 	// @section Methods for modifying map state
 
@@ -235,7 +274,7 @@ export class Map extends Evented {
 
 			if (moved) {
 				// prevent resize handler call, the view will refresh after animation anyway
-				clearTimeout(this._sizeTimer);
+				clearTimeout(this._resizeMoveendTimer);
 				return this;
 			}
 		}
@@ -481,20 +520,22 @@ export class Map extends Evented {
 	// If `options.debounceMoveend` is `true`, it will delay `moveend` event so
 	// that it doesn't happen often even if the method is called many
 	// times in a row.
-	invalidateSize(options: ZoomPanOptions | boolean): this {
+	invalidateSize(options: InvalidateSizeOptions): this {
 		if (!this._loaded) { return this; }
 
-		options = Object.assign<ZoomPanOptions, ZoomPanOptions>({
+		options = {
 			animate: false,
-			pan: true
-		}, typeof options === 'boolean' ? { animate: options } : options);
+			pan: true,
+			...options,
+		};
 
 		const oldSize = this.getSize();
 
 		this._sizeChanged = true;
 		this._lastCenter = undefined;
 
-		const newSize = this.getSize(),
+		const
+			newSize = this.getSize(),
 		    oldCenter = oldSize.divideBy(2).round(),
 		    newCenter = newSize.divideBy(2).round(),
 		    offset = oldCenter.subtract(newCenter);
@@ -503,7 +544,6 @@ export class Map extends Evented {
 
 		if (options.animate && options.pan) {
 			this.panBy(offset);
-
 		} else {
 			if (options.pan) {
 				this._rawPanBy(offset);
@@ -512,8 +552,8 @@ export class Map extends Evented {
 			this.fire('move');
 
 			if (options.debounceMoveend) {
-				clearTimeout(this._sizeTimer);
-				this._sizeTimer = setTimeout(this.fire.bind(this, 'moveend'), 200);
+				clearTimeout(this._resizeMoveendTimer);
+				this._resizeMoveendTimer = setTimeout(() => this.fire('moveend'), 200);
 			} else {
 				this.fire('moveend');
 			}
@@ -962,11 +1002,6 @@ export class Map extends Evented {
 
 	// DOM event handling
 
-	_onResize(): void {
-		cancelAnimationFrame(this._resizeFrame);
-		this._resizeFrame = requestAnimationFrame(() => this.invalidateSize({debounceMoveend: true}));
-	}
-
 	_onScroll(): void {
 		this._container.scrollTop  = 0;
 		this._container.scrollLeft = 0;
@@ -989,13 +1024,21 @@ export class Map extends Evented {
 		let src = e.target || e.srcElement;
 		let dragging = false;
 
+		function _draggableMoved(obj: any, map: Map): boolean {
+			// TODO: this code currently depends on the drag-to-pan and box zoom behavior
+			// instances, which is problematic because those are supposed to be higher-level
+			// features which are completely decoupled from the core code.
+			obj = obj.dragging?.enabled() ? obj : map;
+			return obj.dragging?.moved() || !!(map.boxZoom?._moved);
+		}
+
 		while (src) {
 			const target = this._targets[Util.stamp(src)];
 
 			if (
 				target &&
 				(type === 'click' || type === 'preclick') &&
-				this._draggableMoved(target)
+				_draggableMoved(target, this)
 			) {
 				// Prevent firing click after you just dragged an object.
 				dragging = true;
@@ -1111,14 +1154,6 @@ export class Map extends Evented {
 			if (data.originalEvent._stopped ||
 				(targets[i].options.bubblingMouseEvents === false && this._mouseEvents.includes(type))) { return; }
 		}
-	}
-
-	_draggableMoved(obj: any): boolean {
-		// TODO: this code currently depends on the drag-to-pan and box zoom behavior
-		// instances, which is problematic because those are supposed to be higher-level
-		// features which are completely decoupled from the core code.
-		obj = obj.dragging?.enabled() ? obj : this;
-		return obj.dragging?.moved() || !!(this.boxZoom?._moved);
 	}
 
 	// @section Other Methods
@@ -1276,49 +1311,6 @@ export class Map extends Evented {
 		this.panBy(offset, options);
 
 		return true;
-	}
-
-	_createAnimProxy(): void {
-		const proxy = DomUtil.create('div', 'leaflet-proxy leaflet-zoom-animated');
-		this._proxy = proxy;
-		this._rootPane.appendChild(proxy);
-
-		this.on('zoomanim', function (this: Map, e) {
-			const proxy = this._proxy!; // TODO: null safety
-			const transform = proxy.style.transform;
-
-			DomUtil.setTransform(proxy, this.project(e.center, e.zoom), this.getZoomScale(e.zoom, 1));
-
-			// workaround for case when transform is the same and so transitionend event is not fired
-			if (transform === proxy.style.transform && this._animatingZoom) {
-				this._onZoomTransitionEnd();
-			}
-		}, this);
-
-		this.on('load moveend', this._animMoveEnd, this);
-		this._on('unload', this._destroyAnimProxy, this);
-	}
-
-	_destroyAnimProxy(): void {
-		this._proxy?.remove(); // TODO: safe to wrap all of these in if-statement?
-		this.off('load moveend', this._animMoveEnd, this);
-		this._proxy = undefined;
-	}
-
-	_animMoveEnd(): void {
-		if (this._proxy) {
-			const
-				c = this.getCenter(),
-				z = this._zoom;
-
-			DomUtil.setTransform(this._proxy, this.project(c, z), this.getZoomScale(z, 1));
-		}
-	}
-
-	_catchTransitionEnd(e: TransitionEvent): void {
-		if (this._animatingZoom && e.propertyName.includes('transform')) {
-			this._onZoomTransitionEnd();
-		}
 	}
 
 	_nothingToAnimate(): boolean {
