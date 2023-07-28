@@ -37,6 +37,12 @@ export class MarkerDrag implements Disposable {
 		 */
 		public _autoPanSpeed = 10,
 	) {
+		/**
+		 * @deprecated This is only here for the _draggableMoved() method of Map, which needs to
+		 * be investigated and refactored.
+		 */
+		_marker.dragging = this;
+
 		const icon = this._marker._icon;
 
 		this._draggable = new Draggable(icon, icon, true);
@@ -61,8 +67,16 @@ export class MarkerDrag implements Disposable {
 		this._marker._icon.classList.remove('leaflet-marker-draggable');
 	}
 
+	/**
+	 * @deprecated This is only here for the _draggableMoved() method of Map, which needs to
+	 * be investigated and refactored.
+	 */
+	enabled(): boolean {
+		return this._draggable._enabled;
+	}
+
 	moved(): boolean {
-		return !!this._draggable?._moved;
+		return this._draggable._moved;
 	}
 
 	_adjustPan(e: any): void { // TODO: stronger types

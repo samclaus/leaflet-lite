@@ -54,6 +54,12 @@ export class Marker extends Layer {
 	 */
 	_rotation = 0;
 
+	/**
+	 * @deprecated This is only here for the _draggableMoved() method of Map, which needs to
+	 * be investigated and refactored.
+	 */
+	dragging?: any;
+
 	constructor(
 		public _latlng: LatLng,
 		public _iconInfo: Icon,

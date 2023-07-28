@@ -104,6 +104,14 @@ export class Drag extends BehaviorBase {
 		this._draggable.disable();
 	}
 
+	/**
+	 * @deprecated This is only here for the _draggableMoved() method of Map, which needs to
+	 * be investigated and refactored.
+	 */
+	enabled(): boolean {
+		return this._draggable._enabled;
+	}
+
 	moved(): boolean {
 		return this._draggable._moved;
 	}
