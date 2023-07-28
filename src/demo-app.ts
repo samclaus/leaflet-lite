@@ -1,4 +1,4 @@
-import { BoxZoom, Circle, Drag, Keyboard, LatLng, Locator, Map, Marker, MarkerDrag, SVG, TapHold, TileLayer, TouchZoom, defaultIcon, enableDoubleClickZoom, enableScrollWheelZoom } from '.';
+import { BoxZoom, Circle, Drag, Keyboard, LatLng, Locator, Map, Marker, MarkerDrag, SVG, TapHold, TileLayer, TouchZoom, defaultMarkerIcon, enableDoubleClickZoom, enableScrollWheelZoom } from '.';
 import defaultMarkerURL from '../assets/marker.svg';
 import './demo-app.css';
 
@@ -20,7 +20,7 @@ new Keyboard(map);
 new TapHold(map);
 
 new Locator(map).locate({ setView: true, maxZoom: 16 }).on('locationfound', ev => {
-    const marker = new Marker(ev.latlng, defaultIcon(defaultMarkerURL));
+    const marker = new Marker(ev.latlng, defaultMarkerIcon(defaultMarkerURL));
     new MarkerDrag(map, marker, true);
 
     marker._icon.style.transformOrigin = 'bottom';
