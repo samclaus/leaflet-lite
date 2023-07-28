@@ -1024,21 +1024,13 @@ export class Map extends Evented {
 		let src = e.target || e.srcElement;
 		let dragging = false;
 
-		function _draggableMoved(obj: any, map: Map): boolean {
-			// TODO: this code currently depends on the drag-to-pan and box zoom behavior
-			// instances, which is problematic because those are supposed to be higher-level
-			// features which are completely decoupled from the core code.
-			obj = obj.dragging?.enabled() ? obj : map;
-			return obj.dragging?.moved() || !!(map.boxZoom?._moved);
-		}
-
 		while (src) {
 			const target = this._targets[Util.stamp(src)];
 
 			if (
 				target &&
 				(type === 'click' || type === 'preclick') &&
-				_draggableMoved(target, this)
+				this._draggableMoved(target)
 			) {
 				// Prevent firing click after you just dragged an object.
 				dragging = true;
@@ -1069,6 +1061,14 @@ export class Map extends Evented {
 		}
 
 		return targets;
+	}
+
+	_draggableMoved(obj: any): boolean {
+		// TODO: this code currently depends on the drag-to-pan and box zoom behavior
+		// instances, which is problematic because those are supposed to be higher-level
+		// features which are completely decoupled from the core code.
+		obj = obj.dragging?.enabled() ? obj : this;
+		return obj.dragging?.moved() || !!(this.boxZoom?._moved);
 	}
 
 	_isClickDisabled(el: HTMLElement): boolean {
