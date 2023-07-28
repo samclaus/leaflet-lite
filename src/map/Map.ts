@@ -1,4 +1,4 @@
-import { Browser, Evented, Util, type HandlerFn } from '../core';
+import { Browser, Evented, Util, type Disposable, type HandlerFn } from '../core';
 import { DomEvent, DomUtil, PosAnimation } from '../dom';
 import { LatLng, LatLngBounds } from '../geog';
 import { EPSG3857 } from '../geog/crs';
@@ -61,7 +61,7 @@ import type { FitBoundsOptions, InvalidateSizeOptions, MapOptions, PanOptions, Z
  * @event keyup: KeyboardEvent
  * Fired when the user releases a key from the keyboard while the map is focused.
  */
-export class Map extends Evented {
+export class Map extends Evented implements Disposable {
 
 	options: MapOptions;
 	_targets: Dict<Evented> = Object.create(null);
@@ -586,7 +586,7 @@ export class Map extends Evented {
 	 * If you need to show another map, create a brand new instance. Do not hold on to references
 	 * to the old map so that it can be garbage collected.
 	 */
-	remove(): void {
+	dispose(): void {
 		// @event click: MouseEvent
 		// Fired when the user clicks (or taps) the map.
 		// @event dblclick: MouseEvent
