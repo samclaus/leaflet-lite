@@ -179,7 +179,8 @@ export class Map extends Evented implements Disposable {
 
 		DomEvent.on(
 			this._container,
-			'click dblclick mousedown mouseup mouseover mouseout mousemove contextmenu keypress keydown keyup',
+			'click dblclick mousedown mouseup mouseover mouseout ' +
+			'mousemove contextmenu keypress keydown keyup',
 			this._handleDOMEvent,
 			this,
 		);
@@ -614,7 +615,7 @@ export class Map extends Evented implements Disposable {
 		// that do not produce a character value.
 		// @event keyup: KeyboardEvent
 		// Fired when the user releases a key from the keyboard while the map is focused.
-		DomEvent.on(
+		DomEvent.off(
 			this._container,
 			'click dblclick mousedown mouseup mouseover mouseout ' +
 			'mousemove contextmenu keypress keydown keyup',
