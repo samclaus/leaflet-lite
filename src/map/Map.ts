@@ -60,6 +60,8 @@ import type { FitBoundsOptions, InvalidateSizeOptions, MapOptions, PanOptions, Z
  * that do not produce a character value.
  * @event keyup: KeyboardEvent
  * Fired when the user releases a key from the keyboard while the map is focused.
+ * @event unload: Event
+ * Fired when the map is destroyed with [remove](#map-remove) method.
  */
 export class Map extends Evented implements Disposable {
 
@@ -588,33 +590,6 @@ export class Map extends Evented implements Disposable {
 	 * to the old map so that it can be garbage collected.
 	 */
 	dispose(): void {
-		// @event click: MouseEvent
-		// Fired when the user clicks (or taps) the map.
-		// @event dblclick: MouseEvent
-		// Fired when the user double-clicks (or double-taps) the map.
-		// @event mousedown: MouseEvent
-		// Fired when the user pushes the mouse button on the map.
-		// @event mouseup: MouseEvent
-		// Fired when the user releases the mouse button on the map.
-		// @event mouseover: MouseEvent
-		// Fired when the mouse enters the map.
-		// @event mouseout: MouseEvent
-		// Fired when the mouse leaves the map.
-		// @event mousemove: MouseEvent
-		// Fired while the mouse moves over the map.
-		// @event contextmenu: MouseEvent
-		// Fired when the user pushes the right mouse button on the map, prevents
-		// default browser context menu from showing if there are listeners on
-		// this event. Also fired on mobile when the user holds a single touch
-		// for a second (also called long press).
-		// @event keypress: KeyboardEvent
-		// Fired when the user presses a key from the keyboard that produces a character value while the map is focused.
-		// @event keydown: KeyboardEvent
-		// Fired when the user presses a key from the keyboard while the map is focused. Unlike the `keypress` event,
-		// the `keydown` event is fired for keys that produce a character value and for keys
-		// that do not produce a character value.
-		// @event keyup: KeyboardEvent
-		// Fired when the user releases a key from the keyboard while the map is focused.
 		DomEvent.off(
 			this._container,
 			'click dblclick mousedown mouseup mouseover mouseout ' +
@@ -625,20 +600,7 @@ export class Map extends Evented implements Disposable {
 
 		this._resizeObserver.disconnect();
 
-		if (this.options.transform3DLimit) {
-			this.off('moveend', this._onMoveEnd);
-		}
-
-		if (this.options.maxBounds) {
-			this.off('moveend', this._panInsideMaxBounds);
-		}
-
-		try {
-			// throws error in IE6-8
-			delete this._container._leaflet_id;
-		} catch (e) {
-			this._container._leaflet_id = undefined;
-		}
+		delete this._container._leaflet_id;
 
 		this._stop();
 		this._rootPane.remove();
@@ -648,9 +610,6 @@ export class Map extends Evented implements Disposable {
 			this._resizeFrame = 0;
 		}
 
-		// @section Map state change events
-		// @event unload: Event
-		// Fired when the map is destroyed with [remove](#map-remove) method.
 		this.fire('unload');
 
 		// IMPORTANT: collect all map keys in an array before deleting them
