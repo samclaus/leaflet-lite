@@ -1,4 +1,4 @@
-import { BoxZoom, Circle, Drag, Keyboard, LatLng, Locator, Map, Marker, MarkerDrag, SVG, TapHold, TileLayer, TouchZoom, defaultMarkerIcon, enableDoubleClickZoom, enableScrollWheelZoom } from '.';
+import { BoxZoom, Circle, Drag, Keyboard, LatLng, Map, Marker, MarkerDrag, SVG, TapHold, TileLayer, TouchZoom, defaultMarkerIcon, enableDoubleClickZoom, enableScrollWheelZoom, getCenterAndZoomForGeolocation } from '.';
 import defaultMarkerURL from '../assets/marker.svg';
 import './demo-app.css';
 
@@ -19,8 +19,12 @@ new BoxZoom(map);
 new Keyboard(map);
 new TapHold(map);
 
-new Locator(map).locate({ setView: true, maxZoom: 16 }).on('locationfound', ev => {
-    const marker = new Marker(ev.latlng, defaultMarkerIcon(defaultMarkerURL));
+navigator.geolocation.getCurrentPosition(pos => {
+    const [coords, smartZoom] = getCenterAndZoomForGeolocation(map, pos.coords);
+
+    map.setView(coords, Math.max(smartZoom, 16));
+
+    const marker = new Marker(coords, defaultMarkerIcon(defaultMarkerURL));
     new MarkerDrag(map, marker, true);
 
     marker._icon.style.transformOrigin = 'bottom';
@@ -31,6 +35,6 @@ new Locator(map).locate({ setView: true, maxZoom: 16 }).on('locationfound', ev =
         marker.setRotation((time % 2160) / 6);
     });
 
-    map.addLayer(new Circle(ev.latlng, { radius: ev.accuracy }))
+    map.addLayer(new Circle(coords, { radius: pos.coords.accuracy }))
     map.addLayer(marker);
 });

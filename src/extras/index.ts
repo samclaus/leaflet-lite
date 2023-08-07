@@ -1,1 +1,1 @@
-export * from './Locator.js';
+export * from './geolocation.js';
