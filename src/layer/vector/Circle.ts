@@ -83,7 +83,7 @@ export class Circle extends CircleMarker {
 				lngR = latR / Math.cos(Math.PI / 180 * lat); // Fallback for edge case, #2425
 			}
 
-			this._point = p.subtract(map.getPixelOrigin()!); // TODO: null safety
+			this._point = p.subtract(map.getPixelOrigin());
 			this._radius = isNaN(lngR) ? 0 : p.x - map.project(new LatLng(lat2, lng - lngR)).x;
 			this._radiusY = p.y - top.y;
 

@@ -1,4 +1,4 @@
-import type { LatLng, LatLngBounds } from "../geog";
+import type { LatLngBounds } from "../geog";
 import type { CRS } from "../geog/crs";
 
 export type ZoomOptions = any;
@@ -49,14 +49,6 @@ export interface MapOptions {
      * sure what it means. EPSG3857 (Spherical Mercator projection) by default.
      */
     crs: CRS;
-    /**
-     * Initial geographic center of the map.
-     */
-    center: LatLng | undefined;
-    /**
-     * Initial map zoom level.
-     */
-    zoom: number | undefined;
     /**
      * Minimum zoom level of the map. 0 by default.
      */

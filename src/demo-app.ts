@@ -3,12 +3,16 @@ import defaultMarkerURL from '../assets/marker.svg';
 import './demo-app.css';
 
 // Initialize the map
-const map = new Map(document.body, new SVG(), {
-    minZoom: 0,
-    maxZoom: 18,
-})
-    .addLayer(new TileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png'))
-    .setView(new LatLng(29.64126400008693, -82.34559052037075), 13);
+const map = new Map(
+    document.body,
+    new LatLng(29.64126400008693, -82.34559052037075),
+    13,
+    new SVG(),
+    {
+        minZoom: 0,
+        maxZoom: 18,
+    },
+).addLayer(new TileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png'))
 
 // Add behaviors
 new Drag(map);

@@ -12,7 +12,7 @@ export abstract class BehaviorBase implements Disposable {
 	constructor(
 		public _map: Map,
 	) {
-		_map.on('unload', this.dispose, this, true);
+		_map.on('dispose', this.dispose, this, true);
 	}
 
 	abstract _removeHooks(): void;

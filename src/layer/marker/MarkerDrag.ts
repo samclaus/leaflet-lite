@@ -87,7 +87,7 @@ export class MarkerDrag implements Disposable {
 		    padding = this._autoPanPadding,
 		    iconPos = DomUtil.getPosition(marker._icon),
 		    bounds = map.getPixelBounds(),
-		    origin = map.getPixelOrigin()!, // TODO: null safety
+		    origin = map.getPixelOrigin(),
 			panBounds = new Bounds(
 				bounds.min._subtract(origin).add(padding),
 				bounds.max._subtract(origin).subtract(padding),

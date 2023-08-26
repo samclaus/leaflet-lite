@@ -92,7 +92,7 @@ export class Drag extends BehaviorBase {
 			this._draggable.on('predrag', this._onPreDragWrap, this);
 
 			map.on('zoomend', this._onZoomEnd, this);
-			map.whenReady(this._onZoomEnd, this);
+			this._onZoomEnd();
 		}
 
 		map._container.classList.add('leaflet-grab', 'leaflet-touch-drag');
