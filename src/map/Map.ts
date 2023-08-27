@@ -207,7 +207,6 @@ export class Map extends Evented implements Disposable {
 		initialZoom = this._limitZoom(initialZoom);
 		initialCenter = this._limitCenter(initialCenter, initialZoom, resolvedOpts.maxBounds);
 		this._zoom = initialZoom;
-		this._zoom = initialZoom;
 		this._lastCenter = initialCenter;
 		this._pixelOrigin = this._getNewPixelOrigin(initialCenter);
 		this.fire('moveend');
