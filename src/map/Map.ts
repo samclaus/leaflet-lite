@@ -1274,8 +1274,6 @@ export class Map extends Evented implements Disposable {
 	}
 
 	_animateZoom(center: LatLng, zoom: number, startAnim: boolean, noUpdate?: boolean): void {
-		if (!this._rootPane) { return; }
-
 		if (startAnim) {
 			this._animatingZoom = true;
 
@@ -1305,10 +1303,7 @@ export class Map extends Evented implements Disposable {
 	_onZoomTransitionEnd(): void {
 		if (!this._animatingZoom) { return; }
 
-		if (this._rootPane) {
-			this._rootPane.classList.remove('leaflet-zoom-anim');
-		}
-
+		this._rootPane.classList.remove('leaflet-zoom-anim');
 		this._animatingZoom = false;
 		this._move(this._animateToCenter!, this._animateToZoom, undefined, true);
 
