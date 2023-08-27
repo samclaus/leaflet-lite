@@ -665,7 +665,7 @@ export class Map extends Evented implements Disposable {
 		inside?: boolean,
 		padding = new Point(0, 0),
 	): number {
-		let zoom = this._zoom || 0; // TODO: this._zoom should always be defined, right?
+		let zoom = this._zoom;
 
 		const
 			min = this.options.minZoom,
