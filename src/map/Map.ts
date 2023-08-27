@@ -209,7 +209,6 @@ export class Map extends Evented implements Disposable {
 		this._zoom = initialZoom;
 		this._lastCenter = initialCenter;
 		this._pixelOrigin = this._getNewPixelOrigin(initialCenter);
-		this.fire('moveend');
 
 		// don't animate on browsers without hardware-accelerated transitions or old Android
 		this._zoomAnimated = resolvedOpts.zoomAnimationThreshold > 0;
