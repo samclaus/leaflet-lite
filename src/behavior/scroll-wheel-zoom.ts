@@ -82,7 +82,7 @@ export function enableScrollWheelZoom(map: Map, options: Partial<ScrollWheelZoom
 	}
 
 	DomEvent.on(map._container, 'wheel', onWheelScroll);
-	map.on('unload', disableScrollWheelZoom, undefined, true);
+	map.on('dispose', disableScrollWheelZoom, undefined, true);
 	
 	return disableScrollWheelZoom;
 }

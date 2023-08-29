@@ -31,7 +31,7 @@ export function enableDoubleClickZoom(map: Map, options?: Partial<DoubleClickZoo
 	}
 
 	map.on('dblclick', onDoubleClick);
-	map.on('unload', disableDoubleClickZoom, undefined, true);
+	map.on('dispose', disableDoubleClickZoom, undefined, true);
 
 	return disableDoubleClickZoom;
 }

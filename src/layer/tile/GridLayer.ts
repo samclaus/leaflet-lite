@@ -405,8 +405,7 @@ export abstract class GridLayer extends Layer {
 		if (!level) {
 			level = this._levels[zoom] = {
 				el: DomUtil.create('div', 'leaflet-tile-container leaflet-zoom-animated', this._container),
-				// TODO: null safety
-				origin: map.project(map.unproject(map.getPixelOrigin()!), zoom).round(),
+				origin: map.project(map.unproject(map.getPixelOrigin()), zoom).round(),
 				zoom,
 			};
 			level.el.style.zIndex = maxZoom as any; // will be coerced to string safely

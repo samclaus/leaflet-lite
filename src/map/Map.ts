@@ -1,4 +1,4 @@
-import { Browser, Evented, Util, type Disposable, type HandlerFn } from '../core';
+import { Browser, Evented, Util, type Disposable } from '../core';
 import { DomEvent, DomUtil, PosAnimation } from '../dom';
 import { LatLng, LatLngBounds } from '../geog';
 import { EPSG3857 } from '../geog/crs';
@@ -60,32 +60,34 @@ import type { FitBoundsOptions, InvalidateSizeOptions, MapOptions, PanOptions, Z
  * that do not produce a character value.
  * @event keyup: KeyboardEvent
  * Fired when the user releases a key from the keyboard while the map is focused.
- * @event unload: Event
- * Fired when the map is destroyed with [remove](#map-remove) method.
+ * @event dispose: Event
+ * Fired when the map is destroyed with the dispose() method.
  */
 export class Map extends Evented implements Disposable {
 
+	// Options, DOM elements, and other core properties that only get assigned up-front
 	options: MapOptions;
-	_targets: Dict<Evented> = Object.create(null);
-	_layers: { [leafletID: string]: Layer } = {};
 	_container: HTMLElement;
-	_size: Point | undefined;
-	_sizeChanged = true;
-	_zoom!: number; // TODO: null safety?
-	_zoomAnimated: boolean;
-	_panAnim: PosAnimation | undefined;
 	_panes: Dict<HTMLElement> = Object.create(null);
+	_targets: Dict<Evented> = Object.create(null);
+	_layers: Dict<Layer> = Object.create(null);
 	_rootPane: HTMLElement;
+	_zoomAnimated: boolean;
+
+	// Core mutable state for the current map view
+	_zoom: number;
 	_lastCenter: LatLng | undefined;
-	_loaded = false;
+	_pixelOrigin: Point;
+
 	_enforcingBounds = false;
 	_tempFireZoomEvent = false;
-	_pixelOrigin: Point | undefined;
 	_animatingZoom = false;
 	_animateToCenter: LatLng | undefined;
 	_animateToZoom = 0;
 
 	// Auto-resizing stuff
+	_size: Point | undefined;
+	_sizeChanged = true;
 	_resizeFrame = 0;
 	_resizeMoveendTimer: number | undefined;
 	_resizeObserver = new ResizeObserver((): void => {
@@ -100,6 +102,11 @@ export class Map extends Evented implements Disposable {
 	 * be a generic utility useable by all external animation code so that things are tree shakeable.
 	 */
 	_flyToFrame = 0;
+	/**
+	 * @deprecated TODO: the map DOES need some sort of centralized animation state, but it needs to
+	 * be a generic utility useable by all external animation code so that things are tree shakeable.
+	 */
+	_panAnim: PosAnimation | undefined;
 	/**
 	 * @deprecated TODO: this is a relic left over from Leaflet where some of the code depends on
 	 * having access to the drag-to-pan behavior class instance, so all such "handlers" registered
@@ -121,6 +128,8 @@ export class Map extends Evented implements Disposable {
 
 	constructor(
 		container: HTMLElement,
+		initialCenter: LatLng,
+		initialZoom: number,
 		/**
 		 * @deprecated TODO: need to just be explicit about interacting with vector layers
 		 * and not require map to know anything about them.
@@ -132,8 +141,6 @@ export class Map extends Evented implements Disposable {
 
 		const resolvedOpts: MapOptions = this.options = {
 			crs: EPSG3857,
-			center: undefined,
-			zoom: undefined,
 			minZoom: 0,
 			maxZoom: Infinity,
 			maxBounds: undefined,
@@ -195,14 +202,13 @@ export class Map extends Evented implements Disposable {
 		if (resolvedOpts.maxBounds) {
 			this.setMaxBounds(resolvedOpts.maxBounds);
 		}
-		if (resolvedOpts.zoom !== undefined) {
-			this._zoom = this._limitZoom(resolvedOpts.zoom);
-		}
 
-		// 
-		if (resolvedOpts.center && resolvedOpts.zoom !== undefined) {
-			this.setView(resolvedOpts.center, resolvedOpts.zoom, { reset: true });
-		}
+		// Set up view state according to initial zoom and center
+		initialZoom = this._limitZoom(initialZoom);
+		initialCenter = this._limitCenter(initialCenter, initialZoom, resolvedOpts.maxBounds);
+		this._zoom = initialZoom;
+		this._lastCenter = initialCenter;
+		this._pixelOrigin = this._getNewPixelOrigin(initialCenter);
 
 		// don't animate on browsers without hardware-accelerated transitions or old Android
 		this._zoomAnimated = resolvedOpts.zoomAnimationThreshold > 0;
@@ -223,7 +229,7 @@ export class Map extends Evented implements Disposable {
 					this._onZoomTransitionEnd();
 				}
 			});
-			this.on('load moveend', (): void => {
+			this.on('moveend', (): void => {
 				const
 					c = this.getCenter(),
 					z = this._zoom;
@@ -241,7 +247,7 @@ export class Map extends Evented implements Disposable {
 
 			// Handle all cleanup within a closure here so we do not need to add class properties
 			// to reference the proxy element later
-			this.on('unload', (): void => {
+			this.on('dispose', (): void => {
 				DomEvent.off(animProxy, 'transitionend', catchTransitionEnd);
 				animProxy.remove();
 			});
@@ -255,11 +261,10 @@ export class Map extends Evented implements Disposable {
 	setView(center: LatLng, zoom?: number, options: ZoomPanOptions = {}): this {
 		zoom = zoom === undefined ? this._zoom : this._limitZoom(zoom);
 		center = this._limitCenter(center, zoom, this.options.maxBounds);
-		options = options || {};
 
 		this._stop();
 
-		if (this._loaded && !options.reset && options !== true) {
+		if (options !== true) {
 
 			if (options.animate !== undefined) {
 				options.zoom = { animate: options.animate, ...options.zoom };
@@ -290,10 +295,6 @@ export class Map extends Evented implements Disposable {
 
 	// Sets the zoom of the map.
 	setZoom(zoom: number, options?: ZoomOptions): this {
-		if (!this._loaded) {
-			this._zoom = zoom;
-			return this;
-		}
 		return this.setView(this.getCenter(), zoom, {zoom: options});
 	}
 
@@ -426,10 +427,7 @@ export class Map extends Evented implements Disposable {
 		}
 
 		this.options.maxBounds = bounds;
-
-		if (this._loaded) {
-			this._panInsideMaxBounds();
-		}
+		this._panInsideMaxBounds();
 
 		return this.on('moveend', this._panInsideMaxBounds);
 	}
@@ -442,7 +440,7 @@ export class Map extends Evented implements Disposable {
 	 * as before.
 	 */
 	setMinZoom(minZoom: number): this {
-		if (this._loaded && minZoom !== this.options.minZoom) {
+		if (minZoom !== this.options.minZoom) {
 			this.options.minZoom = minZoom;
 			this.fire('zoomlimitschanged');
 
@@ -461,7 +459,7 @@ export class Map extends Evented implements Disposable {
 	 * as before.
 	 */
 	setMaxZoom(maxZoom: number): this {
-		if (this._loaded && maxZoom !== this.options.maxZoom) {
+		if (maxZoom !== this.options.maxZoom) {
 			this.options.maxZoom = maxZoom;
 			this.fire('zoomlimitschanged');
 
@@ -524,8 +522,6 @@ export class Map extends Evented implements Disposable {
 	// that it doesn't happen often even if the method is called many
 	// times in a row.
 	invalidateSize(options: InvalidateSizeOptions): this {
-		if (!this._loaded) { return this; }
-
 		options = {
 			animate: false,
 			pan: true,
@@ -610,7 +606,7 @@ export class Map extends Evented implements Disposable {
 			this._resizeFrame = 0;
 		}
 
-		this.fire('unload');
+		this.fire('dispose');
 
 		// IMPORTANT: collect all map keys in an array before deleting them
 		for (const layer of Object.values(this._layers)) {
@@ -643,13 +639,9 @@ export class Map extends Evented implements Disposable {
 
 	// Returns the geographical center of the map view
 	getCenter(): LatLng {
-		this._checkIfLoaded();
-
-		if (this._lastCenter && !this._moved()) {
-			return this._lastCenter.clone();
-		}
-
-		return this.layerPointToLatLng(this._getCenterLayerPoint());
+		return (this._lastCenter && !this._moved())
+			? this._lastCenter.clone()
+			: this.layerPointToLatLng(this._getCenterLayerPoint());
 	}
 
 	// Returns the geographical bounds visible in the current map view
@@ -671,7 +663,7 @@ export class Map extends Evented implements Disposable {
 		inside?: boolean,
 		padding = new Point(0, 0),
 	): number {
-		let zoom = this._zoom || 0; // TODO: this._zoom should always be defined, right?
+		let zoom = this._zoom;
 
 		const
 			min = this.options.minZoom,
@@ -697,7 +689,7 @@ export class Map extends Evented implements Disposable {
 
 	// Returns the current size of the map container (in pixels).
 	getSize(): Point {
-		if (!this._size || this._sizeChanged) {
+		if (this._sizeChanged || !this._size) {
 			this._size = new Point(
 				this._container.clientWidth || 0,
 				this._container.clientHeight || 0,
@@ -719,8 +711,7 @@ export class Map extends Evented implements Disposable {
 	// since there can be negative offsets.
 	// Returns the projected pixel coordinates of the top left point of
 	// the map layer (useful in custom layer and overlay implementations).
-	getPixelOrigin(): Point | undefined {
-		this._checkIfLoaded();
+	getPixelOrigin(): Point {
 		return this._pixelOrigin;
 	}
 
@@ -768,7 +759,7 @@ export class Map extends Evented implements Disposable {
 	// Given a pixel coordinate relative to the [origin pixel](#map-getpixelorigin),
 	// returns the corresponding geographical coordinate (for the current zoom level).
 	layerPointToLatLng(point: Point): LatLng {
-		const projectedPoint = point.add(this.getPixelOrigin()!); // TODO: null safety
+		const projectedPoint = point.add(this.getPixelOrigin());
 		return this.unproject(projectedPoint);
 	}
 
@@ -776,7 +767,7 @@ export class Map extends Evented implements Disposable {
 	// relative to the [origin pixel](#map-getpixelorigin).
 	latLngToLayerPoint(latlng: LatLng): Point {
 		const projectedPoint = this.project(latlng)._round();
-		return projectedPoint._subtract(this.getPixelOrigin()!); // TODO: null safety
+		return projectedPoint._subtract(this.getPixelOrigin());
 	}
 
 	// Returns a `LatLng` where `lat` and `lng` has been wrapped according to the
@@ -852,8 +843,6 @@ export class Map extends Evented implements Disposable {
 	_resetView(center: LatLng, zoom: number, noMoveStart?: boolean): void {
 		DomUtil.setPosition(this._rootPane, new Point(0, 0));
 
-		const loading = !this._loaded;
-		this._loaded = true;
 		zoom = this._limitZoom(zoom);
 
 		this.fire('viewprereset');
@@ -866,15 +855,8 @@ export class Map extends Evented implements Disposable {
 
 		// @event viewreset: Event
 		// Fired when the map needs to redraw its content (this usually happens
-		// on map zoom or load). Very useful for creating custom overlays.
+		// on map zoom). Very useful for creating custom overlays.
 		this.fire('viewreset');
-
-		// @event load: Event
-		// Fired when the map is initialized (when its center and zoom are set
-		// for the first time).
-		if (loading) {
-			this.fire('load');
-		}
 	}
 
 	_moveStart(zoomChanged: boolean, noMoveStart?: boolean): this {
@@ -954,12 +936,6 @@ export class Map extends Evented implements Disposable {
 		}
 	}
 
-	_checkIfLoaded(): void {
-		if (!this._loaded) {
-			throw new Error('Set map center and zoom first.');
-		}
-	}
-
 	// DOM event handling
 
 	_onScroll(): void {
@@ -969,6 +945,7 @@ export class Map extends Evented implements Disposable {
 
 	_onMoveEnd(): void {
 		const pos = this._getMapPanePos();
+
 		if (Math.max(Math.abs(pos.x), Math.abs(pos.y)) >= this.options.transform3DLimit) {
 			// https://bugzilla.mozilla.org/show_bug.cgi?id=1203873 but Webkit also have
 			// a pixel offset on very high values, see: https://jsfiddle.net/dg6r5hhb/
@@ -1041,11 +1018,10 @@ export class Map extends Evented implements Disposable {
 		return false;
 	}
 
-	_handleDOMEvent(e: Event) {
+	_handleDOMEvent(e: Event): void {
 		const el = (e.target || e.srcElement) as HTMLElement;
 
 		if (
-			!this._loaded ||
 			el._leaflet_disable_events ||
 			e.type === 'click' && this._isClickDisabled(el)
 		) {
@@ -1116,20 +1092,6 @@ export class Map extends Evented implements Disposable {
 		}
 	}
 
-	// @section Other Methods
-
-	// Runs the given function `fn` when the map gets initialized with
-	// a view (center and zoom) and at least one layer, or immediately
-	// if it's already initialized, optionally passing a function context.
-	whenReady(callback: HandlerFn, context: any = this): this {
-		if (this._loaded) {
-			callback.call(context, { target: this });
-		} else {
-			this.on('load', callback, context);
-		}
-		return this;
-	}
-
 	// private methods for getting map state
 
 	_getMapPanePos(): Point {
@@ -1142,9 +1104,9 @@ export class Map extends Evented implements Disposable {
 	}
 
 	_getTopLeftPoint(center?: LatLng, zoom?: number): Point {
-		const pixelOrigin = center && zoom !== undefined ?
-			this._getNewPixelOrigin(center, zoom) :
-			this.getPixelOrigin()!; // TODO: null safety
+		const pixelOrigin = (center && zoom !== undefined)
+			? this._getNewPixelOrigin(center, zoom)
+			: this.getPixelOrigin();
 		return pixelOrigin.subtract(this._getMapPanePos());
 	}
 
@@ -1310,8 +1272,6 @@ export class Map extends Evented implements Disposable {
 	}
 
 	_animateZoom(center: LatLng, zoom: number, startAnim: boolean, noUpdate?: boolean): void {
-		if (!this._rootPane) { return; }
-
 		if (startAnim) {
 			this._animatingZoom = true;
 
@@ -1341,10 +1301,7 @@ export class Map extends Evented implements Disposable {
 	_onZoomTransitionEnd(): void {
 		if (!this._animatingZoom) { return; }
 
-		if (this._rootPane) {
-			this._rootPane.classList.remove('leaflet-zoom-anim');
-		}
-
+		this._rootPane.classList.remove('leaflet-zoom-anim');
 		this._animatingZoom = false;
 		this._move(this._animateToCenter!, this._animateToZoom, undefined, true);
 
@@ -1372,28 +1329,22 @@ export class Map extends Evented implements Disposable {
 		this._layers[id] = layer;
 
 		layer.beforeAdd?.(this);
+		layer._map = this;
+		layer._zoomAnimated = this._zoomAnimated;
 
-		this.whenReady(() => {
-			// Make sure the layer is still registered by the time we are ready
-			if (id in this._layers) {
-				layer._map = this;
-				layer._zoomAnimated = this._zoomAnimated;
+		if (layer.getEvents) {
+			const events = layer.getEvents();
+			
+			this.on(events, layer);
+			layer.on('remove', () => {
+				this.off(events, layer);
+			}, this, true);
+		}
 
-				if (layer.getEvents) {
-					const events = layer.getEvents();
-					
-					this.on(events, layer);
-					layer.on('remove', () => {
-						this.off(events, layer);
-					}, this, true);
-				}
+		layer.onAdd(this);
+		layer.fire('add');
 
-				layer.onAdd(this);
-				layer.fire('add');
-
-				this.fire('layeradd', { layer });
-			}
-		});
+		this.fire('layeradd', { layer });
 
 		return this;
 	}
@@ -1404,17 +1355,13 @@ export class Map extends Evented implements Disposable {
 
 		if (!this._layers[id]) { return this; }
 
-		if (this._loaded) {
-			layer.onRemove?.(this);
-		}
+		layer.onRemove?.(this);
 
 		delete this._layers[id];
 
-		if (this._loaded) {
-			this.fire('layerremove', {layer});
-			layer.fire('remove');
-		}
+		this.fire('layerremove', {layer});
 
+		layer.fire('remove');
 		layer._map = undefined;
 
 		return this;
