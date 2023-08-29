@@ -80,7 +80,7 @@ export class Drag extends BehaviorBase {
 
 		this._positions = [];
 		this._times = [];
-		this._draggable = new Draggable(map._rootPane, map._container); // TODO: null safety
+		this._draggable = new Draggable(map._rootPane, map._container);
 		this._draggable.on({
 			dragstart: this._onDragStart,
 			drag: this._onDrag,
