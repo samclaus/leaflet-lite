@@ -72,13 +72,6 @@ export interface PathOptions extends LayerOptions {
 	renderer: Renderer | undefined;
 }
 
-/** @deprecated TODO: figure out better way to manage render order for Canvas */
-export interface RenderOrderNode {
-	layer: Path;
-	prev: RenderOrderNode | undefined;
-	next: RenderOrderNode | undefined;
-}
-
 /**
  * An abstract class that contains options and constants shared between vector
  * overlays (Polygon, Polyline, Circle). Do not use it directly. Extends `Layer`.
@@ -90,9 +83,6 @@ export abstract class Path extends Layer {
 	_renderer: Renderer | undefined;
 	_path: any; // TODO: type this
 	_pxBounds: Bounds | undefined;
-
-	/** @deprecated TODO: figure out better way to manage render order for Canvas */
-	_order?: RenderOrderNode;
 
 	constructor(options?: Partial<PathOptions>) {
 		super();

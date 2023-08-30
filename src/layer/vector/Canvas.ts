@@ -3,7 +3,7 @@ import { DomEvent } from '../../dom';
 import { Bounds, Point } from '../../geom';
 import type { Map } from '../../map';
 import type { CircleMarker } from './CircleMarker.js';
-import type { Path, RenderOrderNode } from './Path.js';
+import type { Path } from './Path.js';
 import type { Polyline } from './Polyline.js';
 import { Renderer } from './Renderer.js';
 
@@ -42,8 +42,7 @@ export class Canvas extends Renderer {
 	_redrawFrame = 0;
 	_postponeUpdatePaths = false;
 	_drawing = false;
-	_drawFirst: RenderOrderNode | undefined;
-	_drawLast: RenderOrderNode | undefined;
+	_drawOrder: Path[] = [];
 	_hoveredLayer: any; // TODO
 	_mouseHoverThrottled = false;
 
@@ -98,7 +97,7 @@ export class Canvas extends Renderer {
 		return size;
 	}
 
-	_updatePaths() {
+	_updatePaths(): void {
 		if (this._postponeUpdatePaths) { return; }
 
 		this._redrawBounds = undefined;
@@ -108,7 +107,7 @@ export class Canvas extends Renderer {
 		this._redraw();
 	}
 
-	_update() {
+	_update(): void {
 		// TODO: null safety
 		if (this._map!._animatingZoom && this._bounds) { return; }
 
@@ -135,48 +134,26 @@ export class Canvas extends Renderer {
 		}
 	}
 
-	_initPath(layer: Path): void {
-		this._updateDashArray(layer);
-		this._layers[Util.stamp(layer)] = layer;
-
-		const order: RenderOrderNode = layer._order = {
-			layer,
-			prev: this._drawLast,
-			next: undefined,
-		};
-
-		if (this._drawLast) {
-			this._drawLast.next = order;
-		}
-
-		this._drawLast = order;
-		this._drawFirst ||= this._drawLast;
+	_initPath(path: Path): void {
+		this._updateDashArray(path);
+		this._layers[Util.stamp(path)] = path;
+		this._drawOrder.push(path);
 	}
 
 	_addPath(layer: Path): void {
 		this._requestRedraw(layer);
 	}
 
-	_removePath(layer: Path): void {
-		const order = layer._order!; // TODO: null safety
-		const next = order.next;
-		const prev = order.prev;
+	_removePath(path: Path): void {
+		const drawIndex = this._drawOrder.indexOf(path);
 
-		if (next) {
-			next.prev = prev;
-		} else {
-			this._drawLast = prev;
-		}
-		if (prev) {
-			prev.next = next;
-		} else {
-			this._drawFirst = next;
+		if (drawIndex >= 0) {
+			this._drawOrder.splice(drawIndex, 1);
 		}
 
-		delete layer._order;
-		delete this._layers[Util.stamp(layer)];
+		delete this._layers[Util.stamp(path)];
 
-		this._requestRedraw(layer);
+		this._requestRedraw(path);
 	}
 
 	_updatePath(layer: Path): void {
@@ -264,7 +241,7 @@ export class Canvas extends Renderer {
 		}
 	}
 
-	_draw() {
+	_draw(): void {
 		const
 			bounds = this._redrawBounds,
 			ctx = this._ctx!; // TODO: null safety
@@ -280,10 +257,9 @@ export class Canvas extends Renderer {
 
 		this._drawing = true;
 
-		for (let order = this._drawFirst; order; order = order.next) {
-			const layer = order.layer;
-			if (!bounds || (layer._pxBounds?.intersects(bounds))) {
-				layer._updatePath();
+		for (const path of this._drawOrder) {
+			if (!bounds || (path._pxBounds?.intersects(bounds))) {
+				path._updatePath();
 			}
 		}
 
@@ -372,20 +348,21 @@ export class Canvas extends Renderer {
 
 	_onClick(e: any): void {
 		const point = this._map!.mouseEventToLayerPoint(e); // TODO: null safety
-		let layer, clickedLayer;
 
-		for (let order = this._drawFirst; order; order = order.next) {
-			layer = order.layer;
-			if (layer.options.interactive && layer._containsPoint(point)) {
-				 // TODO: null safety
+		let clickedLayer;
+
+		for (const path of this._drawOrder) {
+			if (path.options.interactive && path._containsPoint(point)) {
 				if (
 					!(e.type === 'click' || e.type === 'preclick') ||
-					!this._map!._draggableMoved(layer)
+					!this._map!._draggableMoved(path) // TODO: null safety
 				) {
-					clickedLayer = layer;
+					// TODO: just iterate array backwards and return immediately here?
+					clickedLayer = path;
 				}
 			}
 		}
+
 		this._fireEvent(clickedLayer ? [clickedLayer] : false, e);
 	}
 
@@ -414,12 +391,12 @@ export class Canvas extends Renderer {
 			return;
 		}
 
-		let layer, candidateHoveredLayer;
+		let candidateHoveredLayer: Path | undefined;
 
-		for (let order = this._drawFirst; order; order = order.next) {
-			layer = order.layer;
-			if (layer.options.interactive && layer._containsPoint(point)) {
-				candidateHoveredLayer = layer;
+		for (const path of this._drawOrder) {
+			if (path.options.interactive && path._containsPoint(point)) {
+				// TODO: iterate array backwards and break loop here?
+				candidateHoveredLayer = path;
 			}
 		}
 
@@ -447,66 +424,41 @@ export class Canvas extends Renderer {
 		this._map!._fireDOMEvent(e, type || e.type, layers);
 	}
 
-	_bringToFront(layer: Path): void {
-		const order = layer._order;
+	_bringToFront(path: Path): void {
+		const
+			order = this._drawOrder,
+			index = order.indexOf(path);
 
-		if (!order) { return; }
-
-		const next = order.next;
-		const prev = order.prev;
-
-		if (next) {
-			next.prev = prev;
-		} else {
-			// Already last
+		if (index < 0 || index === (order.length - 1)) {
+			// Path is not present, or is already at front (last to draw)
 			return;
 		}
-		if (prev) {
-			prev.next = next;
-		} else if (next) {
-			// Update first entry unless this is the
-			// single entry
-			this._drawFirst = next;
-		}
 
-		order.prev = this._drawLast;
-		this._drawLast!.next = order; // TODO: null safety
+		order.splice(index, 1);
+		order.push(path);
 
-		order.next = undefined;
-		this._drawLast = order;
-
-		this._requestRedraw(layer);
+		this._requestRedraw(path);
 	}
 
-	_bringToBack(layer: Path): void {
-		const order = layer._order;
+	_bringToBack(path: Path): void {
+		const
+			order = this._drawOrder,
+			index = order.indexOf(path);
 
-		if (!order) { return; }
-
-		const next = order.next;
-		const prev = order.prev;
-
-		if (prev) {
-			prev.next = next;
-		} else {
-			// Already first
+		if (index < 1) {
+			// Path is not present, or is already at back (first to draw)
 			return;
 		}
-		if (next) {
-			next.prev = prev;
-		} else if (prev) {
-			// Update last entry unless this is the
-			// single entry
-			this._drawLast = prev;
+
+		// Shift all items before/behind the path up one spot
+		for (let i = 0; i < index; ++i) {
+			order[i + 1] = order[i];
 		}
 
-		order.prev = undefined;
-		order.next = this._drawFirst;
+		// Now insert the path at beginning so it draws before/behind everything else
+		order[0] = path;
 
-		this._drawFirst!.prev = order; // TODO: null safety
-		this._drawFirst = order;
-
-		this._requestRedraw(layer);
+		this._requestRedraw(path);
 	}
 
 }
