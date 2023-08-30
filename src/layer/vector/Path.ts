@@ -81,8 +81,12 @@ export abstract class Path extends Layer {
 	declare options: PathOptions;
 
 	_renderer: Renderer | undefined;
-	_path: any; // TODO: type this
 	_pxBounds: Bounds | undefined;
+
+	/**
+	 * Will hold the SVG element created by an SVG renderer, if applicable.
+	 */
+	_path: any;
 
 	constructor(options?: Partial<PathOptions>) {
 		super();

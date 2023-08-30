@@ -1,4 +1,4 @@
-import { BlanketOverlay, Layer, type BlanketOverlayOptions } from '..';
+import { BlanketOverlay, type BlanketOverlayOptions } from '..';
 import { Util } from '../../core';
 import type { Map } from '../../map';
 import { CircleMarker } from './CircleMarker.js';
@@ -35,8 +35,6 @@ export abstract class Renderer extends BlanketOverlay {
 
 	declare options: RendererOptions;
 
-	_layers: { [leafletID: number]: Layer } = {};
-
 	constructor(options?: Partial<RendererOptions>) {
 		super();
 
@@ -55,6 +53,9 @@ export abstract class Renderer extends BlanketOverlay {
 	abstract _removePath(path: Path): void;
 	abstract _updateCircle(layer: CircleMarker): void;
 	abstract _updatePoly(layer: Polyline, closed?: boolean): void;
+	abstract _projectPaths(): void;
+	abstract _updatePaths(): void;
+	abstract _resetPaths(): void;
 
 	// Subclasses are responsible of implementing `_update()`. It should fire
 	// the 'update' event whenever appropriate (before/after rendering).
@@ -70,25 +71,17 @@ export abstract class Renderer extends BlanketOverlay {
 		this.off('update', this._updatePaths, this);
 	}
 
+	/**
+	 * Implements the 'zoomend' handler for BlanketOverlay, calling `_projectPaths()`
+	 * which must iterate over all paths owned by the renderer and have them each
+	 * re-project themselves now that the origin pixel for the map has changed.
+	 */
 	_onZoomEnd(): void {
-		// When a zoom ends, the "origin pixel" changes. Internal coordinates
-		// of paths are relative to the origin pixel and therefore need to
-		// be recalculated.
-		for (const layer of Object.values(this._layers)) {
-			layer._project();
-		}
-	}
-
-	_updatePaths(): void {
-		for (const layer of Object.values(this._layers)) {
-			layer._update();
-		}
+		this._projectPaths();
 	}
 
 	_onViewReset(): void {
-		for (const layer of Object.values(this._layers)) {
-			layer._reset();
-		}
+		this._resetPaths();
 	}
 
 	_onSettled(): void {

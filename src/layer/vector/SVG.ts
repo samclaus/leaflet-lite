@@ -32,6 +32,7 @@ export class SVG extends Renderer {
 
 	_svgSize: Point | undefined;
 	_rootGroup: SVGGElement | undefined;
+	_paths = new Set<Path>();
 
 	_initContainer(): void {
 		this._container = create('svg') as any; // TODO: fix types
@@ -80,107 +81,124 @@ export class SVG extends Renderer {
 
 	// methods below are called by vector layers implementations
 
-	_initPath(layer: Path): void {
-		const path = layer._path = create('path');
+	_initPath(path: Path): void {
+		const el = path._path = create('path');
 
-		if (layer.options.className) {
-			path.classList.add(...Util.splitWords(layer.options.className));
+		if (path.options.className) {
+			el.classList.add(...Util.splitWords(path.options.className));
 		}
 
-		if (layer.options.interactive) {
-			path.classList.add('leaflet-interactive');
+		if (path.options.interactive) {
+			el.classList.add('leaflet-interactive');
 		}
 
-		this._updateStyle(layer);
-		this._layers[Util.stamp(layer)] = layer;
+		this._updateStyle(path);
+		this._paths.add(path);
 	}
 
-	_addPath(layer: Path): void {
+	_addPath(path: Path): void {
 		if (!this._rootGroup) { this._initContainer(); }
-		this._rootGroup!.appendChild(layer._path); // TODO: null safety
-		layer.addInteractiveTarget(layer._path);
+		this._rootGroup!.appendChild(path._path); // TODO: null safety
+		path.addInteractiveTarget(path._path);
 	}
 
-	_removePath(layer: Path): void {
-		layer._path.remove();
-		layer.removeInteractiveTarget(layer._path);
-		delete this._layers[Util.stamp(layer)];
+	_removePath(path: Path): void {
+		path._path.remove();
+		path.removeInteractiveTarget(path._path);
+		this._paths.delete(path);
 	}
 
-	_updatePath(layer: Path): void {
-		layer._project();
-		layer._update();
+	_updatePath(path: Path): void {
+		path._project();
+		path._update();
 	}
 
-	_updateStyle(layer: Path): void {
+	_updateStyle(path: Path): void {
 		const
-			path = layer._path,
-		    options = layer.options;
+			el = path._path as SVGPathElement,
+		    options = path.options;
 
-		if (!path) { return; }
+		if (!el) { return; }
 
 		if (options.stroke) {
-			path.setAttribute('stroke', options.color);
-			path.setAttribute('stroke-opacity', options.opacity);
-			path.setAttribute('stroke-width', options.weight);
-			path.setAttribute('stroke-linecap', options.lineCap);
-			path.setAttribute('stroke-linejoin', options.lineJoin);
+			el.setAttribute('stroke', options.color);
+			el.setAttribute('stroke-opacity', options.opacity as any);
+			el.setAttribute('stroke-width', options.weight as any);
+			el.setAttribute('stroke-linecap', options.lineCap);
+			el.setAttribute('stroke-linejoin', options.lineJoin);
 
 			if (options.dashArray) {
-				path.setAttribute('stroke-dasharray', options.dashArray);
+				el.setAttribute('stroke-dasharray', options.dashArray);
 			} else {
-				path.removeAttribute('stroke-dasharray');
+				el.removeAttribute('stroke-dasharray');
 			}
 
 			if (options.dashOffset) {
-				path.setAttribute('stroke-dashoffset', options.dashOffset);
+				el.setAttribute('stroke-dashoffset', options.dashOffset);
 			} else {
-				path.removeAttribute('stroke-dashoffset');
+				el.removeAttribute('stroke-dashoffset');
 			}
 		} else {
-			path.setAttribute('stroke', 'none');
+			el.setAttribute('stroke', 'none');
 		}
 
 		if (options.fill) {
-			path.setAttribute('fill', options.fillColor || options.color);
-			path.setAttribute('fill-opacity', options.fillOpacity);
-			path.setAttribute('fill-rule', options.fillRule || 'evenodd');
+			el.setAttribute('fill', options.fillColor || options.color);
+			el.setAttribute('fill-opacity', options.fillOpacity as any);
+			el.setAttribute('fill-rule', options.fillRule || 'evenodd');
 		} else {
-			path.setAttribute('fill', 'none');
+			el.setAttribute('fill', 'none');
 		}
 	}
 
-	_updatePoly(layer: Polyline, closed?: boolean): void {
-		this._setPath(layer, pointsToPath(layer._parts, closed));
+	_updatePoly(poly: Polyline, closed?: boolean): void {
+		this._setPath(poly, pointsToPath(poly._parts, closed));
 	}
 
-	_updateCircle(layer: CircleMarker): void {
+	_updateCircle(circle: CircleMarker): void {
 		const
-			p = layer._point!, // TODO: null safety
-		    r = Math.max(Math.round(layer._radius), 1),
-		    r2 = Math.max(Math.round(layer._radiusY), 1) || r,
+			p = circle._point!, // TODO: null safety
+		    r = Math.max(Math.round(circle._radius), 1),
+		    r2 = Math.max(Math.round(circle._radiusY), 1) || r,
 		    arc = `a${r},${r2} 0 1,0 `;
 
 		// drawing a circle with two half-arcs
-		const d = layer._empty() ? 'M0 0' :
-			`M${p.x - r},${p.y
-			}${arc}${r * 2},0 ${
-				arc}${-r * 2},0 `;
+		const d = circle._empty()
+			? 'M0 0'
+			: `M${p.x - r},${p.y}${arc}${r * 2},0 ${arc}${-r * 2},0 `;
 
-		this._setPath(layer, d);
+		this._setPath(circle, d);
 	}
 
-	_setPath(layer: Path, path: string): void {
-		layer._path.setAttribute('d', path);
+	_setPath(path: Path, d: string): void {
+		path._path.setAttribute('d', d);
 	}
 
 	// SVG does not have the concept of zIndex so we resort to changing the DOM order of elements
-	_bringToFront(layer: Path): void {
-		DomUtil.toFront(layer._path);
+	_bringToFront(path: Path): void {
+		DomUtil.toFront(path._path);
 	}
 
-	_bringToBack(layer: Path): void {
-		DomUtil.toBack(layer._path);
+	_bringToBack(path: Path): void {
+		DomUtil.toBack(path._path);
+	}
+
+	_projectPaths(): void {
+		for (const path of this._paths) {
+			path._project();
+		}
+	}
+
+	_updatePaths(): void {
+		for (const path of this._paths) {
+			path._update();
+		}
+	}
+
+	_resetPaths(): void {
+		for (const path of this._paths) {
+			path._reset();
+		}
 	}
 
 }

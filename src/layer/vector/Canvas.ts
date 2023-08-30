@@ -1,4 +1,4 @@
-import { Util, type HandlerMap } from '../../core';
+import type { HandlerMap } from '../../core';
 import { DomEvent } from '../../dom';
 import { Bounds, Point } from '../../geom';
 import type { Map } from '../../map';
@@ -43,7 +43,7 @@ export class Canvas extends Renderer {
 	_postponeUpdatePaths = false;
 	_drawing = false;
 	_drawOrder: Path[] = [];
-	_hoveredLayer: any; // TODO
+	_hoveredPath: any; // TODO
 	_mouseHoverThrottled = false;
 
 	getEvents(): HandlerMap {
@@ -101,9 +101,11 @@ export class Canvas extends Renderer {
 		if (this._postponeUpdatePaths) { return; }
 
 		this._redrawBounds = undefined;
-		for (const layer of Object.values(this._layers)) {
-			layer._update();
+
+		for (const path of this._drawOrder) {
+			path._update();
 		}
+
 		this._redraw();
 	}
 
@@ -136,12 +138,11 @@ export class Canvas extends Renderer {
 
 	_initPath(path: Path): void {
 		this._updateDashArray(path);
-		this._layers[Util.stamp(path)] = path;
 		this._drawOrder.push(path);
 	}
 
-	_addPath(layer: Path): void {
-		this._requestRedraw(layer);
+	_addPath(path: Path): void {
+		this._requestRedraw(path);
 	}
 
 	_removePath(path: Path): void {
@@ -151,31 +152,29 @@ export class Canvas extends Renderer {
 			this._drawOrder.splice(drawIndex, 1);
 		}
 
-		delete this._layers[Util.stamp(path)];
-
 		this._requestRedraw(path);
 	}
 
-	_updatePath(layer: Path): void {
+	_updatePath(path: Path): void {
 		// Redraw the union of the layer's old pixel
 		// bounds and the new pixel bounds.
-		this._extendRedrawBounds(layer);
-		layer._project();
-		layer._update();
+		this._extendRedrawBounds(path);
+		path._project();
+		path._update();
 		// The redraw will extend the redraw bounds
 		// with the new pixel bounds.
-		this._requestRedraw(layer);
+		this._requestRedraw(path);
 	}
 
-	_updateStyle(layer: Path): void {
-		this._updateDashArray(layer);
-		this._requestRedraw(layer);
+	_updateStyle(path: Path): void {
+		this._updateDashArray(path);
+		this._requestRedraw(path);
 	}
 
-	_updateDashArray(layer: Path) {
-		if (typeof layer.options.dashArray === 'string') {
+	_updateDashArray(path: Path) {
+		if (typeof path.options.dashArray === 'string') {
 			const
-				parts = layer.options.dashArray.split(/[, ]+/),
+				parts = path.options.dashArray.split(/[, ]+/),
 				dashArray = [];
 
 			let dashValue,
@@ -186,28 +185,28 @@ export class Canvas extends Renderer {
 				if (isNaN(dashValue)) { return; }
 				dashArray.push(dashValue);
 			}
-			(layer.options as any)._dashArray = dashArray;
+			(path.options as any)._dashArray = dashArray;
 		} else {
-			(layer.options as any)._dashArray = layer.options.dashArray;
+			(path.options as any)._dashArray = path.options.dashArray;
 		}
 	}
 
-	_requestRedraw(layer: Path): void {
+	_requestRedraw(path: Path): void {
 		if (!this._map) { return; }
 
-		this._extendRedrawBounds(layer);
+		this._extendRedrawBounds(path);
 		this._redrawFrame ||= requestAnimationFrame(() => this._redraw());
 	}
 
-	_extendRedrawBounds(layer: Path): void {
-		if (layer._pxBounds) {
+	_extendRedrawBounds(path: Path): void {
+		if (path._pxBounds) {
 			const
-				paddingAmt = (layer.options.weight || 0) + 1,
+				paddingAmt = (path.options.weight || 0) + 1,
 				padding = new Point(paddingAmt, paddingAmt);
 
 			this._redrawBounds ||= new Bounds();
-			this._redrawBounds.extend(layer._pxBounds.min.subtract(padding));
-			this._redrawBounds.extend(layer._pxBounds.max.add(padding));
+			this._redrawBounds.extend(path._pxBounds.min.subtract(padding));
+			this._redrawBounds.extend(path._pxBounds.max.add(padding));
 		}
 	}
 
@@ -268,12 +267,12 @@ export class Canvas extends Renderer {
 		ctx.restore();  // Restore state before clipping.
 	}
 
-	_updatePoly(layer: Polyline, closed?: boolean): void {
+	_updatePoly(poly: Polyline, closed?: boolean): void {
 		if (!this._drawing) { return; }
 
 		let i, j, len2, p;
 		const
-			parts = layer._parts,
+			parts = poly._parts,
 			len = parts.length,
 			ctx = this._ctx!; // TODO: null safety
 
@@ -291,20 +290,20 @@ export class Canvas extends Renderer {
 			}
 		}
 
-		this._fillStroke(ctx, layer);
+		this._fillStroke(ctx, poly);
 
 		// TODO optimization: 1 fill/stroke for all features with equal style instead of 1 for each feature
 	}
 
-	_updateCircle(layer: CircleMarker): void {
+	_updateCircle(circle: CircleMarker): void {
 
-		if (!this._drawing || layer._empty()) { return; }
+		if (!this._drawing || circle._empty()) { return; }
 
 		const
-			p = layer._point!, // TODO: null safety
+			p = circle._point!, // TODO: null safety
 		    ctx = this._ctx!, // TODO: null safety
-		    r = Math.max(Math.round(layer._radius), 1),
-		    s = (Math.max(Math.round(layer._radiusY), 1) || r) / r;
+		    r = Math.max(Math.round(circle._radius), 1),
+		    s = (Math.max(Math.round(circle._radiusY), 1) || r) / r;
 
 		if (s !== 1) {
 			ctx.save();
@@ -318,11 +317,11 @@ export class Canvas extends Renderer {
 			ctx.restore();
 		}
 
-		this._fillStroke(ctx, layer);
+		this._fillStroke(ctx, circle);
 	}
 
-	_fillStroke(ctx: CanvasRenderingContext2D, layer: Path): void {
-		const options = layer.options as any; // TODO
+	_fillStroke(ctx: CanvasRenderingContext2D, path: Path): void {
+		const options = path.options as any; // TODO
 
 		if (options.fill) {
 			ctx.globalAlpha = options.fillOpacity;
@@ -375,13 +374,13 @@ export class Canvas extends Renderer {
 
 
 	_handleMouseOut(e: any): void {
-		const layer = this._hoveredLayer;
+		const path = this._hoveredPath;
 
-		if (layer) {
+		if (path) {
 			// if we're leaving the layer, fire mouseout
 			this._container!.classList.remove('leaflet-interactive'); // TODO: null safety
-			this._fireEvent([layer], e, 'mouseout');
-			this._hoveredLayer = undefined;
+			this._fireEvent([path], e, 'mouseout');
+			this._hoveredPath = undefined;
 			this._mouseHoverThrottled = false;
 		}
 	}
@@ -400,18 +399,18 @@ export class Canvas extends Renderer {
 			}
 		}
 
-		if (candidateHoveredLayer !== this._hoveredLayer) {
+		if (candidateHoveredLayer !== this._hoveredPath) {
 			this._handleMouseOut(e);
 
 			if (candidateHoveredLayer) {
 				// TODO: null safety
 				this._container!.classList.add('leaflet-interactive'); // change cursor
 				this._fireEvent([candidateHoveredLayer], e, 'mouseover');
-				this._hoveredLayer = candidateHoveredLayer;
+				this._hoveredPath = candidateHoveredLayer;
 			}
 		}
 
-		this._fireEvent(this._hoveredLayer ? [this._hoveredLayer] : false, e);
+		this._fireEvent(this._hoveredPath ? [this._hoveredPath] : false, e);
 
 		this._mouseHoverThrottled = true;
 		setTimeout((() => {
@@ -419,9 +418,9 @@ export class Canvas extends Renderer {
 		}), 32);
 	}
 
-	_fireEvent(layers: any, e: any, type?: string): void {
+	_fireEvent(paths: any, e: any, type?: string): void {
 		// TODO: null safety
-		this._map!._fireDOMEvent(e, type || e.type, layers);
+		this._map!._fireDOMEvent(e, type || e.type, paths);
 	}
 
 	_bringToFront(path: Path): void {
@@ -459,6 +458,18 @@ export class Canvas extends Renderer {
 		order[0] = path;
 
 		this._requestRedraw(path);
+	}
+
+	_projectPaths(): void {
+		for (const path of this._drawOrder) {
+			path._project();
+		}
+	}
+
+	_resetPaths(): void {
+		for (const path of this._drawOrder) {
+			path._reset();
+		}
 	}
 
 }
