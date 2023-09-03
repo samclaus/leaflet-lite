@@ -26,7 +26,7 @@ export class BoxZoom extends BehaviorBase {
 		map.boxZoom = this;
 
 		this._container = map._container;
-		this._pane = map._panes.overlay;
+		this._pane = map.pane('overlay');
 
 		DomEvent.on(this._container, 'mousedown', this._onMouseDown, this);
 	}

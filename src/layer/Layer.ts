@@ -76,7 +76,7 @@ export abstract class Layer extends Evented {
 
 	// Returns the `HTMLElement` representing the named pane on the map.
 	getPane(): HTMLElement | undefined {
-		return this._map?._panes[this.options.pane];
+		return this._map?.pane(this.options.pane);
 	}
 
 	addInteractiveTarget(targetEl: HTMLElement): this {

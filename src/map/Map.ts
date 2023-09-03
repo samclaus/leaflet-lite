@@ -21,8 +21,8 @@ import type { FitBoundsOptions, InvalidateSizeOptions, MapOptions, PanOptions, Z
  * ## Panes
  *
  * Panes are DOM elements used to control the ordering of layers on the map. You
- * can access panes using `map._panes`. New panes can be created with the
- * [`map.createPane`](#map-createpane) method.
+ * can access panes using the [`map.pane`](#map-pane) method, which will create a
+ * pane if it doesn't already exist.
  *
  * Every map has the following default panes that differ only in zIndex.
  *
@@ -173,14 +173,15 @@ export class Map extends Evented implements Disposable {
 			container.style.position = 'relative';
 		}
 
-		this._rootPane = this.createPane('root', this._container);
+		this._rootPane = this.pane('root', this._container);
 		DomUtil.setPosition(this._rootPane, new Point(0, 0));
 
-		this.createPane('tile');
-		this.createPane('overlay');
-		this.createPane('tooltip');
+		// Force eager creation of these map panes
+		this.pane('tile');
+		this.pane('overlay');
+		this.pane('tooltip');
 
-		const markerPane = this.createPane('marker');
+		const markerPane = this.pane('marker');
 
 		if (!resolvedOpts.markerZoomAnimation) {
 			markerPane.classList.add('leaflet-zoom-hide');
@@ -624,14 +625,21 @@ export class Map extends Evented implements Disposable {
 	// @section Other Methods
 
 	/**
-	 * Creates a new pane (just a div) and appends it to the given parent, or else the
-	 * root pane if no parent is provided.
+	 * Looks up the map pane with the given name, creating it if necessary. Panes are core to
+	 * how layers work.
+	 * 
+	 * Essentially, a "pane" is just an HTML `<div>` element that can be transformed (e.g.,
+	 * translated) with CSS as the map is panned, zoomed, etc. By transforming the pane, we do
+	 * not need to position the--potentially thousands of--layers within that pane until the
+	 * map settles down (we may have been animating it) and we reset the coordinate system.
+	 * To be honest, I still don't fully understand the details behind how panes are managed,
+	 * so this documentation comment is a work-in-progress.
 	 */
-	createPane(name: string, container = this._rootPane): HTMLElement {
-		return this._panes[name] = DomUtil.create(
+	pane(name: string, container?: HTMLElement): HTMLElement {
+		return this._panes[name] ||= DomUtil.create(
 			'div',
 			`leaflet-pane leaflet-${name}-pane`,
-			container,
+			container || this._rootPane,
 		);
 	}
 
