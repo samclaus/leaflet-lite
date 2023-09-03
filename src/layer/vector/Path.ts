@@ -111,6 +111,8 @@ export abstract class Path extends Layer {
 		});
 	}
 
+	abstract _project(): void;
+	abstract _update(): void;
 	abstract _updateBounds(): void;
 	abstract _updatePath(): void;
 	abstract _containsPoint(p: Point): boolean;

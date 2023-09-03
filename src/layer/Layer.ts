@@ -54,10 +54,6 @@ export abstract class Layer extends Evented {
 	 */
 	abstract onRemove?(map: Map): void;
 
-	_project(): void {}
-	_update(): void {}
-	_reset(): void {}
-
 	setZIndex?(zIndex: number): void;
 
 	/**
