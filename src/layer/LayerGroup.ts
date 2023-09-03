@@ -1,7 +1,7 @@
 import { Util } from '../core';
 import { LatLngBounds } from '../geog';
-import { Layer } from '../layer';
-import type { PathOptions } from '../layer/vector';
+import { Layer } from '.';
+import type { PathOptions } from './vector';
 import type { Map } from '../map';
 
 /**
