@@ -1,4 +1,3 @@
-export * from './animation';
 export * from './behavior';
 export * from './core';
 export * from './dom';
@@ -10,5 +9,7 @@ export * from './layer/marker';
 export * from './layer/tile';
 export * from './layer/vector';
 export * from './map';
+export * from './map-anim';
 
 import './critical-styles.css';
+
