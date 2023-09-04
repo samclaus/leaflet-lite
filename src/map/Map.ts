@@ -3,8 +3,8 @@ import { DomEvent, DomUtil, PosAnimation } from '../dom';
 import { LatLng, LatLngBounds } from '../geog';
 import { EPSG3857 } from '../geog/crs';
 import { Bounds, Point } from '../geom';
-import type { Layer } from '../layer/Layer.js';
-import type { Path, Renderer } from '../layer/vector';
+import type { Layer } from '../map-elem/Layer.js';
+import type { Path, Renderer } from '../map-elem/vector';
 import type { FitBoundsOptions, InvalidateSizeOptions, MapOptions, PanOptions, ZoomOptions, ZoomPanOptions } from './map-options';
 
 /**
