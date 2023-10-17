@@ -4,7 +4,7 @@ import { LatLng, LatLngBounds } from '../geog';
 import { EPSG3857 } from '../geog/crs';
 import { Bounds, Point } from '../geom';
 import type { Layer } from '../map-elem/Layer.js';
-import type { Path, Renderer } from '../map-elem/vector';
+import type { Renderer } from '../map-elem/vector';
 import type { FitBoundsOptions, InvalidateSizeOptions, MapOptions, PanOptions, ZoomOptions, ZoomPanOptions } from './map-options';
 
 /**
@@ -130,11 +130,6 @@ export class Map extends Evented implements Disposable {
 		container: HTMLElement,
 		initialCenter: LatLng,
 		initialZoom: number,
-		/**
-		 * @deprecated TODO: need to just be explicit about interacting with vector layers
-		 * and not require map to know anything about them.
-		 */
-		public _defaultRenderer: Renderer,
 		options?: Partial<MapOptions>,
 	) {
 		super();
@@ -961,10 +956,19 @@ export class Map extends Evented implements Disposable {
 		}
 	}
 
-	_findEventTargets(e: any, type: string): Evented[] {
+	_findEventTargets(e: any, type: string, canvasTargets?: Evented[]): Evented[] {
 		const
 			targets: Evented[] = [],
 			isHover = type === 'mouseout' || type === 'mouseover';
+
+		// Put vector layers at the beginning
+		if (canvasTargets) {
+			for (const path of canvasTargets) {
+				if (path.listens(type, true)) {
+					targets.push(path);
+				}
+			}
+		}
 
 		let src = e.target || e.srcElement;
 		let dragging = false;
@@ -1062,17 +1066,7 @@ export class Map extends Evented implements Disposable {
 		}
 
 		// Find the layer the event is propagating from and its parents.
-		let targets: any[] = this._findEventTargets(e, type);
-
-		if (canvasTargets) {
-			const filtered = []; // pick only targets with listeners
-			for (let i = 0; i < canvasTargets.length; i++) {
-				if (canvasTargets[i].listens(type, true)) {
-					filtered.push(canvasTargets[i]);
-				}
-			}
-			targets = filtered.concat(targets);
-		}
+		const targets: any[] = this._findEventTargets(e, type, canvasTargets);
 
 		if (!targets.length) { return; }
 
@@ -1080,23 +1074,29 @@ export class Map extends Evented implements Disposable {
 			DomEvent.preventDefault(e);
 		}
 
-		const target = targets[0];
+		const first = targets[0];
 		const data: any = { // TODO: strong typing
 			originalEvent: e
 		};
 
 		if (e.type !== 'keypress' && e.type !== 'keydown' && e.type !== 'keyup') {
-			const isMarker = target.getLatLng && (!target._radius || target._radius <= 10);
-			data.containerPoint = isMarker ?
-				this.latLngToContainerPoint(target.getLatLng()) : this.mouseEventToContainerPoint(e);
+			const isMarker = first.getLatLng && (!first._radius || first._radius <= 10);
+			data.containerPoint = isMarker
+				? this.latLngToContainerPoint(first.getLatLng())
+				: this.mouseEventToContainerPoint(e);
 			data.layerPoint = this.containerPointToLayerPoint(data.containerPoint);
-			data.latlng = isMarker ? target.getLatLng() : this.layerPointToLatLng(data.layerPoint);
+			data.latlng = isMarker ? first.getLatLng() : this.layerPointToLatLng(data.layerPoint);
 		}
 
-		for (let i = 0; i < targets.length; i++) {
-			targets[i].fire(type, data, true);
-			if (data.originalEvent._stopped ||
-				(targets[i].options.bubblingMouseEvents === false && this._mouseEvents.includes(type))) { return; }
+		for (const target of targets) {
+			target.fire(type, data, true);
+
+			if (
+				data.originalEvent._stopped ||
+				(target.options.bubblingMouseEvents === false && this._mouseEvents.includes(type))
+			) {
+				return;
+			}
 		}
 	}
 
@@ -1336,7 +1336,6 @@ export class Map extends Evented implements Disposable {
 
 		this._layers[id] = layer;
 
-		layer.beforeAdd?.(this);
 		layer._map = this;
 		layer._zoomAnimated = this._zoomAnimated;
 
@@ -1352,8 +1351,6 @@ export class Map extends Evented implements Disposable {
 		layer.onAdd(this);
 		layer.fire('add');
 
-		this.fire('layeradd', { layer });
-
 		return this;
 	}
 
@@ -1367,8 +1364,6 @@ export class Map extends Evented implements Disposable {
 
 		delete this._layers[id];
 
-		this.fire('layerremove', {layer});
-
 		layer.fire('remove');
 		layer._map = undefined;
 
@@ -1378,15 +1373,6 @@ export class Map extends Evented implements Disposable {
 	// Returns `true` if the given layer is currently added to the map
 	hasLayer(layer: Layer): boolean {
 		return Util.stamp(layer) in this._layers;
-	}
-
-	// Returns the instance of `Renderer` that should be used to render the given
-	// `Path`. It will ensure that the `renderer` options of the map and paths
-	// are respected, and that the renderers do exist on the map.
-	getRenderer(layer: Path): Renderer {
-		const renderer = layer.options.renderer || this._defaultRenderer;
-		this.addLayer(renderer);
-		return renderer;
 	}
 
 }

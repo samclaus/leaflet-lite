@@ -1,86 +1,74 @@
-import { Layer, type LayerOptions } from '..';
-import { Util } from '../../core';
+import { type LayerOptions } from '..';
 import type { Bounds, Point } from '../../geom';
-import type { Map } from '../../map';
 import type { Renderer } from './Renderer.js';
 
 export interface PathOptions extends LayerOptions {
-	// @option stroke: Boolean = true
-	// Whether to draw stroke along the path. Set it to `false` to disable borders on polygons or circles.
+	/**
+	 * Whether to draw stroke along the path. Set it to `false` to disable
+	 * borders on polygons or circles. True by default.
+	 */
 	stroke: boolean;
-
-	// @option color: String = '#3388ff'
-	// Stroke color
+	/** Stroke color. '#3388ff' by default. */
 	color: string;
-
-	// @option weight: Number = 3
-	// Stroke width in pixels
+	/** Stroke width in pixels. 3 by default. */
 	weight: number;
-
-	// @option opacity: Number = 1.0
-	// Stroke opacity
+	/** Stroke opacity, in range [0, 1]. 1 (fully opaque) by default. */
 	opacity: number;
-
-	// @option lineCap: String= 'round'
-	// A string that defines [shape to be used at the end](https://developer.mozilla.org/docs/Web/SVG/Attribute/stroke-linecap) of the stroke.
+	/**
+	 * A string that defines [shape to be used at the end](https://developer.mozilla.org/docs/Web/SVG/Attribute/stroke-linecap)
+	 * of the stroke. 'round' by default.
+	 */
 	lineCap: string;
-
-	// @option lineJoin: String = 'round'
-	// A string that defines [shape to be used at the corners](https://developer.mozilla.org/docs/Web/SVG/Attribute/stroke-linejoin) of the stroke.
+	/** A string that defines [shape to be used at the corners](https://developer.mozilla.org/docs/Web/SVG/Attribute/stroke-linejoin)
+	 * of the stroke. 'round' by default. */
 	lineJoin: string;
-
-	// @option dashArray: String = null
-	// A string that defines the stroke [dash pattern](https://developer.mozilla.org/docs/Web/SVG/Attribute/stroke-dasharray). Doesn't work on `Canvas`-powered layers in [some old browsers](https://developer.mozilla.org/docs/Web/API/CanvasRenderingContext2D/setLineDash#Browser_compatibility).
+	/**
+	 * A string that defines the stroke [dash pattern](https://developer.mozilla.org/docs/Web/SVG/Attribute/stroke-dasharray). Doesn't
+	 * work on `Canvas`-powered layers in [some old browsers](https://developer.mozilla.org/docs/Web/API/CanvasRenderingContext2D/setLineDash#Browser_compatibility).
+	 * Undefined (meaning the stroke is solid) by default.
+	 */
 	dashArray: string | undefined;
-
-	// @option dashOffset: String = null
-	// A string that defines the [distance into the dash pattern to start the dash](https://developer.mozilla.org/docs/Web/SVG/Attribute/stroke-dashoffset). Doesn't work on `Canvas`-powered layers in [some old browsers](https://developer.mozilla.org/docs/Web/API/CanvasRenderingContext2D/setLineDash#Browser_compatibility).
-	dashOffset: string | undefined;
-
-	// @option fill: Boolean = depends
-	// Whether to fill the path with color. Set it to `false` to disable filling on polygons or circles.
+	/**
+	 * A string that defines the [distance into the dash pattern to start the dash](https://developer.mozilla.org/docs/Web/SVG/Attribute/stroke-dashoffset).
+	 * Doesn't work on `Canvas`-powered layers in [some old browsers](https://developer.mozilla.org/docs/Web/API/CanvasRenderingContext2D/setLineDash#Browser_compatibility).
+	 * Undefined (no offset) by default.
+	 */
+	dashOffset: number | undefined;
+	/**
+	 * Whether to fill the path with color. Set it to `false` to disable filling on polygons or circles.
+	 * The default value depends on the type of path.
+	 */
 	fill: boolean;
-
-	// @option fillColor: String = *
-	// Fill color. Defaults to the value of the [`color`](#path-color) option
+	/** Fill color. Defaults to the value of the `color` option. */
 	fillColor: string | undefined;
-
-	// @option fillOpacity: Number = 0.2
-	// Fill opacity.
+	/** Opacity of the fill color, in range [0, 1]. 0.2 by default. */
 	fillOpacity: number;
-
-	// @option fillRule: String = 'evenodd'
-	// A string that defines [how the inside of a shape](https://developer.mozilla.org/docs/Web/SVG/Attribute/fill-rule) is determined.
+	/**
+	 * A string that defines [how the inside of a shape](https://developer.mozilla.org/docs/Web/SVG/Attribute/fill-rule)
+	 * is determined. 'evenodd' by default.
+	 */
 	fillRule: string;
-
-	// Option inherited from "Interactive layer" abstract class
-	interactive: boolean;
-
-	// @option bubblingMouseEvents: Boolean = true
-	// When `true`, a mouse event on this path will trigger the same event on the map
-	// (unless [`L.DomEvent.stopPropagation`](#domevent-stoppropagation) is used).
-	bubblingMouseEvents: boolean;
-
 	/**
 	 * Custom class name set on an element. Only for SVG renderer.
 	 */
 	className: string | undefined;
-	/**
-	 * Use this specific instance of `Renderer` for this path. Takes
-	 * precedence over the map's [default renderer](#map-renderer).
-	 */
-	renderer: Renderer | undefined;
+	// Option inherited from "Interactive layer" abstract class
+	interactive: boolean;
+	// @option bubblingMouseEvents: Boolean = true
+	// When `true`, a mouse event on this path will trigger the same event on the map
+	// (unless [`L.DomEvent.stopPropagation`](#domevent-stoppropagation) is used).
+	bubblingMouseEvents: boolean;
 }
 
 /**
  * An abstract class that contains options and constants shared between vector
  * overlays (Polygon, Polyline, Circle). Do not use it directly. Extends `Layer`.
  */
-export abstract class Path extends Layer {
+export abstract class Path {
 
 	declare options: PathOptions;
 
-	_renderer: Renderer | undefined;
+	_renderer!: Renderer; // TODO
 	_pxBounds: Bounds | undefined;
 
 	/**
@@ -89,9 +77,8 @@ export abstract class Path extends Layer {
 	_path: any;
 
 	constructor(options?: Partial<PathOptions>) {
-		super();
-
-		Util.setOptions(this, options, {
+		this.options = {
+			pane: 'overlay',
 			stroke: true,
 			color: '#3388ff',
 			weight: 3,
@@ -107,8 +94,8 @@ export abstract class Path extends Layer {
 			interactive: true,
 			bubblingMouseEvents: true,
 			className: undefined,
-			renderer: undefined,
-		});
+			...options,
+		};
 	}
 
 	abstract _project(): void;
@@ -117,31 +104,21 @@ export abstract class Path extends Layer {
 	abstract _updatePath(): void;
 	abstract _containsPoint(p: Point): boolean;
 
-	beforeAdd(map: Map): void {
-		// Renderer is set here because we need to call renderer.getEvents
-		// before this.getEvents.
-		this._renderer = map.getRenderer(this);
-	}
-
 	onAdd(): this {
-		// TODO: null safety
-		this._renderer!._initPath(this);
+		this._renderer._initPath(this);
 		this._reset();
-		// TODO: null safety
-		this._renderer!._addPath(this);
+		this._renderer._addPath(this);
 		return this;
 	}
 
 	onRemove(): void {
-		// TODO: null safety
-		this._renderer!._removePath(this);
+		this._renderer._removePath(this);
 	}
 
 	// Redraws the layer. Sometimes useful after you changed the coordinates that the path uses.
 	redraw(): this {
-		if (this._map) {
-			// TODO: null safety
-			this._renderer!._updatePath(this);
+		if (this._renderer) {
+			this._renderer._updatePath(this);
 		}
 		return this;
 	}

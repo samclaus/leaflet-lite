@@ -63,13 +63,6 @@ export abstract class Layer extends Evented {
 	 */
 	getEvents?(): HandlerMap;
 
-	/**
-	 * Optional method. Called on [`map.addLayer(layer)`](#map-addlayer), before the layer is
-	 * added to the map, before events are initialized, without waiting until the map is in a
-	 * usable state. Use for early initialization only.
-	 */
-	beforeAdd?(map: Map): void;
-
 	getBounds?(): LatLngBounds;
 	getLatLng?(): LatLng;
 	getElement?(): HTMLElement;

@@ -13,7 +13,6 @@ import type { Map } from '../map';
  *  - Events are propagated to the `LayerGroup`, so if the group has an event
  * handler, it will handle events from any of the layers. This includes mouse events
  * and custom events.
- *  - Has `layeradd` and `layerremove` events
  *
  * ```js
  * const lg = new LayerGroup([marker1, marker2])
@@ -23,11 +22,6 @@ import type { Map } from '../map';
  * 
  * map.addLayer(lg);
  * ```
- * @event layeradd: LayerEvent
- * Fired when a layer is added to this `LayerGroup`
- * 
- * @event layerremove: LayerEvent
- * Fired when a layer is removed from this `LayerGroup`
  */
 export class LayerGroup extends Layer {
 
@@ -79,8 +73,6 @@ export class LayerGroup extends Layer {
 		if (this._map) {
 			this._map.addLayer(layer);
 		}
-
-		return this.fire('layeradd', { layer });
 	}
 
 	/**
@@ -106,7 +98,7 @@ export class LayerGroup extends Layer {
 
 		delete this._layers[id];
 
-		return this.fire('layerremove', { layer });
+		return this;
 	}
 
 	// Returns `true` if the given layer (or layer ID) is currently added to the group.

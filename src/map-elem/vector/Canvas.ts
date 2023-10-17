@@ -348,7 +348,7 @@ export class Canvas extends Renderer {
 	_onClick(e: any): void {
 		const point = this._map!.mouseEventToLayerPoint(e); // TODO: null safety
 
-		let clickedLayer;
+		let clickedLayer: Path | undefined;
 
 		for (const path of this._drawOrder) {
 			if (path.options.interactive && path._containsPoint(point)) {
@@ -362,7 +362,7 @@ export class Canvas extends Renderer {
 			}
 		}
 
-		this._fireEvent(clickedLayer ? [clickedLayer] : false, e);
+		this._fireEvent(e, undefined, clickedLayer ? [clickedLayer] : undefined);
 	}
 
 	_onMouseMove(e: any): void {
@@ -379,7 +379,7 @@ export class Canvas extends Renderer {
 		if (path) {
 			// if we're leaving the layer, fire mouseout
 			this._container!.classList.remove('leaflet-interactive'); // TODO: null safety
-			this._fireEvent([path], e, 'mouseout');
+			this._fireEvent(e, 'mouseout', [path]);
 			this._hoveredPath = undefined;
 			this._mouseHoverThrottled = false;
 		}
@@ -405,12 +405,12 @@ export class Canvas extends Renderer {
 			if (candidateHoveredLayer) {
 				// TODO: null safety
 				this._container!.classList.add('leaflet-interactive'); // change cursor
-				this._fireEvent([candidateHoveredLayer], e, 'mouseover');
+				this._fireEvent(e, 'mouseover', [candidateHoveredLayer]);
 				this._hoveredPath = candidateHoveredLayer;
 			}
 		}
 
-		this._fireEvent(this._hoveredPath ? [this._hoveredPath] : false, e);
+		this._fireEvent(e, undefined, this._hoveredPath ? [this._hoveredPath] : undefined);
 
 		this._mouseHoverThrottled = true;
 		setTimeout((() => {
@@ -418,9 +418,9 @@ export class Canvas extends Renderer {
 		}), 32);
 	}
 
-	_fireEvent(paths: any, e: any, type?: string): void {
+	_fireEvent(e: any, type?: string, paths?: Path[]): void {
 		// TODO: null safety
-		this._map!._fireDOMEvent(e, type || e.type, paths);
+		this._map!._fireDOMEvent(e, type || e.type, paths); // TODO: paths are no longer Eventeds because they do not inherit Layer and I want to keep them lightweight
 	}
 
 	_bringToFront(path: Path): void {

@@ -175,8 +175,11 @@ export class Evented {
 		return this;
 	}
 
-	// Returns `true` if a particular event type has any listeners attached to it.
-	// The verification can optionally be propagated, it will return `true` if parents have the listener attached to it.
+	/**
+	 * Returns true if a particular event type has any listeners attached to it. The verification
+	 * can optionally be propagated, and will return true if parents have the listener attached
+	 * to it.
+	 */
 	listens(type: string, propagate?: boolean): boolean;
 	listens(type: string, fn?: HandlerFn, context?: any, propagate?: boolean): boolean;
 	listens(type: string, fn?: HandlerFn | boolean, context?: any, propagate?: boolean): boolean {
