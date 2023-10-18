@@ -464,3 +464,175 @@ export class Tooltip extends Layer {
 	}
 
 }
+
+// CODE BELOW USED TO BE PART OF LAYER CLASS
+// extend class Layer {
+
+	// _tooltip: Tooltip | undefined;
+	// _tooltipHandlersAdded = false;
+	// _openOnceFlag = false;
+
+	// Binds a tooltip to the layer with the passed `content` and sets up the
+	// necessary event listeners. If a `Function` is passed it will receive
+	// the layer as the first argument and should return a `String` or `HTMLElement`.
+	// bindTooltip(content: string | HTMLElement | Tooltip, options?: any /* TODO: tooltip options */): this {
+	// 	// IMPORTANT: only unbind the tooltip if it is currently open; otherwise we can reuse the
+	// 	// Tooltip instance and set new options without creating a brand new instance
+	// 	if (this._tooltip?.isOpen()) {
+	// 		this.unbindTooltip();
+	// 	}
+
+	// 	let newTooltip: Tooltip;
+
+	// 	if (content instanceof Tooltip) {
+	// 		Util.setOptions(content, options);
+	// 		content._source = this;
+	// 		newTooltip = content;
+	// 	} else {
+	// 		newTooltip = (this._tooltip && !options) ? this._tooltip : new Tooltip(options, this);
+	// 		newTooltip.setContent(content);
+	// 	}
+
+	// 	this._tooltip = newTooltip;
+	// 	this._initTooltipInteractions();
+
+	// 	if (newTooltip.options.permanent && this._map?.hasLayer(this)) {
+	// 		this.openTooltip();
+	// 	}
+
+	// 	return this;
+	// }
+
+	// closeTooltip(): void {
+	// 	this._tooltip?.close();
+	// }
+
+	// // Removes the tooltip previously bound with `bindTooltip`.
+	// unbindTooltip(): this {
+	// 	if (this._tooltip) {
+	// 		this._initTooltipInteractions(true);
+	// 		this._tooltip.close();
+	// 		this._tooltip = undefined;
+	// 	}
+	// 	return this;
+	// }
+
+	// _initTooltipInteractions(remove?: boolean): void {
+	// 	if (!remove === this._tooltipHandlersAdded) { return; }
+
+	// 	const
+	// 		tooltip = this._tooltip!, // TODO: null safety
+	// 		onOff = remove ? 'off' : 'on',
+	// 		events: HandlerMap = {
+	// 			remove: this.closeTooltip,
+	// 			move: this._moveTooltip
+	// 		};
+
+	// 	if (tooltip.options.permanent) {
+	// 		events.add = this._openTooltip;
+	// 	} else {
+	// 		events.mouseover = this._openTooltip;
+	// 		events.mouseout = this.closeTooltip;
+	// 		events.click = this._openTooltip;
+
+	// 		if (this._map) {
+	// 			this._addFocusListeners();
+	// 		} else {
+	// 			events.add = this._addFocusListeners;
+	// 		}
+	// 	}
+	// 	if (tooltip.options.sticky) {
+	// 		events.mousemove = this._moveTooltip;
+	// 	}
+	// 	this[onOff](events);
+	// 	this._tooltipHandlersAdded = !remove;
+	// }
+
+	/**
+	 * @deprecated TODO: this is just a hideous hack because some of the code in here is not
+	 * truly abstract and needs to know about subclasses, which caused circular dependencies.
+	 */
+	// _isLayerGroup?: boolean;
+
+	// Opens the bound tooltip at the specified `latlng` or at the default tooltip anchor if no `latlng` is passed.
+	// openTooltip(latlng?: LatLng): this {
+	// 	if (this._tooltip) {
+	// 		if (!this._isLayerGroup) {
+	// 			this._tooltip._source = this;
+	// 		}
+	// 		if (this._tooltip._prepareOpen(latlng)) {
+	// 			// open the tooltip on the map
+	// 			this._tooltip.openOn(this._map);
+	// 			this._setAriaDescribedBy();
+	// 		}
+	// 	}
+	// 	return this;
+	// }
+
+	// _addFocusListeners(): void {
+	// 	this._addFocusListenersOnLayer(this);
+	// }
+
+	// _setAriaDescribedBy(): void {
+	// 	this._setAriaDescribedByOnLayer(this);
+	// }
+
+	// _addFocusListenersOnLayer(layer: Layer): void {
+	// 	const el = layer.getElement?.();
+
+	// 	if (el) {
+	// 		DomEvent.on(el, 'focus', () => {
+	// 			// TODO: null safety
+	// 			this._tooltip!._source = layer;
+	// 			this.openTooltip();
+	// 		});
+	// 		DomEvent.on(el, 'blur', this.closeTooltip, this);
+	// 	}
+	// }
+
+	// _setAriaDescribedByOnLayer(layer: Layer): void {
+	// 	const el = layer.getElement?.();
+
+	// 	if (el) {
+	// 		// TODO: null safety
+	// 		el.setAttribute('aria-describedby', this._tooltip!._container.id);
+	// 	}
+	// }
+
+	// _openTooltip(e: any): void {
+	// 	if (!this._tooltip || !this._map) {
+	// 		return;
+	// 	}
+
+	// 	// If the map is moving, we will show the tooltip after it's done.
+	// 	if (this._map.dragging?.moving() && !this._openOnceFlag) {
+	// 		this._openOnceFlag = true;
+	// 		this._map.on('moveend', () => {
+	// 			this._openOnceFlag = false;
+	// 			this._openTooltip(e);
+	// 		}, this, true);
+	// 		return;
+	// 	}
+
+	// 	this._tooltip._source = e.layer || e.target;
+
+	// 	this.openTooltip(this._tooltip.options.sticky ? e.latlng : undefined);
+	// }
+
+	// _moveTooltip(e: any): void {
+	// 	const
+	// 		map = this._map!, // TODO: null safety
+	// 		tooltip = this._tooltip!; // TODO: null safety
+
+	// 	let latlng = e.latlng;
+
+	// 	if (tooltip.options.sticky && e.originalEvent) {
+	// 		const containerPoint = map.mouseEventToContainerPoint(e.originalEvent);
+	// 		const layerPoint = map.containerPointToLayerPoint(containerPoint);
+	// 		latlng = map.layerPointToLatLng(layerPoint);
+	// 	}
+
+	// 	tooltip.setLatLng(latlng);
+	// }
+
+// }
