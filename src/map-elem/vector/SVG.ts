@@ -4,7 +4,7 @@ import type { Point } from '../../geom';
 import type { CircleMarker } from './CircleMarker.js';
 import type { Path } from './Path.js';
 import type { Polyline } from './Polyline.js';
-import { Renderer } from './Renderer.js';
+import { Renderer, type RendererOptions } from './Renderer.js';
 import { svgCreate as create, pointsToPath } from './SVG.Util.js';
 
 /**
@@ -30,36 +30,37 @@ import { svgCreate as create, pointsToPath } from './SVG.Util.js';
  */
 export class SVG extends Renderer {
 
+	declare _container: SVGSVGElement;
+
 	_svgSize: Point | undefined;
-	_rootGroup: SVGGElement | undefined;
+	_rootGroup: SVGGElement;
 	_paths = new Set<Path>();
 
-	_initContainer(): void {
+	constructor(options?: Partial<RendererOptions>) {
+		super(options);
+
 		this._container = create('svg') as any; // TODO: fix types
+		this._rootGroup = create('g') as any; // TODO: fix types
+		this._container.appendChild(this._rootGroup);
 
 		// makes it possible to click through svg root; we'll reset it back in individual paths
-		this._container!.setAttribute('pointer-events', 'none');
-
-		this._rootGroup = create('g') as any; // TODO: fix types
-		this._container!.appendChild(this._rootGroup!);
+		this._container.setAttribute('pointer-events', 'none');
 	}
 
 	_destroyContainer(): void {
 		Renderer.prototype._destroyContainer.call(this);
 		this._svgSize = undefined;
-		this._rootGroup = undefined;
+		this._rootGroup = undefined as any;
 	}
 
 	_resizeContainer(): Point {
 		const size = Renderer.prototype._resizeContainer.call(this);
 
 		// set size of svg-container if changed
-		if (!this._svgSize || !this._svgSize.equals(size)) {
+		if (!this._svgSize?.equals(size)) {
 			this._svgSize = size;
-
-			// TODO: null safety
-			this._container!.setAttribute('width', size.x as any); // gets coerced to string
-			this._container!.setAttribute('height', size.y as any); // gets coerced to string
+			this._container.setAttribute('width', size.x as any); // gets coerced to string
+			this._container.setAttribute('height', size.y as any); // gets coerced to string
 		}
 
 		return size;
@@ -74,8 +75,7 @@ export class SVG extends Renderer {
 		    size = b.getSize();
 
 		// movement: update container viewBox so that we don't have to change coordinates of individual layers
-		// TODO: null safety
-		this._container!.setAttribute('viewBox', [b.min.x, b.min.y, size.x, size.y].join(' '));
+		this._container.setAttribute('viewBox', `${b.min.x}, ${b.min.y}, ${size.x}, ${size.y}`);
 		this.fire('update');
 	}
 
@@ -97,8 +97,7 @@ export class SVG extends Renderer {
 	}
 
 	_addPath(path: Path): void {
-		if (!this._rootGroup) { this._initContainer(); }
-		this._rootGroup!.appendChild(path._path); // TODO: null safety
+		this._rootGroup.appendChild(path._path);
 		path.addInteractiveTarget(path._path);
 	}
 

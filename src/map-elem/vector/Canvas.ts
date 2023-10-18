@@ -34,7 +34,7 @@ import { Renderer } from './Renderer.js';
  */
 export class Canvas extends Renderer {
 
-	declare _container: HTMLCanvasElement | undefined;
+	declare _container: HTMLCanvasElement;
 
 	_ctxScale = window.devicePixelRatio;
 	_ctx: CanvasRenderingContext2D | undefined;
@@ -235,7 +235,7 @@ export class Canvas extends Renderer {
 		} else {
 			ctx.save();
 			ctx.setTransform(1, 0, 0, 1, 0, 0);
-			ctx.clearRect(0, 0, this._container!.width, this._container!.height); // TODO: null safety
+			ctx.clearRect(0, 0, this._container.width, this._container.height);
 			ctx.restore();
 		}
 	}
@@ -378,7 +378,7 @@ export class Canvas extends Renderer {
 
 		if (path) {
 			// if we're leaving the layer, fire mouseout
-			this._container!.classList.remove('leaflet-interactive'); // TODO: null safety
+			this._container.classList.remove('leaflet-interactive');
 			this._fireEvent(e, 'mouseout', [path]);
 			this._hoveredPath = undefined;
 			this._mouseHoverThrottled = false;
@@ -403,8 +403,7 @@ export class Canvas extends Renderer {
 			this._handleMouseOut(e);
 
 			if (candidateHoveredLayer) {
-				// TODO: null safety
-				this._container!.classList.add('leaflet-interactive'); // change cursor
+				this._container.classList.add('leaflet-interactive'); // change cursor
 				this._fireEvent(e, 'mouseover', [candidateHoveredLayer]);
 				this._hoveredPath = candidateHoveredLayer;
 			}

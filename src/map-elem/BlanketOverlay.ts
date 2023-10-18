@@ -34,7 +34,7 @@ export abstract class BlanketOverlay extends Layer {
 
 	declare options: BlanketOverlayOptions;
 
-	_container!: HTMLElement | undefined;
+	_container!: HTMLElement;
 	_bounds: Bounds | undefined;
 	_center: LatLng | undefined;
 	_zoom: number | undefined;
@@ -65,13 +65,8 @@ export abstract class BlanketOverlay extends Layer {
 	abstract _onSettled(): void;
 
 	onAdd(_map: Map): this {
-		if (!this._container) {
-			this._initContainer(); // defined by renderer implementations
-
-			// always keep transform-origin as 0 0, #8794
-			// TODO: null safety
-			this._container!.classList.add('leaflet-zoom-animated');
-		}
+		// always keep transform-origin as 0 0, #8794
+		this._container.classList.add('leaflet-zoom-animated');
 
 		// TODO: null safety
 		this.getPane()!.appendChild(this._container!);
@@ -121,9 +116,8 @@ export abstract class BlanketOverlay extends Layer {
 		        .subtract(map._getNewPixelOrigin(center, zoom));
 
 		// TODO: null safety
-		DomUtil.setTransform(this._container!, topLeftOffset, scale);
+		DomUtil.setTransform(this._container, topLeftOffset, scale);
 	}
-
 
 	/**
 	 * If the `continuous` option is set to `true`, then this also runs on
@@ -151,14 +145,6 @@ export abstract class BlanketOverlay extends Layer {
 	}
 
 	/**
-	 * Must initialize the HTML element to use as blanket, and store it as
-	 * `this._container`. The base implementation creates a blank `<div>`.
-	 */
-	_initContainer(): void {
-		this._container = DomUtil.create('div');
-	}
-
-	/**
 	 * Must destroy the HTML element in `this._container` and free any other
 	 * resources. The base implementation destroys the element and removes
 	 * any event handlers attached to it.
@@ -167,7 +153,7 @@ export abstract class BlanketOverlay extends Layer {
 		if (this._container) {
 			DomEvent.off(this._container);
 			this._container.remove();
-			this._container = undefined;
+			this._container = undefined as any;
 		}
 	}
 
@@ -181,8 +167,8 @@ export abstract class BlanketOverlay extends Layer {
 			// TODO: null safety
 		    size = this._map!.getSize().multiplyBy(1 + p * 2).round();
 		// TODO: null safety
-		this._container!.style.width = `${size.x}px`;
-		this._container!.style.height = `${size.y}px`;
+		this._container.style.width = `${size.x}px`;
+		this._container.style.height = `${size.y}px`;
 		return size;
 	}
 

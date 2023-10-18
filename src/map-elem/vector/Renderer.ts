@@ -33,6 +33,7 @@ export interface RendererOptions extends BlanketOverlayOptions {
  */
 export abstract class Renderer extends BlanketOverlay {
 
+	declare _container: any;
 	declare options: RendererOptions;
 
 	constructor(options?: Partial<RendererOptions>) {
