@@ -67,7 +67,7 @@ export class ImageOverlay extends Layer {
 
 	constructor(
 		public _url: any, // TODO
-		public _bounds: any, // TODO
+		public _bounds: LatLngBounds,
 		options?: Partial<ImageOverlayOptions>, // TODO
 	) {
 		super();
