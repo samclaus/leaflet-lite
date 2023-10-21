@@ -129,8 +129,6 @@ export class Tooltip extends Layer {
 	}
 
 	onAdd(map: Map): this {
-		this._zoomAnimated = map._zoomAnimated;
-
 		if (!this._container) {
 			this._initLayout();
 		}
@@ -211,7 +209,7 @@ export class Tooltip extends Layer {
 			viewreset: this._updatePosition
 		};
 
-		if (this._zoomAnimated) {
+		if (this._map!._zoomAnimated) { // TODO: null safety
 			events.zoomanim = this._animateZoom;
 		}
 		if (!this.options.permanent) {
@@ -376,7 +374,7 @@ export class Tooltip extends Layer {
 	_initLayout(): void {
 		const
 			prefix = 'leaflet-tooltip',
-		    className = `${prefix} ${this.options.className || ''} leaflet-zoom-${this._zoomAnimated ? 'animated' : 'hide'}`;
+		    className = `${prefix} ${this.options.className || ''} leaflet-zoom-${this._map!._zoomAnimated ? 'animated' : 'hide'}`; // TODO: null safety
 
 		this._contentNode = this._container = DomUtil.create('div', className);
 		this._container.setAttribute('role', 'tooltip');

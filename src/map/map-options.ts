@@ -75,12 +75,6 @@ export interface MapOptions {
      */
     fadeAnimation: boolean;
     /**
-     * Whether markers animate their zoom with the zoom animation, if disabled
-     * they will disappear for the length of the animation. Enabled (true) by
-     * default.
-     */
-    markerZoomAnimation: boolean;
-    /**
      * Defines the maximum size of a CSS translation transform. The default
      * value, which is the maximum integer a 32-bit float can hold (2^23),
      * should not be changed unless a web browser positions layers in the

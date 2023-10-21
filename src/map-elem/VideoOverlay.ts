@@ -67,8 +67,14 @@ export class VideoOverlay extends ImageOverlay {
 		const vid = this._image = wasElementSupplied ? this._url : DomUtil.create('video');
 
 		vid.classList.add('leaflet-image-layer');
-		if (this._zoomAnimated) { vid.classList.add('leaflet-zoom-animated'); }
-		if (this.options.className) { vid.classList.add(...Util.splitWords(this.options.className)); }
+
+		if (this._map!._zoomAnimated) { // TODO: null safety
+			vid.classList.add('leaflet-zoom-animated');
+		}
+
+		if (this.options.className) {
+			vid.classList.add(...Util.splitWords(this.options.className));
+		}
 
 		vid.onselectstart = Util.falseFn;
 		vid.onmousemove = Util.falseFn;

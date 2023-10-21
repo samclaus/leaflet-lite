@@ -81,20 +81,17 @@ export class Marker extends Layer {
 	}
 
 	onAdd(map: Map): this {
-		// TODO: _zoomAnimated is set by the map whenever it adds the layer--this whole dance
-		// is kinda janky and concerning.
-		this._zoomAnimated &&= map.options.markerZoomAnimation;
-
-		if (this._zoomAnimated) {
-			map.on('zoomanim', this._animateZoom, this);
-		}
-
 		const
+			zoomAnimated = map._zoomAnimated,
 			options = this.options,
 			icon = this._icon;
 
+		if (zoomAnimated) {
+			map.on('zoomanim', this._animateZoom, this);
+		}
+	
 		// TODO: need to remove later?
-		icon.classList.add(`leaflet-zoom-${this._zoomAnimated ? 'animated' : 'hide'}`);
+		icon.classList.add(`leaflet-zoom-${zoomAnimated ? 'animated' : 'hide'}`);
 
 		if (options.keyboard) {
 			icon.tabIndex = 0;
@@ -125,7 +122,7 @@ export class Marker extends Layer {
 	}
 
 	onRemove(map: Map): void {
-		if (this._zoomAnimated) {
+		if (map._zoomAnimated) {
 			map.off('zoomanim', this._animateZoom, this);
 		}
 

@@ -37,7 +37,6 @@ export abstract class Layer extends Evented {
 		bubblingMouseEvents: true,
 	};
 	_map: Map | undefined;
-	_zoomAnimated = false;
 
 	/**
 	 * Should contain code that creates DOM elements for the layer, adds them to `map panes`

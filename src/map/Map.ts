@@ -141,7 +141,6 @@ export class Map extends Evented implements Disposable {
 			maxBounds: undefined,
 			zoomAnimationThreshold: 4,
 			fadeAnimation: true,
-			markerZoomAnimation: true,
 			transform3DLimit: 8388608,
 			zoomSnap: 1,
 			zoomDelta: 1,
@@ -175,12 +174,7 @@ export class Map extends Evented implements Disposable {
 		this.pane('tile');
 		this.pane('overlay');
 		this.pane('tooltip');
-
-		const markerPane = this.pane('marker');
-
-		if (!resolvedOpts.markerZoomAnimation) {
-			markerPane.classList.add('leaflet-zoom-hide');
-		}
+		this.pane('marker');
 
 		DomEvent.on(
 			this._container,
@@ -1337,7 +1331,6 @@ export class Map extends Evented implements Disposable {
 		this._layers[id] = layer;
 
 		layer._map = this;
-		layer._zoomAnimated = this._zoomAnimated;
 
 		if (layer.getEvents) {
 			const events = layer.getEvents();

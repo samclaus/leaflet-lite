@@ -88,7 +88,7 @@ export abstract class BlanketOverlay extends Layer {
 			zoomend: this._onZoomEnd || Util.falseFn,
 			resize: this._resizeContainer,
 		};
-		if (this._zoomAnimated) {
+		if (this._map!._zoomAnimated) { // TODO: null safety
 			events.zoomanim = this._onAnimZoom;
 		}
 		if (this.options.continuous) {

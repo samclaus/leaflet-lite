@@ -170,7 +170,7 @@ export class ImageOverlay extends Layer {
 			viewreset: this._reset
 		};
 
-		if (this._zoomAnimated) {
+		if (this._map!._zoomAnimated) { // TODO: null safety
 			events.zoomanim = this._animateZoom;
 		}
 
@@ -200,8 +200,13 @@ export class ImageOverlay extends Layer {
 		const img: HTMLImageElement = this._image = wasElementSupplied ? this._url : DomUtil.create('img');
 
 		img.classList.add('leaflet-image-layer');
-		if (this._zoomAnimated) { img.classList.add('leaflet-zoom-animated'); }
-		if (this.options.className) { img.classList.add(...Util.splitWords(this.options.className)); }
+
+		if (this._map!._zoomAnimated) { // TODO: null safety
+			img.classList.add('leaflet-zoom-animated');
+		}
+		if (this.options.className) {
+			img.classList.add(...Util.splitWords(this.options.className));
+		}
 
 		img.onselectstart = Util.falseFn;
 		img.onmousemove = Util.falseFn;

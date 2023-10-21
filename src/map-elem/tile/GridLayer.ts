@@ -286,7 +286,7 @@ export abstract class GridLayer extends Layer {
 			events.move = this._onMove;
 		}
 
-		if (this._zoomAnimated) {
+		if (this._map!._zoomAnimated) { // TODO: null safety
 			events.zoomanim = this._animateZoom;
 		}
 
