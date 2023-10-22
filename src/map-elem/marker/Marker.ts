@@ -23,11 +23,6 @@ export interface MarkerOptions extends LayerOptions {
 	 */
 	zIndexOffset: number;
 	/**
-	 * If greater than 0, the marker's z-index will be raised by this amount when hovered, so
-	 * that it shows on top of other markers. 0 by default.
-	 */
-	riseOnHoverOffset: number;
-	/**
 	 * When true, the map will pan whenever the marker is focused (via
 	 * e.g. pressing `tab` on the keyboard) to ensure the marker is
 	 * visible within the map's bounds. True by default.
@@ -46,7 +41,6 @@ export class Marker extends Layer {
 
 	declare options: MarkerOptions;
 
-	_zIndex = 0; // TODO: safe to make it a number from the get-go?
 	_icon: HTMLElement;
 
 	/**
@@ -71,7 +65,6 @@ export class Marker extends Layer {
 			interactive: true,
 			keyboard: true,
 			zIndexOffset: 0,
-			riseOnHoverOffset: 0,
 			pane: 'marker',
 			bubblingMouseEvents: false,
 			autoPanOnFocus: true,
@@ -98,13 +91,6 @@ export class Marker extends Layer {
 			icon.setAttribute('role', 'button');
 		}
 
-		if (options.riseOnHoverOffset > 0) {
-			this.on({
-				mouseover: this._bringToFront,
-				mouseout: this._resetZIndex
-			});
-		}
-
 		if (this.options.autoPanOnFocus) {
 			DomEvent.on(icon, 'focus', this._panOnFocus, this);
 		}
@@ -124,13 +110,6 @@ export class Marker extends Layer {
 	onRemove(map: Map): void {
 		if (map._zoomAnimated) {
 			map.off('zoomanim', this._animateZoom, this);
-		}
-
-		if (this.options.riseOnHoverOffset > 0) {
-			this.off({
-				mouseover: this._bringToFront,
-				mouseout: this._resetZIndex
-			});
 		}
 
 		if (this.options.autoPanOnFocus) {
@@ -192,8 +171,9 @@ export class Marker extends Layer {
 		DomUtil.setPosition(this._icon, pos);
 
 		this._icon.style.transform += ` rotateZ(${this._rotation}deg)`;
-		this._zIndex = pos.y + this.options.zIndexOffset;
-		this._resetZIndex();
+
+		// Make TypeScript shut up here--number automatically gets converted to string
+		this._icon.style.zIndex = (pos.y + this.options.zIndexOffset) as any;
 	}
 
 	_animateZoom(ev: ZoomAnimationEvent): void {
@@ -206,19 +186,6 @@ export class Marker extends Layer {
 				).round(),
 			);
 		}
-	}
-
-	_updateZIndex(offset: number): void {
-		// Make TypeScript shut up here--number automatically gets converted to string
-		this._icon.style.zIndex = (this._zIndex + offset) as any;
-	}
-
-	_bringToFront(): void {
-		this._updateZIndex(this.options.riseOnHoverOffset);
-	}
-
-	_resetZIndex(): void {
-		this._updateZIndex(0);
 	}
 
 	_panOnFocus(): void {
