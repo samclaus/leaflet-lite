@@ -98,12 +98,12 @@ export class SVG extends Renderer {
 
 	_addPath(path: Path): void {
 		this._rootGroup.appendChild(path._path);
-		path.addInteractiveTarget(path._path);
+		// TODO: path.addInteractiveTarget(path._path);
 	}
 
 	_removePath(path: Path): void {
 		path._path.remove();
-		path.removeInteractiveTarget(path._path);
+		// TODO: path.removeInteractiveTarget(path._path);
 		this._paths.delete(path);
 	}
 

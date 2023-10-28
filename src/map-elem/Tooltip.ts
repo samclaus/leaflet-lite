@@ -149,7 +149,6 @@ export class Tooltip extends Layer {
 
 		if (this.options.interactive) {
 			this._container.classList.add('leaflet-interactive');
-			this.addInteractiveTarget(this._container);
 		}
 
 		this.setOpacity(this.options.opacity);
@@ -183,7 +182,6 @@ export class Tooltip extends Layer {
 
 		if (this.options.interactive) {
 			this._container.classList.remove('leaflet-interactive');
-			this.removeInteractiveTarget(this._container);
 		}
 
 		// @namespace Map
@@ -253,11 +251,6 @@ export class Tooltip extends Layer {
 		return this;
 	}
 
-	// Returns the geographical point of the overlay.
-	getLatLng(): LatLng {
-		return this._latlng!; // TODO: null safety
-	}
-
 	// Sets the geographical point where the overlay will open.
 	setLatLng(latlng: LatLng): this {
 		this._latlng = latlng;
@@ -299,7 +292,7 @@ export class Tooltip extends Layer {
 
 	// Returns `true` when the overlay is visible on the map.
 	isOpen(): boolean {
-		return !!(this._map?.hasLayer(this));
+		return !!this._map;
 	}
 
 	// Brings this overlay in front of other overlays (in the same map pane).
@@ -340,7 +333,7 @@ export class Tooltip extends Layer {
 
 		latlng ||= (
 			source.getCenter?.() ||
-			source.getLatLng?.() ||
+			source._latlng ||
 			source.getBounds?.()?.getCenter()
 		);
 	

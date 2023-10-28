@@ -1,4 +1,4 @@
-import type { LatLngBounds } from "../geog";
+import type { LatLng, LatLngBounds } from "../geog";
 import type { CRS } from "../geog/crs";
 
 export type ZoomOptions = any;
@@ -30,12 +30,11 @@ export type FitBoundsOptions = any;
 // 	maxZoom?: number;
 // }
 
-export type ZoomAnimationEvent = any;
-// {
-// 	center: LatLng,
-// 	zoom: number,
-// 	noUpdate: boolean | undefined;
-// }
+export interface ZoomAnimationEvent {
+	center: LatLng,
+	zoom: number,
+	noUpdate: boolean | undefined;
+}
 
 export interface InvalidateSizeOptions {
     animate?: boolean;

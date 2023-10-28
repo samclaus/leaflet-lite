@@ -1,9 +1,8 @@
-import { Browser, Evented, Util, type Disposable } from '../core';
+import { Browser, Evented, type Disposable } from '../core';
 import { DomEvent, DomUtil, PosAnimation } from '../dom';
 import { LatLng, LatLngBounds } from '../geog';
 import { EPSG3857 } from '../geog/crs';
 import { Bounds, Point } from '../geom';
-import type { Layer } from '../map-elem/Layer.js';
 import type { Renderer } from '../map-elem/vector';
 import type { FitBoundsOptions, InvalidateSizeOptions, MapOptions, PanOptions, ZoomOptions, ZoomPanOptions } from './map-options';
 
@@ -69,8 +68,7 @@ export class Map extends Evented implements Disposable {
 	options: MapOptions;
 	_container: HTMLElement;
 	_panes: Dict<HTMLElement> = Object.create(null);
-	_targets: Dict<Evented> = Object.create(null);
-	_layers: Dict<Layer> = Object.create(null);
+	_targets = new WeakMap<WeakKey, unknown>();
 	_rootPane: HTMLElement;
 	_zoomAnimated: boolean;
 
@@ -148,7 +146,7 @@ export class Map extends Evented implements Disposable {
 		};
 
 		this._container = container;
-		this._targets[Util.stamp(container)] = this;
+		this._targets.set(container, this);
 
 		DomEvent.on(container, 'scroll', this._onScroll, this);
 	
@@ -598,11 +596,6 @@ export class Map extends Evented implements Disposable {
 
 		this.fire('dispose');
 
-		// IMPORTANT: collect all map keys in an array before deleting them
-		for (const layer of Object.values(this._layers)) {
-			this.removeLayer(layer);
-		}
-
 		for (const pane of Object.values(this._panes)) {
 			pane.remove();
 		}
@@ -968,7 +961,7 @@ export class Map extends Evented implements Disposable {
 		let dragging = false;
 
 		while (src) {
-			const target = this._targets[Util.stamp(src)];
+			const target = this._targets.get(src);
 
 			if (
 				target &&
@@ -1074,12 +1067,12 @@ export class Map extends Evented implements Disposable {
 		};
 
 		if (e.type !== 'keypress' && e.type !== 'keydown' && e.type !== 'keyup') {
-			const isMarker = first.getLatLng && (!first._radius || first._radius <= 10);
+			const isMarker = first._latlng && (!first._radius || first._radius <= 10);
 			data.containerPoint = isMarker
-				? this.latLngToContainerPoint(first.getLatLng())
+				? this.latLngToContainerPoint(first._latlng)
 				: this.mouseEventToContainerPoint(e);
 			data.layerPoint = this.containerPointToLayerPoint(data.containerPoint);
-			data.latlng = isMarker ? first.getLatLng() : this.layerPointToLatLng(data.layerPoint);
+			data.latlng = isMarker ? first._latlng : this.layerPointToLatLng(data.layerPoint);
 		}
 
 		for (const target of targets) {
@@ -1237,10 +1230,6 @@ export class Map extends Evented implements Disposable {
 		return true;
 	}
 
-	_nothingToAnimate(): boolean {
-		return !this._container.getElementsByClassName('leaflet-zoom-animated').length;
-	}
-
 	_tryAnimatedZoom(center: LatLng, zoom: number, options: PanOptions = {}): boolean {
 		if (this._animatingZoom) {
 			return true;
@@ -1250,7 +1239,6 @@ export class Map extends Evented implements Disposable {
 		if (
 			!this._zoomAnimated ||
 			options.animate === false ||
-			this._nothingToAnimate() ||
 		    Math.abs(zoom - this._zoom) > this.options.zoomAnimationThreshold
 		) {
 			return false;
@@ -1314,58 +1302,6 @@ export class Map extends Evented implements Disposable {
 
 		this.fire('move');
 		this._moveEnd(true);
-	}
-
-	// Methods pertaining to layers
-
-	/**
-	 * Adds the given layer to the map IF it is not already added (so
-	 * this is always safe to call).
-	 */
-	addLayer(layer: Layer): Map {
-		const id = Util.stamp(layer);
-
-		// Do nothing if the layer is already registered
-		if (id in this._layers) { return this; }
-
-		this._layers[id] = layer;
-
-		layer._map = this;
-
-		if (layer.getEvents) {
-			const events = layer.getEvents();
-			
-			this.on(events, layer);
-			layer.on('remove', () => {
-				this.off(events, layer);
-			}, this, true);
-		}
-
-		layer.onAdd(this);
-		layer.fire('add');
-
-		return this;
-	}
-
-	// Removes the given layer from the map.
-	removeLayer(layer: Layer): this {
-		const id = Util.stamp(layer);
-
-		if (!this._layers[id]) { return this; }
-
-		layer.onRemove?.(this);
-
-		delete this._layers[id];
-
-		layer.fire('remove');
-		layer._map = undefined;
-
-		return this;
-	}
-
-	// Returns `true` if the given layer is currently added to the map
-	hasLayer(layer: Layer): boolean {
-		return Util.stamp(layer) in this._layers;
 	}
 
 }

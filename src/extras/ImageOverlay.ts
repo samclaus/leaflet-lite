@@ -59,7 +59,7 @@ export interface ImageOverlayOptions extends LayerOptions {
  * map.addLayer(overlay);
  * ```
  */
-export class ImageOverlay extends Layer {
+export class ImageOverlay extends Layer { // TODO rename to "Area"
 
 	declare options: ImageOverlayOptions;
 
@@ -93,7 +93,6 @@ export class ImageOverlay extends Layer {
 
 		if (this.options.interactive) {
 			this._image!.classList.add('leaflet-interactive'); // TODO: null safety
-			this.addInteractiveTarget(this._image!); // TODO: null safety
 		}
 
 		this.getPane()!.appendChild(this._image!); // TODO: null safety
@@ -102,13 +101,7 @@ export class ImageOverlay extends Layer {
 		return this;
 	}
 
-	onRemove(): void {
-		this._image!.remove(); // TODO: null safety
-
-		if (this.options.interactive) {
-			this.removeInteractiveTarget(this._image!);
-		}
-	}
+	onRemove(): void {}
 
 	// Sets the opacity of the overlay.
 	setOpacity(opacity: number): this {
@@ -184,26 +177,12 @@ export class ImageOverlay extends Layer {
 		return this;
 	}
 
-	// Get the bounds that this ImageOverlay covers
-	getBounds(): LatLngBounds {
-		return this._bounds;
-	}
-
-	// Returns the instance of [`HTMLImageElement`](https://developer.mozilla.org/docs/Web/API/HTMLImageElement)
-	// used by this overlay.
-	getElement(): HTMLElement {
-		return this._image!; // TODO: null safety
-	}
-
 	_initImage(): void {
 		const wasElementSupplied = this._url.tagName === 'IMG';
 		const img: HTMLImageElement = this._image = wasElementSupplied ? this._url : DomUtil.create('img');
 
 		img.classList.add('leaflet-image-layer');
 
-		if (this._map!._zoomAnimated) { // TODO: null safety
-			img.classList.add('leaflet-zoom-animated');
-		}
 		if (this.options.className) {
 			img.classList.add(...Util.splitWords(this.options.className));
 		}

@@ -45,11 +45,6 @@ export class CircleMarker extends Path {
 		return this.fire('move', { oldLatLng, latlng: this._latlng });
 	}
 
-	// Returns the current geographical position of the circle marker
-	getLatLng(): LatLng {
-		return this._latlng;
-	}
-
 	// Sets the radius of a circle marker. Units are in pixels.
 	setRadius(radius: number): this {
 		this.options.radius = this._radius = radius;

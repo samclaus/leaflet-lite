@@ -1,8 +1,8 @@
-import type { Disposable } from '../../core';
-import { DomUtil, Draggable } from '../../dom';
-import type { LatLng } from '../../geog';
-import { Bounds, Point } from '../../geom';
-import type { Map } from '../../map';
+import type { Disposable } from '../core';
+import { DomUtil, Draggable } from '../dom';
+import type { LatLng } from '../geog';
+import { Bounds, Point } from '../geom';
+import type { Map } from '../map';
 import { Marker } from './Marker.js';
 
 /**
@@ -43,7 +43,7 @@ export class MarkerDrag implements Disposable {
 		 */
 		_marker.dragging = this;
 
-		const icon = this._marker._icon;
+		const icon = this._marker._el;
 
 		this._draggable = new Draggable(icon, icon, true);
 		this._draggable.on({
@@ -64,7 +64,7 @@ export class MarkerDrag implements Disposable {
 			dragend: this._onDragEnd
 		}, this).disable();
 
-		this._marker._icon.classList.remove('leaflet-marker-draggable');
+		this._marker._el.classList.remove('leaflet-marker-draggable');
 	}
 
 	/**
@@ -85,7 +85,7 @@ export class MarkerDrag implements Disposable {
 		    map = marker._map!, // TODO: null safety
 		    speed = this._autoPanSpeed,
 		    padding = this._autoPanPadding,
-		    iconPos = DomUtil.getPosition(marker._icon),
+		    iconPos = DomUtil.getPosition(marker._el),
 		    bounds = map.getPixelBounds(),
 		    origin = map.getPixelOrigin(),
 			panBounds = new Bounds(
@@ -108,7 +108,7 @@ export class MarkerDrag implements Disposable {
 			this._draggable._newPos!._add(movement); // TODO: null safety
 			this._draggable._startPos!._add(movement); // TODO: null safety
 
-			DomUtil.setPosition(marker._icon, this._draggable._newPos!); // TODO: null safety
+			DomUtil.setPosition(marker._el, this._draggable._newPos!); // TODO: null safety
 			this._onDrag(e);
 
 			this._panFrame = requestAnimationFrame(() => this._adjustPan(e));
@@ -138,7 +138,7 @@ export class MarkerDrag implements Disposable {
 	_onDrag(e: any): void { // TODO: stronger types
 		const
 			marker = this._marker,
-		    iconPos = DomUtil.getPosition(marker._icon),
+		    iconPos = DomUtil.getPosition(marker._el),
 		    latlng = marker._map!.layerPointToLatLng(iconPos); // TODO: null safety
 
 		marker._latlng = latlng;

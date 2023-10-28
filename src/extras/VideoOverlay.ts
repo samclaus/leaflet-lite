@@ -1,6 +1,6 @@
 import { Util } from '../core';
 import { DomUtil } from '../dom';
-import { ImageOverlay, type ImageOverlayOptions } from './ImageOverlay.js';
+import { ImageOverlay, type ImageOverlayOptions } from '../extras/ImageOverlay.js';
 
 export interface VideoOverlayOptions extends ImageOverlayOptions {
 	/**

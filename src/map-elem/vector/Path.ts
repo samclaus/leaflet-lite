@@ -153,10 +153,6 @@ export abstract class Path {
 		return this;
 	}
 
-	getElement() {
-		return this._path;
-	}
-
 	_reset(): void {
 		// defined in child classes
 		this._project();

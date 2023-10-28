@@ -64,20 +64,20 @@ export function toBack(el: HTMLElement): void {
  * and optionally scaled by `scale`. Does not have an effect if the
  * browser doesn't support 3D CSS transforms.
  */
-export function setTransform(el: HTMLElement, offset?: Point, scale?: number): void {
+export function setTransform(el: ElementCSSInlineStyle, offset?: Point, scale?: number): void {
 	const {x, y} = offset || new Point(0, 0);
 
 	el.style.transform = `translate3d(${x}px,${y}px,0)${typeof scale === "number" ? ` scale(${scale})` : ''}`;
 }
 
-const positions = new WeakMap<HTMLElement, Point>();
+const positions = new WeakMap<ElementCSSInlineStyle, Point>();
 
 /**
  * Sets the position of `el` to coordinates specified by `position`,
  * using CSS translate or top/left positioning depending on the browser
  * (used by Leaflet internally to position its layers).
  */
-export function setPosition(el: HTMLElement, point: Point): void {
+export function setPosition(el: ElementCSSInlineStyle, point: Point): void {
 	positions.set(el, point);
 	setTransform(el, point);
 }
