@@ -44,6 +44,11 @@ export interface TooltipOptions extends LayerOptions {
 }
 
 /**
+ * Used for generating a unique ID for each tooltip element.
+ */
+let idCounter = 0;
+
+/**
  * Used to display small texts on top of map layers.
  *
  * If you want to just bind a tooltip to marker:
@@ -371,7 +376,7 @@ export class Tooltip extends Layer {
 
 		this._contentNode = this._container = DomUtil.create('div', className);
 		this._container.setAttribute('role', 'tooltip');
-		this._container.setAttribute('id', `leaflet-tooltip-${Util.stamp(this)}`);
+		this._container.setAttribute('id', `leaflet-tooltip-${idCounter++}`);
 	}
 
 	_updateLayout(): void {}

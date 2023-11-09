@@ -7,7 +7,6 @@ const map = new Map(
     document.body,
     new LatLng(29.64126400008693, -82.34559052037075),
     13,
-    new SVG(),
     {
         minZoom: 0,
         maxZoom: 18,

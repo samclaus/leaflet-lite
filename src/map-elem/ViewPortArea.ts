@@ -37,6 +37,20 @@ export interface ViewPortAreaOptions {
  * The `continuous` option can be used to force a `ViewPortArea` to resize and
  * reposition itself even during every frame of an animation, but that will
  * incur a performance penalty.
+ * 
+ * `ViewPortArea` is only really useful for Canvas/SVG renderers, and trades
+ * perfect-world UX for performance. The trade-off revolves around CSS transforms,
+ * which are often GPU accelerated. Because Leaflet is usually just modifying the
+ * transforms of DOM elements as the user interacts with the map, performance is
+ * excellent. However, as soon as you, say, start messing with an SVG's coordinate
+ * space or clearing and redrawing an entire `<canvas>`'s content from scratch on
+ * every frame, you can run into performance problems. `ViewPortArea` solves this
+ * by only updating the transform on the 'floating' `<canvas>` or `<svg>` element
+ * on every frame, and updates their content whenever the map stops moving. The
+ * trade-off is that dragging the map too far will take you out of the bounds of
+ * the `<canvas>` or `<svg>`, so you will see the polylines and whatnot end abruptly,
+ * and you will only be able to see further portions of them once you stop panning
+ * or zooming and let the map settle.
  */
 export abstract class ViewPortArea<El extends HTMLElement | SVGSVGElement> extends Elem<El> {
 

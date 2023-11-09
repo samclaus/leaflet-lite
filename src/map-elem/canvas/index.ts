@@ -4,6 +4,3 @@ export * from './CircleMarker.js';
 export * from './Path.js';
 export * from './Polygon.js';
 export * from './Polyline.js';
-export * from './Rectangle.js';
-export * from './Renderer.js';
-export * from './SVG.js';
