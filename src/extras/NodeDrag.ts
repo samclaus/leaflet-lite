@@ -1,19 +1,15 @@
-import type { Disposable } from '../core';
-import { DomUtil, Draggable } from '../dom';
+import { Evented, type Disposable } from '../core';
+import { DomUtil, Draggable, type DomElement } from '../dom';
 import type { LatLng } from '../geog';
 import { Bounds, Point } from '../geom';
 import type { Map } from '../map';
-import { Marker } from './Marker.js';
+import type { Node } from '../map-elem';
 
 /**
- * MarkerDrag is used to make Markers draggable. It adds event listeners upon being
+ * `NodeDrag` is used to make a `Node` draggable. It adds event listeners upon being
  * constructed, and you must `dispose()` of it to remove the behavior.
- *
- * @property dragging: Handler
- * Marker dragging handler (by both mouse and touch). Only valid when the marker is
- * on the map (Otherwise set [`marker.options.draggable`](#marker-draggable)).
  */
-export class MarkerDrag implements Disposable {
+export class NodeDrag<El extends DomElement> extends Evented implements Disposable {
 
 	_oldLatLng: LatLng | undefined;
 	_panFrame = 0;
@@ -21,7 +17,7 @@ export class MarkerDrag implements Disposable {
 
 	constructor(
 		public _map: Map,
-		public _marker: Marker,
+		public _marker: Node<El>,
 		/**
 		 * Whether to pan the map when dragging this marker near its edge or not.
 		 * False by default.
@@ -37,6 +33,8 @@ export class MarkerDrag implements Disposable {
 		 */
 		public _autoPanSpeed = 10,
 	) {
+		super();
+
 		/**
 		 * @deprecated This is only here for the _draggableMoved() method of Map, which needs to
 		 * be investigated and refactored.
@@ -116,14 +114,14 @@ export class MarkerDrag implements Disposable {
 	}
 
 	_onDragStart(): void {
-		this._oldLatLng = this._marker.getLatLng();
+		this._oldLatLng = this._marker._latlng;
 
 		// @section Dragging events
 		// @event movestart: Event
 		// Fired when the marker starts moving (because of dragging).
 		// @event dragstart: Event
 		// Fired when the user starts dragging the marker.
-		this._marker
+		this
 			.fire('movestart')
 			.fire('dragstart');
 	}
@@ -148,7 +146,7 @@ export class MarkerDrag implements Disposable {
 
 		// @event drag: Event
 		// Fired repeatedly while the user drags the marker.
-		marker
+		this
 		    .fire('move', e)
 		    .fire('drag', e);
 	}
@@ -161,7 +159,7 @@ export class MarkerDrag implements Disposable {
 		// @event dragend: DragEndEvent
 		// Fired when the user stops dragging the marker.
 		this._oldLatLng = undefined;
-		this._marker
+		this
 		    .fire('moveend')
 		    .fire('dragend', e);
 	}

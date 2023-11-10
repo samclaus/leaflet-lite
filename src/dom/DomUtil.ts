@@ -1,4 +1,5 @@
 import { Point } from '../geom';
+import type { DomElement } from './DomElement.js';
 import * as DomEvent from './DomEvent.js';
 
 // TODO: this is just a temporary fix to break a circular dependency
@@ -85,7 +86,7 @@ export function setPosition(el: ElementCSSInlineStyle, point: Point): void {
 /**
  * Returns the coordinates of an element previously positioned with setPosition.
  */
-export function getPosition(el: HTMLElement): Point {
+export function getPosition(el: ElementCSSInlineStyle): Point {
 	// this method is only used for elements previously positioned using setPosition,
 	// so it's safe to cache the position for performance
 	return positions.get(el) ?? new Point(0, 0);
@@ -141,7 +142,7 @@ export function enableImageDrag(): void {
 }
 
 let
-	_outlineElement: HTMLElement | undefined,
+	_outlineElement: DomElement | undefined,
 	_outlineStyle: string | undefined;
 
 /**
@@ -154,7 +155,7 @@ let
  * element it was called for, if there is one. The function may only affect
  * one element at a time.
  */
-export function preventOutline(element: HTMLElement): void {
+export function preventOutline(element: DomElement): void {
 	while (element.tabIndex === -1 && element.parentNode) {
 		element = element.parentNode as HTMLElement;
 	}
@@ -182,14 +183,14 @@ export function restoreOutline(): void {
 /**
  * Finds the closest parent node for which size (width and height) is not null or 0.
  */
-export function getSizedParentNode(element: HTMLElement): HTMLElement | undefined {
+export function getSizedParentNode<T extends DomElement>(element: T): T | undefined {
 	do {
 		// IMPORTANT: parentNode might be 'null' but I don't want to create a
 		// separate variable from the parameter just to make TypeScript happy
 		element = element.parentNode as any;
 	} while (
 		element &&
-		(!element.offsetWidth || !element.offsetHeight) &&
+		(!(element as any).offsetWidth || !(element as any).offsetHeight) &&
 		element !== document.body
 	);
 	return element || undefined; // coerce 'null' to 'undefined'

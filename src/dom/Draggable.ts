@@ -1,3 +1,4 @@
+import type { DomElement } from '.';
 import { Browser, Evented, Util } from '../core';
 import { Point } from '../geom';
 import * as DomEvent from './DomEvent.js';
@@ -43,7 +44,7 @@ export class Draggable extends Evented {
 	// @constructor L.Draggable(el: HTMLElement, dragHandle?: HTMLElement, preventOutline?: Boolean, options?: Draggable options)
 	// Creates a `Draggable` object for moving `el` when you start dragging the `dragHandle` element (equals `el` itself by default).
 	constructor(
-		public _element: HTMLElement,
+		public _element: DomElement,
 		public _dragStartTarget = _element,
 		public _preventOutline = false,
 		options?: Partial<DraggableOptions>,

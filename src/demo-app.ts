@@ -1,4 +1,4 @@
-import { BoxZoom, Drag, Keyboard, LatLng, Map, TapHold, TileLayer, TouchZoom, canvas, defaultMarkerIcon, enableDoubleClickZoom, enableScrollWheelZoom, getCenterAndZoomForGeolocation } from '.';
+import { BoxZoom, Drag, Keyboard, LatLng, Map, NodeDrag, TapHold, TileLayer, TouchZoom, canvas, defaultMarkerIcon, enableDoubleClickZoom, enableScrollWheelZoom, getCenterAndZoomForGeolocation } from '.';
 import defaultMarkerURL from '../assets/marker.svg';
 import './demo-app.css';
 
@@ -33,7 +33,7 @@ navigator.geolocation.getCurrentPosition(pos => {
     map.setView(coords, Math.max(smartZoom, 16));
 
     const marker = defaultMarkerIcon(map, defaultMarkerURL, coords);
-    // TODO: new MarkerDrag(map, marker, true);
+    new NodeDrag(map, marker, true);
 
     marker._el.style.transformOrigin = 'bottom';
 

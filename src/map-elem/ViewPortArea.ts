@@ -1,5 +1,5 @@
 import { Util, type HandlerMap } from '../core';
-import { DomUtil } from '../dom';
+import { DomUtil, type DomElement } from '../dom';
 import type { LatLng } from '../geog';
 import { Bounds, type Point } from '../geom';
 import type { Map, ZoomAnimationEvent } from '../map';
@@ -52,7 +52,7 @@ export interface ViewPortAreaOptions {
  * and you will only be able to see further portions of them once you stop panning
  * or zooming and let the map settle.
  */
-export abstract class ViewPortArea<El extends HTMLElement | SVGSVGElement> extends Elem<El> {
+export abstract class ViewPortArea<El extends DomElement> extends Elem<El> {
 
 	_padding: number;
 	_continuous: boolean;

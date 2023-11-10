@@ -1,5 +1,5 @@
 import type { HandlerMap } from '../core';
-import { DomUtil } from '../dom';
+import { DomUtil, type DomElement } from '../dom';
 import { LatLng } from '../geog';
 import { Point } from '../geom';
 import type { Map, ZoomAnimationEvent } from '../map';
@@ -80,7 +80,7 @@ export interface NodeOptions {
  * element if `autoPanOnFocus` is true, but it does not call `preventDefault()` or
  * `stopPropagation()`.
  */
-export class Node<El extends HTMLElement | SVGSVGElement> extends Elem<El> {
+export class Node<El extends DomElement = DomElement> extends Elem<El> {
 	// TODO: rename to "Point"
 
 	/**
@@ -178,7 +178,7 @@ export class Node<El extends HTMLElement | SVGSVGElement> extends Elem<El> {
  * Alternatively, it could be useful if the user selects something from outside
  * of the map which has a corresponding node on the map.
  */
-export function panNodeIntoView(node: Node<HTMLElement | SVGSVGElement>): void {
+export function panNodeIntoView(node: Node): void {
 	node._map.panInside(node._latlng, {
 		paddingTopLeft: node._anchor,
 		paddingBottomRight: node._size.subtract(node._anchor),

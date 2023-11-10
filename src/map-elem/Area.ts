@@ -1,5 +1,5 @@
 import { Util, type HandlerMap } from '../core';
-import { DomUtil } from '../dom';
+import { DomUtil, type DomElement } from '../dom';
 import type { LatLng, LatLngBounds } from '../geog';
 import { Bounds } from '../geom';
 import type { Map } from '../map';
@@ -46,7 +46,7 @@ export interface AreaOptions {
  * And that's all there is to it!
  * ```
  */
-export class Area<El extends HTMLElement | SVGSVGElement> extends Elem<El> {
+export class Area<El extends DomElement = DomElement> extends Elem<El> {
 
 	constructor(
         map: Map,

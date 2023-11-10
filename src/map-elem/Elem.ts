@@ -1,3 +1,4 @@
+import type { DomElement } from '..';
 import type { Disposable, HandlerMap } from '../core';
 import type { Map, ZoomAnimationEvent } from '../map';
 
@@ -5,7 +6,7 @@ import type { Map, ZoomAnimationEvent } from '../map';
  * @private Don't use this API. It is only intended to be used internally by Leaflet Lite
  * and may be removed in the near future.
  */
-export abstract class Elem<El extends HTMLElement | SVGSVGElement> implements Disposable {
+export abstract class Elem<El extends DomElement> implements Disposable {
 
 	/**
 	 * This field exists purely for the application's use. Leaflet Lite does not use
