@@ -1,6 +1,7 @@
 import { Browser, Util } from '../../core';
 import { DomEvent } from '../../dom';
 import type { Point } from '../../geom';
+import type { Map } from '../../map';
 import { GridLayer, type DoneFn, type GridLayerOptions } from './GridLayer.js';
 
 export interface TileLayerOptions extends GridLayerOptions {
@@ -88,10 +89,11 @@ export class TileLayer extends GridLayer {
 	declare options: TileLayerOptions;
 
 	constructor(
+		_map: Map,
 		public _url: string,
 		options?: Partial<TileLayerOptions>,
 	) {
-		super(options);
+		super(_map, options);
 
 		const opts = Util.setOptions(this, options, {
 			minZoom: 0,
@@ -191,7 +193,7 @@ export class TileLayer extends GridLayer {
 			y: coords.y,
 			z: this._getZoomForUrl()
 		};
-		if (this._map && !this._map.options.crs.infinite) {
+		if (!this._map.options.crs.infinite) {
 			// TODO: null safety
 			const invertedY = this._globalTileRange!.max.y - coords.y;
 			if (this.options.tms) {
@@ -274,7 +276,7 @@ export class TileLayer extends GridLayer {
 	}
 
 	_tileReady(coords: Point, err: unknown /* TODO */, tile?: HTMLImageElement): void {
-		if (!this._map || (tile && tile.src === Util.emptyImageUrl)) {
+		if (tile?.src === Util.emptyImageUrl) {
 			return;
 		}
 

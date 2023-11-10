@@ -23,6 +23,7 @@ export abstract class Elem<El extends HTMLElement | SVGSVGElement> implements Di
 	 */
 	data: any;
 
+	_initialized = false;
 	_disposed = false;
 	_events: HandlerMap | undefined;
 
@@ -44,7 +45,7 @@ export abstract class Elem<El extends HTMLElement | SVGSVGElement> implements Di
 			_el.classList.add('leaflet-interactive');
 		}
 
-		this._init();
+		// TODO: this._init();
 
 		_map._targets.set(_el, this);
 		_map.pane(pane).appendChild(_el);
@@ -61,8 +62,24 @@ export abstract class Elem<El extends HTMLElement | SVGSVGElement> implements Di
 	 * Should contain code that creates DOM elements for the layer, adds them to `map panes`
 	 * where they should belong and puts listeners on relevant map events. Called on
 	 * [`map.addLayer(layer)`](#map-addlayer).
+	 * 
+	 * @deprecated Used to be onAdd(map), need to figure out how to make inheritance play nicely
+	 * with order of code. Main problem is that parent constructor runs before child constructor
+	 * so it's pretty easy to run child-implemented initialization code before the child actually
+	 * sets up all of its state (and then TypeScript is happy as can be but you end up with a lot
+	 * of runtime 'Cannot read property of undefined' errors).
 	 */
 	abstract _init(): void;
+
+	/**
+	 * @deprecated See _init() comment for why.
+	 */
+	init(): void {
+		if (!this._initialized && !this._disposed) {
+			this._init();
+			this._initialized = true;
+		}
+	}
 
 	/**
 	 * Should contain all clean up code that removes the layer's elements from the DOM and

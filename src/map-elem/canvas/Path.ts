@@ -109,7 +109,10 @@ export abstract class Path implements Disposable {
 	 * 
 	 * @deprecated Constructing a path should also register it immediately because that is
 	 * better for null-safety and brevity, and there is no reason for construction to be
-	 * separate from registration for the purposes of this library.
+	 * separate from registration for the purposes of this library. I just needed a separate
+	 * mechanism because I couldn't register in the constructor of, say, CircleMarker, and then
+	 * have Circle inherit from it because then it would be registered before Circle's constructor
+	 * runs.
 	 */
 	add(): void {
 		this._canvas._addPath(this);

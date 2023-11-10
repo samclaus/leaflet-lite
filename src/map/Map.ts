@@ -973,7 +973,8 @@ export class Map extends Evented implements Disposable {
 				break;
 			}
 
-			if (target && target.listens(type, true)) {
+			// TODO: fix this code
+			if (target instanceof Evented && target.listens(type, true)) {
 				if (isHover && !DomEvent.isExternalTarget(src, e)) {
 					break;
 				}

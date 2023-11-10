@@ -108,6 +108,18 @@ export class Node<El extends HTMLElement | SVGSVGElement> extends Elem<El> {
 
 		this._size = size.clone();
 		this._anchor = anchor.clone();
+
+		el.classList.add('leaflet-marker-icon');
+		el.style.width  = `${size.x}px`;
+		el.style.height = `${size.y}px`;
+		el.style.marginLeft = `-${anchor.x}px`;
+		el.style.marginTop  = `-${anchor.y}px`;
+
+		if (!this._map._zoomAnimated) {
+			el.classList.add('leaflet-zoom-hide');
+		}
+
+		this._update();
 	}
 
 	_mapEvents(): HandlerMap {
@@ -118,23 +130,7 @@ export class Node<El extends HTMLElement | SVGSVGElement> extends Elem<El> {
 	}
 
 	_init(): void {
-		const {
-			_el,
-			_size,
-			_anchor,
-		} = this;
-
-		_el.classList.add('leaflet-marker-icon');
-		_el.style.width  = `${_size.x}px`;
-		_el.style.height = `${_size.y}px`;
-		_el.style.marginLeft = `-${_anchor.x}px`;
-		_el.style.marginTop  = `-${_anchor.y}px`;
-
-		if (!this._map._zoomAnimated) {
-			_el.classList.add('leaflet-zoom-hide');
-		}
-
-		this._update();
+		// 
 	}
 
 	_update(): this {

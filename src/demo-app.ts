@@ -1,4 +1,4 @@
-import { BoxZoom, Circle, Drag, Keyboard, LatLng, Map, Marker, MarkerDrag, SVG, TapHold, TileLayer, TouchZoom, defaultMarkerIcon, enableDoubleClickZoom, enableScrollWheelZoom, getCenterAndZoomForGeolocation } from '.';
+import { BoxZoom, Drag, Keyboard, LatLng, Map, TapHold, TileLayer, TouchZoom, canvas, defaultMarkerIcon, enableDoubleClickZoom, enableScrollWheelZoom, getCenterAndZoomForGeolocation } from '.';
 import defaultMarkerURL from '../assets/marker.svg';
 import './demo-app.css';
 
@@ -11,7 +11,12 @@ const map = new Map(
         minZoom: 0,
         maxZoom: 18,
     },
-).addLayer(new TileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png'))
+);
+
+new TileLayer(map, 'https://tile.openstreetmap.org/{z}/{x}/{y}.png').init();
+
+const cvs = new canvas.Canvas(map);
+cvs.init();
 
 // Add behaviors
 new Drag(map);
@@ -27,10 +32,10 @@ navigator.geolocation.getCurrentPosition(pos => {
 
     map.setView(coords, Math.max(smartZoom, 16));
 
-    const marker = new Marker(coords, defaultMarkerIcon(defaultMarkerURL));
-    new MarkerDrag(map, marker, true);
+    const marker = defaultMarkerIcon(map, defaultMarkerURL, coords);
+    // TODO: new MarkerDrag(map, marker, true);
 
-    marker._icon.style.transformOrigin = 'bottom';
+    marker._el.style.transformOrigin = 'bottom';
 
     requestAnimationFrame(function updateRotation(time: DOMHighResTimeStamp): void {
         requestAnimationFrame(updateRotation);
@@ -38,6 +43,5 @@ navigator.geolocation.getCurrentPosition(pos => {
         marker.setRotation((time % 2160) / 6);
     });
 
-    map.addLayer(new Circle(coords, { radius: pos.coords.accuracy }))
-    map.addLayer(marker);
+    new canvas.Circle(cvs, coords, pos.coords.accuracy);
 });
