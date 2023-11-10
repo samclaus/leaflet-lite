@@ -43,5 +43,5 @@ navigator.geolocation.getCurrentPosition(pos => {
         marker.setRotation((time % 2160) / 6);
     });
 
-    new canvas.Circle(cvs, coords, pos.coords.accuracy);
+    new canvas.Circle(cvs, coords, pos.coords.accuracy).add();
 });
