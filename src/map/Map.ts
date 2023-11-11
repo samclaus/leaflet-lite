@@ -3,7 +3,6 @@ import { DomEvent, DomUtil, PosAnimation } from '../dom';
 import { LatLng, LatLngBounds } from '../geog';
 import { EPSG3857 } from '../geog/crs';
 import { Bounds, Point } from '../geom';
-import type { Renderer } from '../map-elem/vector';
 import type { FitBoundsOptions, InvalidateSizeOptions, MapOptions, PanOptions, ZoomOptions, ZoomPanOptions } from './map-options';
 
 /**
@@ -121,8 +120,6 @@ export class Map extends Evented implements Disposable {
 	 * being zoomed, etc.
 	 */
 	boxZoom?: any;
-
-	_renderer: Renderer | undefined;
 
 	constructor(
 		container: HTMLElement,
@@ -600,7 +597,6 @@ export class Map extends Evented implements Disposable {
 			pane.remove();
 		}
 
-		this._renderer = undefined;
 		this.off();
 	}
 
