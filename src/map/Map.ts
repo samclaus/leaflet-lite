@@ -19,7 +19,7 @@ import type { FitBoundsOptions, InvalidateSizeOptions, MapOptions, PanOptions, Z
  * correctly. The map will also emit a 'dispose' event when it is disposed,
  * which elements should listen for and then dispose of themselves in a chain
  * reaction.
- * - Host a centralized map (a WeakMap for the sake of easy garbage collection)
+ * - Host a centralized key-value map (a WeakMap for the sake of easy garbage collection)
  * which links DOM elements to map elements (classes like `Node` or `Area`) so
  * DOM event targets can easily be translated to the class instances you care
  * about: "Ah, it was THIS marker on the map that was clicked, which corresponds
