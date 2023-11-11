@@ -6,23 +6,97 @@ import { Bounds, Point } from '../geom';
 import type { FitBoundsOptions, InvalidateSizeOptions, MapOptions, PanOptions, ZoomOptions, ZoomPanOptions } from './map-options';
 
 /**
- * The central class of the API — it is used to create a map on a page and manipulate it.
+ * `Map` is the core class for the library and serves these main purposes:
+ * 
+ * - Given a DOM element, set up a particular DOM structure within it (which
+ * is discussed in detail below) so that elements you add to the map can
+ * easily position/stack themselves relative to each other.
+ * - Keep all view-related state (current center, current zoom, coordinate
+ * system details, etc.) in a central spot and emit events whenever they
+ * change so that 'elements' you add to the map (i.e., other classes in this
+ * library or maybe you roll your own) can listen for those events and
+ * update the CSS for their corresponding DOM elements to keep them positioned
+ * correctly. The map will also emit a 'dispose' event when it is disposed,
+ * which elements should listen for and then dispose of themselves in a chain
+ * reaction.
+ * - Host a centralized map (a WeakMap for the sake of easy garbage collection)
+ * which links DOM elements to map elements (classes like `Node` or `Area`) so
+ * DOM event targets can easily be translated to the class instances you care
+ * about: "Ah, it was THIS marker on the map that was clicked, which corresponds
+ * to THIS restaurant in my application's database!"
+ * - Host centralized animation state so that only one animation function, such
+ * as `flyTo()`, will be manipulating the map state (and therefore causing
+ * events to be emitted that tell elements to update their CSS) at a given time.
+ * 
+ * ## Simple Example
  *
  * ```js
- * // initialize the map on the "map" div with a given center and zoom
- * var map = L.map('map', {
- * 	center: [51.505, -0.09],
- * 	zoom: 13
- * });
+ * // When creating the Map, you MUST give it an initial center and zoom because
+ * // that greatly simplifies state management and null safety within the library,
+ * // and I don't believe it makes much sense to show a blank map in an 'unloaded'
+ * // state on the page. If you need to figure out the center and zoom
+ * // asynchronously, such as by loading the information from a server, you could
+ * // show a loading indicator and then construct the map once the information is
+ * // available.
+ * const map = new Map(
+ *     document.getElementById('my-map-div'),
+ *     new LatLng(51.505, -0.09), // initial center for the map
+ *     13, // initial zoom for the map
+ *     {
+ *         minZoom: 8,
+ *         maxZoom: 16,
+ *         // etc..
+ *     }
+ * );
+ * 
+ * // The Map class knows nothing of loading a grid of PNG map tiles--the TileLayer
+ * // class simply listens for changes to the current map view and manages a bunch
+ * // of <img> elements accordingly!
+ * new TileLayer(map, 'https://tile.openstreetmap.org/{z}/{x}/{y}.png')
+ *     .init();
+ * 
+ * // Add behaviors to the map. They are all optional, you can roll your own, and
+ * // they work in a straightforward manner by listening to DOM events and then
+ * // telling the Map instance to update its view as necessary. That causes the
+ * // Map to emit state change events, which in turn causes the TileLayer above
+ * // (and any other elements added to the Map) to update their DOM elements!
+ * new Drag(map);
+ * enableScrollWheelZoom(map);
+ * enableDoubleClickZoom(map);
+ * new TouchZoom(map);
+ * new BoxZoom(map);
+ * new Keyboard(map);
+ * new TapHold(map);
  * ```
  * 
- * ## Panes
+ * ## DOM Structure of the Map
+ * 
+ * You know what grinds my gears? Libraries that don't document things like DOM
+ * structure or their CSS, making all of that information a magical black box so
+ * that it's difficult for application programmers to add their own CSS without
+ * breaking things!
+ * 
+ * Here is the DOM structure any Leaflet Lite map will have, followed by an
+ * explanation of 'why':
+ * 
+ * ```HTML
+ * <!-- TODO -->
+ * <div class="leaflet-container leaflet-touch leaflet-retina leaflet-fade-anim leaflet-grab leaflet-touch-drag leaflet-touch-zoom" tabindex="0">
+ *     <div class="leaflet-pane leaflet-root-pane">
+ *         <div class="leaflet-pane leaflet-tile-pane"></div>
+ *         <div class="leaflet-pane leaflet-overlay-pane"></div>
+ *         <div class="leaflet-pane leaflet-tooltip-pane"></div>
+ *         <div class="leaflet-pane leaflet-marker-pane"></div>
+ *         <div class="leaflet-proxy leaflet-zoom-animated"></div>
+ *     </div>
+ * </div>
+ * ```
  *
- * Panes are DOM elements used to control the ordering of layers on the map. You
+ * Panes are DOM elements used to control the stacking of elements on the map. You
  * can access panes using the [`map.pane`](#map-pane) method, which will create a
  * pane if it doesn't already exist.
  *
- * Every map has the following default panes that differ only in zIndex.
+ * Every map has the following default panes that differ only in zIndex
  *
  * @pane map ('auto'): Pane that contains all other map panes
  * @pane tile (200): Pane for `GridLayer`s and `TileLayer`s
@@ -32,19 +106,12 @@ import type { FitBoundsOptions, InvalidateSizeOptions, MapOptions, PanOptions, Z
  * @pane tooltip (650): Pane for `Tooltip`s.
  * 
  * @event click: MouseEvent
- * Fired when the user clicks (or taps) the map.
  * @event dblclick: MouseEvent
- * Fired when the user double-clicks (or double-taps) the map.
  * @event mousedown: MouseEvent
- * Fired when the user pushes the mouse button on the map.
  * @event mouseup: MouseEvent
- * Fired when the user releases the mouse button on the map.
  * @event mouseover: MouseEvent
- * Fired when the mouse enters the map.
  * @event mouseout: MouseEvent
- * Fired when the mouse leaves the map.
  * @event mousemove: MouseEvent
- * Fired while the mouse moves over the map.
  * @event contextmenu: MouseEvent
  * Fired when the user pushes the right mouse button on the map, prevents
  * default browser context menu from showing if there are listeners on
