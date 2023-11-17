@@ -104,7 +104,7 @@ export class TileLayerWMS extends TileLayer {
 		});
 
 		const realRetina = options.detectRetina && Browser.retina ? 2 : 1;
-		const tileSize = this.getTileSize();
+		const tileSize = this._tileSize;
 		wmsParams.width = tileSize.x * realRetina;
 		wmsParams.height = tileSize.y * realRetina;
 

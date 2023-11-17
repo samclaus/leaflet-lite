@@ -109,7 +109,7 @@ export interface LevelModel {
  *         var tile = L.DomUtil.create('canvas', 'leaflet-tile');
  *
  *         // setup tile width and height according to the options
- *         var size = this.getTileSize();
+ *         var size = this._tileSize;
  *         tile.width = size.x;
  *         tile.height = size.y;
  *
@@ -134,7 +134,7 @@ export interface LevelModel {
  *         var tile = L.DomUtil.create('canvas', 'leaflet-tile');
  *
  *         // setup tile width and height according to the options
- *         var size = this.getTileSize();
+ *         var size = this._tileSize;
  *         tile.width = size.x;
  *         tile.height = size.y;
  *
@@ -154,6 +154,8 @@ export abstract class GridLayer extends Evented implements Disposable {
 
 	/** DOM element that contains the tiles for this layer. */
 	_container: HTMLElement;
+	/** Tile size from options, normalized so that it's always a Point, even if width/height are the same. */
+	_tileSize: Point;
 	_tileZoom: number | undefined;
 	_levels = new Map<number, LevelModel>();
 	_tiles = new Map<string, TileModel>();
@@ -197,6 +199,10 @@ export abstract class GridLayer extends Evented implements Disposable {
 		};
 
 		this._container = DomUtil.create('div', `leaflet-layer ${this.options.className || ''}`);
+
+		const s = this.options.tileSize;
+		this._tileSize = s instanceof Point ? s : new Point(s, s);
+
 		this._updateZIndex();
 
 		if (this.options.opacity < 1) {
@@ -295,12 +301,6 @@ export abstract class GridLayer extends Evented implements Disposable {
 		}
 		this._update();
 		return this;
-	}
-
-	// Normalizes the [tileSize option](#gridlayer-tilesize) into a point. Used by the `createTile()` method.
-	getTileSize(): Point {
-		const s = this.options.tileSize;
-		return s instanceof Point ? s : new Point(s, s);
 	}
 
 	_updateZIndex(): void {
@@ -596,7 +596,7 @@ export abstract class GridLayer extends Evented implements Disposable {
 		const
 			map = this._map,
 		    crs = map.options.crs,
-		    tileSize = this.getTileSize(),
+		    tileSize = this._tileSize,
 		    tileZoom = this._tileZoom,
 			bounds = map.getPixelWorldBounds(this._tileZoom);
 
@@ -736,7 +736,7 @@ export abstract class GridLayer extends Evented implements Disposable {
 	_tileCoordsToNwSe(coords: Point): [LatLng, LatLng] {
 		const
 			map = this._map,
-		    tileSize = this.getTileSize(),
+		    tileSize = this._tileSize,
 		    nwPoint = coords.scaleBy(tileSize),
 		    sePoint = nwPoint.add(tileSize),
 		    nw = map.unproject(nwPoint, coords.z),
@@ -787,7 +787,7 @@ export abstract class GridLayer extends Evented implements Disposable {
 	}
 
 	_initTile(tile: HTMLElement): void {
-		const tileSize = this.getTileSize();
+		const tileSize = this._tileSize;
 
 		tile.classList.add('leaflet-tile');
 		tile.style.width = `${tileSize.x}px`;
@@ -889,7 +889,7 @@ export abstract class GridLayer extends Evented implements Disposable {
 	}
 
 	_getTilePos(coords: Point): Point {
-		return coords.scaleBy(this.getTileSize()).subtract(this._level.origin);
+		return coords.scaleBy(this._tileSize).subtract(this._level.origin);
 	}
 
 	_wrapCoords(coords: Point): Point {
@@ -902,7 +902,7 @@ export abstract class GridLayer extends Evented implements Disposable {
 	}
 
 	_pxBoundsToTileRange(bounds: Bounds): Bounds {
-		const tileSize = this.getTileSize();
+		const tileSize = this._tileSize;
 		return new Bounds(
 			bounds.min.unscaleBy(tileSize).floor(),
 			bounds.max.unscaleBy(tileSize).ceil().subtract(new Point(1, 1)),
