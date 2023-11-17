@@ -72,7 +72,6 @@ export function flyTo(map: Map, targetCenter: LatLng, targetZoom?: number, optio
         }
     }
 
-    map._moveStart(true, options.noMoveStart);
     frame.call(map);
 }
 

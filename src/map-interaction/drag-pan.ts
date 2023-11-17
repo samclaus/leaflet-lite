@@ -137,9 +137,7 @@ export class Drag extends BehaviorBase {
 			this._offsetLimit = undefined;
 		}
 
-		map
-		    .fire('movestart')
-		    .fire('dragstart');
+		map.fire('dragstart');
 
 		if (this.options.inertia) {
 			this._positions = [];
@@ -250,7 +248,6 @@ export class Drag extends BehaviorBase {
 					map.panBy(offset, {
 						duration: decelerationDuration,
 						easeLinearity: ease,
-						noMoveStart: true,
 						animate: true
 					});
 				});

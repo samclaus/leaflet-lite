@@ -117,10 +117,7 @@ export class TouchZoom extends BehaviorBase {
 			this._center = map.unproject(map.project(this._pinchStartLatLng!, this._zoom).subtract(delta), this._zoom);
 		}
 
-		if (!this._moved) {
-			map._moveStart(true, false);
-			this._moved = true;
-		}
+		this._moved = true;
 
 		cancelAnimationFrame(this._animFrame);
 

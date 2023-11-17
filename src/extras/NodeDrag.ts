@@ -117,12 +117,9 @@ export class NodeDrag<El extends DomElement> extends Evented implements Disposab
 		this._oldLatLng = this._marker._latlng;
 
 		// @section Dragging events
-		// @event movestart: Event
-		// Fired when the marker starts moving (because of dragging).
 		// @event dragstart: Event
 		// Fired when the user starts dragging the marker.
 		this
-			.fire('movestart')
 			.fire('dragstart');
 	}
 

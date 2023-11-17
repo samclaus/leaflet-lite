@@ -7,7 +7,6 @@ export type PanOptions = any;
 // {
 // 	// TODO
 
-// 	noMoveStart?: boolean;
 // 	animate?: boolean;
 // 	duration?: number;
 // 	easeLinearity?: number;

@@ -340,7 +340,7 @@ export class Map extends Evented implements Disposable {
 		}
 
 		// animation didn't start, just reset the map view
-		this._resetView(center, zoom, options.pan?.noMoveStart);
+		this._resetView(center, zoom);
 
 		return this;
 	}
@@ -446,11 +446,6 @@ export class Map extends Evented implements Disposable {
 				'step': this._onPanTransitionStep,
 				'end': this._onPanTransitionEnd,
 			}, this);
-		}
-
-		// don't fire movestart if animating inertia
-		if (!options.noMoveStart) {
-			this.fire('movestart');
 		}
 
 		// animate pan unless animate: false specified
@@ -893,7 +888,7 @@ export class Map extends Evented implements Disposable {
 	// private methods that modify map state
 
 	// @section Map state change events
-	_resetView(center: LatLng, zoom: number, noMoveStart?: boolean): void {
+	_resetView(center: LatLng, zoom: number): void {
 		DomUtil.setPosition(this._rootPane, new Point(0, 0));
 
 		zoom = this._limitZoom(zoom);
@@ -902,7 +897,6 @@ export class Map extends Evented implements Disposable {
 
 		const zoomChanged = this._zoom !== zoom;
 		this
-			._moveStart(zoomChanged, noMoveStart)
 			._move(center, zoom)
 			._moveEnd(zoomChanged);
 
@@ -910,20 +904,6 @@ export class Map extends Evented implements Disposable {
 		// Fired when the map needs to redraw its content (this usually happens
 		// on map zoom). Very useful for creating custom overlays.
 		this.fire('viewreset');
-	}
-
-	_moveStart(zoomChanged: boolean, noMoveStart?: boolean): this {
-		// @event zoomstart: Event
-		// Fired when the map zoom is about to change (e.g. before zoom animation).
-		// @event movestart: Event
-		// Fired when the view of the map starts changing (e.g. user starts dragging the map).
-		if (zoomChanged) {
-			this.fire('zoomstart');
-		}
-		if (!noMoveStart) {
-			this.fire('movestart');
-		}
-		return this;
 	}
 
 	_move(
@@ -1316,11 +1296,7 @@ export class Map extends Evented implements Disposable {
 		// don't animate if the zoom origin isn't within one screen from the current center, unless forced
 		if (options.animate !== true && !this.getSize().contains(offset)) { return false; }
 
-		requestAnimationFrame(() => {
-			this
-			    ._moveStart(true, options.noMoveStart ?? false)
-			    ._animateZoom(center, zoom, true);
-		});
+		requestAnimationFrame(() => this._animateZoom(center, zoom, true));
 
 		return true;
 	}
