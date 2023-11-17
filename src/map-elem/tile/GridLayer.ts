@@ -1,8 +1,8 @@
-import { Browser, Util, type HandlerMap, Evented, type Disposable } from '../../core';
+import { Browser, Evented, Util, type Disposable, type HandlerMap } from '../../core';
 import { DomUtil } from '../../dom';
 import { LatLng, LatLngBounds } from '../../geog';
 import { Bounds, Point } from '../../geom';
-import type { Map } from '../../map';
+import type { Map as GeoMap } from '../../map';
 
 export interface GridLayerOptions {
 	/**
@@ -155,8 +155,8 @@ export abstract class GridLayer extends Evented implements Disposable {
 	/** DOM element that contains the tiles for this layer. */
 	_container: HTMLElement;
 	_tileZoom: number | undefined;
-	_levels: Dict<LevelModel> = Object.create(null);
-	_tiles: Dict<TileModel> = Object.create(null);
+	_levels = new Map<number, LevelModel>();
+	_tiles = new Map<string, TileModel>();
 	_onOpaqueTile: (tile: TileModel) => void = Util.falseFn;
 	_onUpdateLevel: (levelID: number) => void = Util.falseFn;
 	_onRemoveLevel: (levelID: number) => void = Util.falseFn;
@@ -172,7 +172,7 @@ export abstract class GridLayer extends Evented implements Disposable {
 	_mapEvents: HandlerMap;
 
 	constructor(
-		public _map: Map,
+		public _map: GeoMap,
 		options?: Partial<GridLayerOptions>
 	) {
 		super();
@@ -338,7 +338,7 @@ export abstract class GridLayer extends Evented implements Disposable {
 		let nextFrame = false,
 		    willPrune = false;
 
-		for (const tile of Object.values(this._tiles)) {
+		for (const tile of this._tiles.values()) {
 			if (!tile.current || !tile.loaded) { continue; }
 
 			const fade = Math.min(1, (now - tile.loaded) / 200);
@@ -365,16 +365,14 @@ export abstract class GridLayer extends Evented implements Disposable {
 		}
 	}
 
-	_updateLevels() { // TODO: return type?
+	_updateLevels(): LevelModel | undefined {
 		const
 			zoom = this._tileZoom,
 		    maxZoom = this.options.maxZoom;
 
 		if (zoom === undefined) { return undefined; }
 
-		for (let [_z, level] of Object.entries(this._levels)) {
-			const z = Number(_z);
-	
+		for (let [z, level] of this._levels) {
 			if (level.el.children.length || z === zoom) {
 				// TODO: null safety for maxZoom
 				level.el.style.zIndex = (maxZoom! - Math.abs(zoom - z)) as any; // automatically coerced to string
@@ -383,21 +381,23 @@ export abstract class GridLayer extends Evented implements Disposable {
 				level.el.remove();
 				this._removeTilesAtZoom(z);
 				this._onRemoveLevel(z);
-				delete this._levels[z];
+				this._levels.delete(z);
 			}
 		}
 
-		let level = this._levels[zoom];
 		const map = this._map;
 
+		let level = this._levels.get(zoom);
+
 		if (!level) {
-			level = this._levels[zoom] = {
+			level = {
 				el: DomUtil.create('div', 'leaflet-tile-container leaflet-zoom-animated', this._container),
 				origin: map.project(map.unproject(map.getPixelOrigin()), zoom).round(),
 				zoom,
 			};
 			level.el.style.zIndex = maxZoom as any; // will be coerced to string safely
 
+			this._levels.set(zoom, level);
 			this._setZoomTransform(level, map.getCenter(), map._zoom);
 
 			// force reading offsetWidth so the browser considers the newly added element for transition
@@ -419,11 +419,11 @@ export abstract class GridLayer extends Evented implements Disposable {
 			return;
 		}
 
-		for (const tile of Object.values(this._tiles)) {
+		for (const tile of this._tiles.values()) {
 			tile.retain = tile.current;
 		}
 
-		for (const tile of Object.values(this._tiles)) {
+		for (const tile of this._tiles.values()) {
 			if (tile.current && !tile.active) {
 				const coords = tile.coords;
 				if (!this._retainParent(coords.x, coords.y, coords.z!, coords.z! - 5)) { // TODO: null safety
@@ -432,7 +432,7 @@ export abstract class GridLayer extends Evented implements Disposable {
 			}
 		}
 
-		for (const [key, tile] of Object.entries(this._tiles)) {
+		for (const [key, tile] of this._tiles) {
 			if (!tile.retain) {
 				this._removeTile(key);
 			}
@@ -440,25 +440,24 @@ export abstract class GridLayer extends Evented implements Disposable {
 	}
 
 	_removeTilesAtZoom(zoom: number): void {
-		for (const key in this._tiles) {
-			if (this._tiles[key].coords.z !== zoom) {
-				continue;
+		for (const [key, tile] of this._tiles) {
+			if (tile.coords.z === zoom) {
+				this._removeTile(key);
 			}
-			this._removeTile(key);
 		}
 	}
 
 	_removeAllTiles(): void {
-		for (const key of Object.keys(this._tiles)) {
+		for (const key of this._tiles.keys()) {
 			this._removeTile(key);
 		}
 	}
 
 	_invalidateAll(): void {
-		for (const [z, level] of Object.entries(this._levels)) {
+		for (const [z, level] of this._levels) {
 			level.el.remove();
-			this._onRemoveLevel(Number(z));
-			delete this._levels[z];
+			this._onRemoveLevel(z);
+			this._levels.delete(z);
 		}
 
 		this._removeAllTiles();
@@ -474,7 +473,7 @@ export abstract class GridLayer extends Evented implements Disposable {
 
 		const
 			key = this._tileCoordsToKey(coords2),
-		    tile = this._tiles[key];
+		    tile = this._tiles.get(key);
 
 		if (tile && tile.active) {
 			tile.retain = true;
@@ -498,8 +497,9 @@ export abstract class GridLayer extends Evented implements Disposable {
 				const coords = new Point(i, j);
 				coords.z = z + 1;
 
-				const key = this._tileCoordsToKey(coords),
-				    tile = this._tiles[key];
+				const
+					key = this._tileCoordsToKey(coords),
+				    tile = this._tiles.get(key);
 
 				if (tile && tile.active) {
 					tile.retain = true;
@@ -645,7 +645,7 @@ export abstract class GridLayer extends Evented implements Disposable {
 			pixelBounds = this._getTiledPixelBounds(center),
 		    tileRange = this._pxBoundsToTileRange(pixelBounds),
 		    tileCenter = tileRange.getCenter(),
-		    queue = [],
+		    queue: Point[] = [],
 		    margin = this.options.keepBuffer,
 		    noPruneRange = new Bounds(
 				tileRange.getBottomLeft().subtract(new Point(margin, -margin)),
@@ -658,7 +658,7 @@ export abstract class GridLayer extends Evented implements Disposable {
 		      isFinite(tileRange.max.x) &&
 		      isFinite(tileRange.max.y))) { throw new Error('Attempted to load an infinite number of tiles'); }
 
-		for (const tile of Object.values(this._tiles)) {
+		for (const tile of this._tiles.values()) {
 			const c = tile.coords;
 			
 			if (c.z !== this._tileZoom || !noPruneRange.contains(new Point(c.x, c.y))) {
@@ -678,7 +678,8 @@ export abstract class GridLayer extends Evented implements Disposable {
 
 				if (!this._isValidTile(coords)) { continue; }
 
-				const tile = this._tiles[this._tileCoordsToKey(coords)];
+				const tile = this._tiles.get(this._tileCoordsToKey(coords));
+
 				if (tile) {
 					tile.current = true;
 				} else {
@@ -771,12 +772,12 @@ export abstract class GridLayer extends Evented implements Disposable {
 	}
 
 	_removeTile(key: string): void {
-		const tile = this._tiles[key];
+		const tile = this._tiles.get(key);
 		if (!tile) { return; }
 
 		tile.el.remove();
 
-		delete this._tiles[key];
+		this._tiles.delete(key);
 
 		// @event tileunload: TileEvent
 		// Fired when a tile is removed (e.g. when a tile goes off the screen).
@@ -814,14 +815,14 @@ export abstract class GridLayer extends Evented implements Disposable {
 		DomUtil.setPosition(tile, tilePos);
 
 		// save tile in cache
-		this._tiles[key] = {
+		this._tiles.set(key, {
 			el: tile,
 			coords,
 			current: true,
 			loaded: 0,
 			active: false,
 			retain: false,
-		};
+		});
 
 		container.appendChild(tile);
 
@@ -844,8 +845,9 @@ export abstract class GridLayer extends Evented implements Disposable {
 			});
 		}
 
-		const key = this._tileCoordsToKey(coords);
-		const tile = this._tiles[key];
+		const
+			key = this._tileCoordsToKey(coords),
+			tile = this._tiles.get(key);
 
 		if (!tile) { return; }
 
@@ -909,8 +911,12 @@ export abstract class GridLayer extends Evented implements Disposable {
 	}
 
 	_noTilesToLoad(): boolean {
-		// TODO: use for-in for less memory consumption?
-		return Object.values(this._tiles).every(tile => tile.loaded);
+		for (const tile of this._tiles.values()) {
+			if (!tile.loaded) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 }

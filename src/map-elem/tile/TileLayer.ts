@@ -241,23 +241,22 @@ export class TileLayer extends GridLayer {
 
 	// stops loading all tiles in the background layer
 	_abortLoading(): void {
-		let i, tile;
-		for (i in this._tiles) {
-			if (this._tiles[i].coords.z !== this._tileZoom) {
-				tile = this._tiles[i].el as HTMLImageElement;
+		for (const [key, tile] of this._tiles) {
+			if (tile.coords.z !== this._tileZoom) {
+				const el = tile.el as HTMLImageElement;
 
-				tile.onload = Util.falseFn;
-				tile.onerror = Util.falseFn;
+				el.onload = Util.falseFn;
+				el.onerror = Util.falseFn;
 
-				if (!tile.complete) {
-					tile.src = Util.emptyImageUrl;
-					const coords = this._tiles[i].coords;
-					tile.remove();
-					delete this._tiles[i];
+				if (!el.complete) {
+					el.src = Util.emptyImageUrl;
+					const coords = tile.coords;
+					el.remove();
+					this._tiles.delete(key);
 					// @event tileabort: TileEvent
 					// Fired when a tile was loading but is now not wanted.
 					this.fire('tileabort', {
-						tile,
+						tile: el,
 						coords
 					});
 				}
@@ -266,21 +265,19 @@ export class TileLayer extends GridLayer {
 	}
 
 	_removeTile(key: string): void {
-		const tile = this._tiles[key];
+		const tile = this._tiles.get(key);
 		if (!tile) { return; }
 
 		// Cancels any pending http requests associated with the tile
 		tile.el.setAttribute('src', Util.emptyImageUrl);
 
-		return GridLayer.prototype._removeTile.call(this, key);
+		super._removeTile(key);
 	}
 
 	_tileReady(coords: Point, err: unknown /* TODO */, tile?: HTMLImageElement): void {
-		if (tile?.src === Util.emptyImageUrl) {
-			return;
+		if (tile?.src !== Util.emptyImageUrl) {
+			super._tileReady(coords, err, tile);
 		}
-
-		return GridLayer.prototype._tileReady.call(this, coords, err, tile);
 	}
 
 }
