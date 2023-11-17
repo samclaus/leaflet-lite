@@ -13,6 +13,10 @@ export class CanvasEventProxy {
 		DomEvent.on(this._el, 'click dblclick mousedown mouseup contextmenu', this._onClick, this);
 		DomEvent.on(this._el, 'mouseout', this._handleMouseOut, this);
 		this._el['_leaflet_disable_events'] = true;
+		// TODO: need to remove all these event handlers now that this is no longer integrated
+		// with BlanketOverlay (which has been removed), since BlanketOverlay used to call
+		// DomEvent.off() to remove all event handlers, but I would like to not store event
+		// handlers in the first place
 	}
 
 	_onClick(e: any): void {
