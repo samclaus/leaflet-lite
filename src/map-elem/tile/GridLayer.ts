@@ -331,8 +331,7 @@ export abstract class GridLayer extends Evented implements Disposable {
 	}
 
 	_updateOpacity(): void {
-		// TODO: null safety
-		this._container!.style.opacity = this.options.opacity as any; // automatically coerced to string
+		this._container.style.opacity = this.options.opacity as any; // automatically coerced to string
 
 		const now = Date.now();
 		let nextFrame = false,
