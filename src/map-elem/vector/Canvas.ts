@@ -1,20 +1,67 @@
-import type { HandlerMap } from '../../core';
+import { Util, type Disposable, type HandlerMap } from '../../core';
+import { DomUtil } from '../../dom';
+import type { LatLng } from '../../geog';
 import { Bounds, Point } from '../../geom';
-import type { Map } from '../../map';
-import { ViewPortArea, type ViewPortAreaOptions } from '../ViewPortArea';
+import type { Map, ZoomAnimationEvent } from '../../map';
 import type { CircleMarker } from './CircleMarker.js';
 import type { Path, PathOptions } from './Path.js';
 import type { Polyline } from './Polyline.js';
 
+export interface CanvasOptions {
+	/**
+	 * Which map pane to position the area within. 'overlay' by default.
+	 */
+	pane: string;
+	/**
+	 * How much to extend the clip area around the map view (relative to its size)
+	 * e.g. 0.1 would be 10% of map view in each direction. 0.1 by default.
+	 */
+	padding: number;
+}
+
 const ctxScale = window.devicePixelRatio;
 
 /**
+ * TODO: update this doc comment.
+ * TODO optimization: 1 fill/stroke for all features with equal style instead of 1 for each feature
+ * 
+ * `ViewPortArea` is the same as `Area` (see `Area` documentation for more info),
+ * but it automatically adjusts itself to cover the current viewport of the map
+ * every time the map settles (at the end of a pan and/or zoom animation).
+ * 
+ * `ViewPortArea` is only really useful for Canvas/SVG renderers, and trades
+ * perfect-world UX for performance. The trade-off revolves around CSS transforms,
+ * which are often GPU accelerated. Because Leaflet is usually just modifying the
+ * transforms of DOM elements as the user interacts with the map, performance is
+ * excellent. However, as soon as you, say, start messing with an SVG's coordinate
+ * space or clearing and redrawing an entire `<canvas>`'s content from scratch on
+ * every frame, you can run into performance problems. `ViewPortArea` solves this
+ * by only updating the transform on the 'floating' `<canvas>` or `<svg>` element
+ * on every frame, and updates their content whenever the map stops moving. The
+ * trade-off is that dragging the map too far will take you out of the bounds of
+ * the `<canvas>` or `<svg>`, so you will see the polylines and whatnot end abruptly,
+ * and you will only be able to see further portions of them once you stop panning
+ * or zooming and let the map settle.
+ * 
  * Allows vector layers to be displayed with
  * [`<canvas>`](https://developer.mozilla.org/docs/Web/API/Canvas_API).
  */
-export class Canvas extends ViewPortArea<HTMLCanvasElement> {
+export class Canvas implements Disposable {
 
+	_events: HandlerMap = {
+		viewreset: this._reset,
+		zoom: this._onZoom,
+		moveend: this._onMoveEnd,
+		resize: this._resizeContainer,
+		zoomend: this._onZoomEnd,
+		viewprereset: this._onViewPreReset,
+	};
+	_el: HTMLCanvasElement;
+	_padding: number;
 	_ctx: CanvasRenderingContext2D;
+	_bounds: Bounds | undefined;
+	_center: LatLng | undefined;
+	_zoom: number | undefined;
 	_drawOrder: Path[] = [];
 	_redrawBounds: Bounds | undefined;
 	_redrawFrame = 0;
@@ -22,33 +69,37 @@ export class Canvas extends ViewPortArea<HTMLCanvasElement> {
 	_drawing = false;
 	_hoveredPath: any; // TODO
 	_mouseHoverThrottled = false;
+	_disposed = false;
 
 	constructor(
-		map: Map,
-		opts?: Partial<ViewPortAreaOptions>,
+		public _map: Map,
+		opts?: Partial<CanvasOptions>,
 	) {
-		super(map, document.createElement('canvas'), opts);
+		const el = document.createElement('canvas');
 
+		// always keep transform-origin as 0 0, #8794
+		el.classList.add('leaflet-zoom-animated', 'leaflet-image-layer');
+		el.onselectstart = Util.falseFn;
+		el.onmousemove = Util.falseFn;
+
+		this._el = el;
+		this._padding = opts?.padding ?? 0.1;
 		this._ctx = this._el.getContext('2d')!;
-	}
+		
+		if (_map._zoomAnimated) {
+			_map.on('zoomanim', this._animateZoom, this);
+		}
 
-	_mapEvents(): HandlerMap {
-		const events = super._mapEvents();
-		events.viewprereset = this._onViewPreReset;
-		return events;
-	}
+		_map._targets.set(el, this);
+		_map.pane(opts?.pane || 'overlay').appendChild(el);
+		_map.on(this._events, this);
 
-	_init(): void {
-		super._init();
+		this._resizeContainer();
+		this._onMoveEnd();
 
 		// Redraw vectors since canvas is cleared upon removal,
 		// in case of removing the renderer itself from the map.
 		this._draw();
-	}
-
-	_deinit(): void {
-		cancelAnimationFrame(this._redrawFrame);
-		this._ctx = undefined as any;
 	}
 
 	/**
@@ -60,10 +111,10 @@ export class Canvas extends ViewPortArea<HTMLCanvasElement> {
 		this._projectPaths();
 	}
 
-	_onViewReset(): void {
-		this._resetPaths();
-	}
-
+	/**
+	 * Runs whenever the map state settles after changing (at the end of pan/zoom
+	 * animations, etc). This should trigger the bulk of any rendering logic.
+	 */
 	_onSettled(): void {
 		this._update();
 	}
@@ -76,10 +127,14 @@ export class Canvas extends ViewPortArea<HTMLCanvasElement> {
 	_resizeContainer(): Point {
 		const
 			el = this._el,
-			size = super._resizeContainer(),
+			size = this._map.getSize().multiplyBy(1 + this._padding*2).round(),
 			s = ctxScale;
 
-		// set canvas size (also clearing it); use double size on retina
+		// Set canvas size on page, in CSS pixels
+		el.style.width = `${size.x}px`;
+		el.style.height = `${size.y}px`;
+
+		// Set canvas resolution physical pixels (also clearing it); use double size on retina
 		el.width = s * size.x;
 		el.height = s * size.y;
 
@@ -116,7 +171,9 @@ export class Canvas extends ViewPortArea<HTMLCanvasElement> {
 	}
 
 	_reset(): void {
-		super._reset();
+		this._onSettled();
+		this._updateTransform(this._center!, this._zoom!); // TODO: null safety
+		this._resetPaths();
 
 		if (this._postponeUpdatePaths) {
 			this._postponeUpdatePaths = false;
@@ -257,8 +314,6 @@ export class Canvas extends ViewPortArea<HTMLCanvasElement> {
 		}
 
 		poly._fillStroke(ctx);
-
-		// TODO optimization: 1 fill/stroke for all features with equal style instead of 1 for each feature
 	}
 
 	_updateCircle(circle: CircleMarker): void {
@@ -331,6 +386,63 @@ export class Canvas extends ViewPortArea<HTMLCanvasElement> {
 	_resetPaths(): void {
 		for (const path of this._drawOrder) {
 			path._reset();
+		}
+	}
+
+	_onZoom(): void {
+		this._updateTransform(this._map.getCenter(), this._map._zoom);
+	}
+
+	_animateZoom(ev: ZoomAnimationEvent): void {
+		this._updateTransform(ev.center, ev.zoom);
+	}
+
+	_updateTransform(center: LatLng, zoom: number): void {
+		const
+			map = this._map,
+			scale = map.getZoomScale(zoom, this._zoom),
+		    viewHalf = map.getSize().multiplyBy(0.5 + this._padding),
+		    currentCenterPoint = map.project(this._center!, zoom), // TODO: null safety
+		    topLeftOffset = viewHalf.multiplyBy(-scale).add(currentCenterPoint)
+		        .subtract(map._getNewPixelOrigin(center, zoom));
+
+		DomUtil.setTransform(this._el, topLeftOffset, scale);
+	}
+
+	_onMoveEnd(): void {
+		// Update pixel bounds of renderer container (for positioning/sizing/clipping later)
+		const
+			map = this._map,
+			p = this._padding,
+		    size = map.getSize(),
+		    min = map.containerPointToLayerPoint(size.multiplyBy(-p)).round();
+
+		this._bounds = new Bounds(min, min.add(size.multiplyBy(1 + p*2)).round());
+		this._center = map.getCenter();
+		this._zoom = map._zoom;
+		this._updateTransform(this._center, this._zoom);
+		this._onSettled();
+	}
+
+	dispose(): void {
+		if (!this._disposed) {
+			const { _map, _el } = this;
+
+			_map.off(this._events, this);
+
+			if (_map._zoomAnimated) {
+				_map.off('zoomanim', this._animateZoom, this);
+			}
+
+			_el.remove();
+			_map._targets.delete(_el);
+			// TODO: need to make sure to remove all DOM event listeners
+			cancelAnimationFrame(this._redrawFrame);
+			this._ctx = undefined as any;
+			this._map = undefined as any;
+			this._el = undefined as any;
+			this._events = undefined as any;
+			this._disposed = true;
 		}
 	}
 

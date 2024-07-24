@@ -15,9 +15,6 @@ const map = new Map(
 
 new TileLayer(map, 'https://tile.openstreetmap.org/{z}/{x}/{y}.png').init();
 
-const cvs = new canvas.Canvas(map);
-cvs.init();
-
 // Add behaviors
 new Drag(map);
 enableScrollWheelZoom(map);
@@ -26,6 +23,8 @@ new TouchZoom(map);
 new BoxZoom(map);
 new Keyboard(map);
 new TapHold(map);
+
+const cvs = new canvas.Canvas(map);
 
 navigator.geolocation.getCurrentPosition(pos => {
     const [coords, smartZoom] = getCenterAndZoomForGeolocation(map, pos.coords);
