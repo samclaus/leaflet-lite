@@ -282,26 +282,4 @@ export class Polyline extends Path {
 		this._canvas._updatePoly(this);
 	}
 
-	// Needed by the `Canvas` renderer for interactivity
-	_containsPoint(p: Point, closed?: boolean): boolean {
-		let i, j, k, len, len2, part;
-		const w = this._clickTolerance();
-
-		if (!this._pxBounds || !this._pxBounds.contains(p)) { return false; }
-
-		// hit detection for polylines
-		for (i = 0, len = this._parts.length; i < len; i++) {
-			part = this._parts[i];
-
-			for (j = 0, len2 = part.length, k = len2 - 1; j < len2; k = j++) {
-				if (!closed && (j === 0)) { continue; }
-
-				if (GeomUtil.pointToSegmentDistance(p, part[k], part[j]) <= w) {
-					return true;
-				}
-			}
-		}
-		return false;
-	}
-
 }

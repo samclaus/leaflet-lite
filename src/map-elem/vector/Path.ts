@@ -1,5 +1,5 @@
 import type { Disposable } from '../../core';
-import type { Bounds, Point } from '../../geom';
+import type { Bounds } from '../../geom';
 import type { Canvas } from './Canvas.js';
 
 export interface PathOptions {
@@ -97,12 +97,6 @@ export abstract class Path implements Disposable {
 	abstract _update(): void;
 	abstract _updateBounds(): void;
 	abstract _updatePath(): void;
-
-	/**
-	 * Tests if a point lies on/inside the path. This is used for hitbox testing
-	 * so mouse events on the canvas can be mapped to a particular path.
-	 */
-	abstract _containsPoint(p: Point): boolean;
 
 	/**
 	 * Registers this path with the canvas so it actually gets rendered.
