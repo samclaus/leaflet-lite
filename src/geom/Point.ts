@@ -20,9 +20,6 @@ import { Util } from '../core';
  */
 export class Point {
 
-	x: number;
-	y: number;
-
 	/**
 	 * @deprecated This is only here for the dumb GridLayer class which tacks zoom information
 	 * onto existing Points via a 'z' property. That is terrible for JS optimization and also
@@ -32,17 +29,9 @@ export class Point {
 	z?: number;
 
 	constructor(
-		x: number,
-		y: number,
-		/**
-		 * TODO: remove this and round at call site
-		 * @deprecated
-		 */
-		round?: boolean,
-	) {
-		this.x = round ? Math.round(x) : x;
-		this.y = round ? Math.round(y) : y;
-	}
+		public x: number,
+		public y: number,
+	) {}
 
 	// Returns a copy of the current point.
 	clone(): Point {

@@ -420,9 +420,10 @@ export class Tooltip extends Layer {
 			subY = tooltipHeight / 2;
 		}
 
-		pos = pos.subtract(
-			new Point(Math.round(subX), Math.round(subY)),
-		).add(offset).add(anchor);
+		pos = pos
+			.subtract(new Point(subX, subY)._round())
+			.add(offset)
+			.add(anchor);
 
 		container.classList.remove(
 			'leaflet-tooltip-right',
@@ -431,6 +432,7 @@ export class Tooltip extends Layer {
 			'leaflet-tooltip-bottom'
 		);
 		container.classList.add(`leaflet-tooltip-${direction}`);
+
 		DomUtil.setPosition(container, pos);
 	}
 

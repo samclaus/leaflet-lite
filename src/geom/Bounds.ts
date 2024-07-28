@@ -65,11 +65,11 @@ export class Bounds {
 
 	// Returns the center point of the bounds.
 	getCenter(round?: boolean): Point {
-		return new Point(
+		const center = new Point(
 			(this.min.x + this.max.x) / 2,
 			(this.min.y + this.max.y) / 2,
-			round,
 		);
+		return round ? center._round() : center;
 	}
 
 	// Returns the bottom-left point of the bounds.

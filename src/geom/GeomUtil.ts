@@ -213,7 +213,9 @@ export function _getEdgeIntersection(
 		throw new Error("cannot compute edge intersection point");
 	}
 
-	return new Point(x, y, round);
+	const result = new Point(x, y);
+
+	return round ? result._round() : result;
 }
 
 export function _getBitCode(p: Point, bounds: Bounds): number {
