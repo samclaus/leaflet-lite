@@ -1,8 +1,7 @@
-import type { Disposable } from '../../core';
 import type { Bounds } from '../../geom';
-import type { Canvas } from './Canvas.js';
+import type { Map } from '../../map';
 
-export interface PathOptions {
+export interface PathStyle {
 	/**
 	 * Whether to draw stroke along the path. Set it to `false` to disable
 	 * borders on polygons or circles. True by default.
@@ -27,7 +26,7 @@ export interface PathOptions {
 	 * work on `Canvas`-powered layers in [some old browsers](https://developer.mozilla.org/docs/Web/API/CanvasRenderingContext2D/setLineDash#Browser_compatibility).
 	 * Undefined (meaning the stroke is solid) by default.
 	 */
-	dashArray: string | readonly number[] | undefined;
+	dashArray: string | number[] | undefined;
 	/**
 	 * A string that defines the [distance into the dash pattern to start the dash](https://developer.mozilla.org/docs/Web/SVG/Attribute/stroke-dashoffset).
 	 * Doesn't work on `Canvas`-powered layers in [some old browsers](https://developer.mozilla.org/docs/Web/API/CanvasRenderingContext2D/setLineDash#Browser_compatibility).
@@ -52,36 +51,40 @@ export interface PathOptions {
 	interactive: boolean;
 }
 
-function normalizeDashArray(dashArray: string | readonly number[] | undefined): readonly number[] {
-	return typeof dashArray === 'string'
-		? dashArray.split(/[, ]+/).map(Number)
-		: (dashArray || []);
+export interface NormalizedPathStyle extends PathStyle {
+	dashArray: number[];
 }
 
 /**
  * An abstract class that contains options and constants shared between vector
- * overlays (Polygon, Polyline, Circle). Do not use it directly. Extends `Layer`.
+ * overlays (Polygon, Polyline, Circle). Do not use it directly.
  */
-export abstract class Path implements Disposable {
+export abstract class Path {
 
-	declare options: PathOptions;
-
-	_dashArray: readonly number[];
 	_pxBounds: Bounds | undefined;
-	_disposed = false;
+
+	abstract project(map: Map, padding: number): void;
+	abstract render(ctx: CanvasRenderingContext2D): void;
+
+}
+
+export class PathBuffer {
+
+	style: NormalizedPathStyle;
 
 	constructor(
-		public _canvas: Canvas,
-		style?: Partial<PathOptions>,
+		style: Partial<PathStyle>,
+		public paths: Path[] = [],
 	) {
-		this.options = {
+		const dashArray = style.dashArray;
+
+		this.style = {
 			stroke: true,
 			color: '#3388ff',
 			weight: 3,
 			opacity: 1,
 			lineCap: 'round',
 			lineJoin: 'round',
-			dashArray: undefined,
 			dashOffset: undefined,
 			fill: false,
 			fillColor: undefined,
@@ -89,89 +92,10 @@ export abstract class Path implements Disposable {
 			fillRule: 'evenodd',
 			interactive: true,
 			...style,
+			dashArray: typeof dashArray === 'string'
+				? dashArray.split(/[, ]+/).map(Number)
+				: (dashArray || []),
 		};
-		this._dashArray = normalizeDashArray(this.options.dashArray);
-	}
-
-	abstract _project(): void;
-	abstract _update(): void;
-	abstract _updateBounds(): void;
-	abstract _updatePath(): void;
-
-	/**
-	 * Registers this path with the canvas so it actually gets rendered.
-	 * 
-	 * @deprecated Constructing a path should also register it immediately because that is
-	 * better for null-safety and brevity, and there is no reason for construction to be
-	 * separate from registration for the purposes of this library. I just needed a separate
-	 * mechanism because I couldn't register in the constructor of, say, CircleMarker, and then
-	 * have Circle inherit from it because then it would be registered before Circle's constructor
-	 * runs.
-	 */
-	add(): void {
-		this._canvas._addPath(this);
-	}
-
-	// Redraws the layer. Sometimes useful after you changed the coordinates that the path uses.
-	redraw(): this {
-		if (this._canvas) {
-			this._canvas._updatePath(this);
-		}
-		return this;
-	}
-
-	// Changes the appearance of a Path based on the options in the `Path options` object.
-	_mergeStyles(style: Partial<PathOptions>): void {
-		Object.assign(this.options, style);
-
-		this._dashArray = normalizeDashArray(this.options.dashArray);
-
-		if (this.options.stroke && Object.hasOwn(style, 'weight')) {
-			this._updateBounds();
-		}
-	}
-
-	_reset(): void {
-		// defined in child classes
-		this._project();
-		this._update();
-	}
-
-	_clickTolerance(): number {
-		// used when doing hit detection for Canvas layers
-		return (this.options.stroke ? this.options.weight / 2 : 0) +
-		  0; // TODO: (this._canvas!.options.tolerance || 0);
-	}
-
-	_fillStroke(ctx: CanvasRenderingContext2D): void {
-		const options = this.options; // TODO
-
-		if (options.fill) {
-			ctx.globalAlpha = options.fillOpacity;
-			ctx.fillStyle = options.fillColor || options.color;
-			// Intentionally let them give us any string to avoid TypeScript compatibility headaches
-			ctx.fill(options.fillRule as CanvasFillRule || 'evenodd');
-		}
-
-		if (options.stroke && options.weight !== 0) {
-			ctx.setLineDash(this._dashArray);
-			ctx.globalAlpha = options.opacity;
-			ctx.lineWidth = options.weight;
-			ctx.strokeStyle = options.color;
-			// Intentionally let them give us any string to avoid TypeScript compatibility headaches
-			ctx.lineCap = options.lineCap as CanvasLineCap;
-			// Intentionally let them give us any string to avoid TypeScript compatibility headaches
-			ctx.lineJoin = options.lineJoin as CanvasLineJoin;
-			ctx.stroke();
-		}
-	}
-
-	dispose(): void {
-		if (!this._disposed) {
-			this._canvas._removePath(this);
-			this._canvas = undefined as any;
-			this._disposed = true;
-		}
 	}
 
 }

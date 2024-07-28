@@ -1,20 +1,15 @@
 import { LatLng, LatLngBounds } from '../../geog';
 import { Earth } from '../../geog/crs';
 import { Point } from '../../geom';
-import type { Canvas } from './Canvas.js';
+import type { Map } from '../../map';
 import { CircleMarker } from './CircleMarker.js';
-import { Path, type PathOptions } from './Path.js';
 
 /**
- * A class for drawing circle overlays on a map. Extends `CircleMarker`.
+ * A "physically sized" circle, with the radius specified in meters, that
+ * will appear bigger/smaller depending on the current zoom of the map.
  *
- * It's an approximation and starts to diverge from a real circle closer to poles (due to projection distortion).
- *
- * ```js
- * const circ = L.circle([50.5, 30.5], {radius: 200});
- * 
- * map.addLayer(circ);
- * ```
+ * It's an approximation and starts to become an ellipse closer
+ * to poles (due to projection distortion).
  */
 export class Circle extends CircleMarker {
 
@@ -22,51 +17,18 @@ export class Circle extends CircleMarker {
 	_mRadius: number;
 
 	constructor(
-		_canvas: Canvas,
 		latlng: LatLng,
 		radius?: number,
-		options?: Partial<PathOptions>,
 	) {
-		super(_canvas, latlng, radius, options);
+		super(latlng, radius);
 
 		this._mRadius = this._radius;
 	}
 
-	// Sets the radius of a circle. Units are in meters.
-	setRadius(radius: number): this {
-		this._mRadius = radius;
-		return this.redraw();
-	}
-
-	// Returns the current radius of a circle. Units are in meters.
-	getRadius(): number {
-		return this._mRadius;
-	}
-
-	// Returns the `LatLngBounds` of the path.
-	getBounds(): LatLngBounds {
-		const
-			half = new Point(this._radius, this._radiusY || this._radius),
-			map = this._canvas._map,
-			point = this._point!; // TODO: null safety
-
-		return new LatLngBounds(
-			map.layerPointToLatLng(point.subtract(half)),
-			map.layerPointToLatLng(point.add(half)),
-		);
-	}
-
-	_mergeStyles(style: Partial<PathOptions>): void {
-		// CircleMarker (our parent class) overrides the method, but we want to
-		// use the basic Path (our grandparent class) implementation
-		Path.prototype._mergeStyles.call(this, style);
-	}
-
-	_project(): void {
+	project(map: Map, padding: number): void {
 		const
 			lng = this._latlng.lng,
 		    lat = this._latlng.lat,
-		    map = this._canvas._map,
 		    crs = map.options.crs;
 
 		if (crs.distance === Earth.distance) {
@@ -92,10 +54,27 @@ export class Circle extends CircleMarker {
 			const latlng2 = crs.unproject(crs.project(this._latlng).subtract(new Point(this._mRadius, 0)));
 
 			this._point = map.latLngToLayerPoint(this._latlng);
-			this._radius = this._point.x - map.latLngToLayerPoint(latlng2).x;
+			this._radius = this._point!.x - map.latLngToLayerPoint(latlng2).x;
 		}
 
-		this._updateBounds();
+		this._recomputeBounds(padding);
 	}
 
+}
+
+/**
+ * Get the geographical bounds of the physical circle, which may be stretched into an
+ * ellipse depending on the CRS and zoom level. The circle MUST be projected according
+ * to the current pan/zoom of the map FIRST, or this will return outdated/invalid
+ * information, or even throw an error if the circle was never projected.
+ */
+export function computeCircleBounds(c: Circle, map: Map): LatLngBounds {
+	const
+		half = new Point(c._radius, c._radiusY || c._radius),
+		point = c._point!; // TODO: null safety
+
+	return new LatLngBounds(
+		map.layerPointToLatLng(point.subtract(half)),
+		map.layerPointToLatLng(point.add(half)),
+	);
 }

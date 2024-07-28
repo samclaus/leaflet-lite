@@ -3,9 +3,7 @@ import { DomUtil } from '../../dom';
 import type { LatLng } from '../../geog';
 import { Bounds, Point } from '../../geom';
 import type { Map, ZoomAnimationEvent } from '../../map';
-import type { CircleMarker } from './CircleMarker.js';
-import type { Path, PathOptions } from './Path.js';
-import type { Polyline } from './Polyline.js';
+import type { NormalizedPathStyle, PathBuffer } from './Path.js';
 
 export interface CanvasOptions {
 	/**
@@ -23,7 +21,6 @@ const ctxScale = window.devicePixelRatio;
 
 /**
  * TODO: update this doc comment.
- * TODO optimization: 1 fill/stroke for all features with equal style instead of 1 for each feature
  * 
  * `ViewPortArea` is the same as `Area` (see `Area` documentation for more info),
  * but it automatically adjusts itself to cover the current viewport of the map
@@ -53,8 +50,7 @@ export class Canvas implements Disposable {
 		zoom: this._onZoom,
 		moveend: this._onMoveEnd,
 		resize: this._resizeContainer,
-		zoomend: this._onZoomEnd,
-		viewprereset: this._onViewPreReset,
+		zoomend: this._projectPaths,
 	};
 	_el: HTMLCanvasElement;
 	_padding: number;
@@ -62,14 +58,9 @@ export class Canvas implements Disposable {
 	_bounds: Bounds | undefined;
 	_center: LatLng | undefined;
 	_zoom: number | undefined;
-	_drawOrder: Path[] = [];
-	_redrawBounds: Bounds | undefined;
 	_redrawFrame = 0;
-	_postponeUpdatePaths = false;
-	_drawing = false;
-	_hoveredPath: any; // TODO
-	_mouseHoverThrottled = false;
-	_disposed = false;
+
+	drawOrder: PathBuffer[] = [];
 
 	constructor(
 		public _map: Map,
@@ -102,28 +93,6 @@ export class Canvas implements Disposable {
 		this._draw();
 	}
 
-	/**
-	 * Implements the 'zoomend' handler for BlanketOverlay, calling `_projectPaths()`
-	 * which must iterate over all paths owned by the renderer and have them each
-	 * re-project themselves now that the origin pixel for the map has changed.
-	 */
-	_onZoomEnd(): void {
-		this._projectPaths();
-	}
-
-	/**
-	 * Runs whenever the map state settles after changing (at the end of pan/zoom
-	 * animations, etc). This should trigger the bulk of any rendering logic.
-	 */
-	_onSettled(): void {
-		this._update();
-	}
-
-	_onViewPreReset(): void {
-		// Set a flag so that a viewprereset+moveend+viewreset only updates&redraws once
-		this._postponeUpdatePaths = true;
-	}
-
 	_resizeContainer(): Point {
 		const
 			el = this._el,
@@ -141,19 +110,7 @@ export class Canvas implements Disposable {
 		return size;
 	}
 
-	_updatePaths(): void {
-		if (this._postponeUpdatePaths) { return; }
-
-		this._redrawBounds = undefined;
-
-		for (const path of this._drawOrder) {
-			path._update();
-		}
-
-		this._redraw();
-	}
-
-	_update(): void {
+	_updateCoordSpaceAndRenderFromScratch(): void {
 		if (this._map._animatingZoom && this._bounds) { return; }
 
 		const
@@ -164,240 +121,104 @@ export class Canvas implements Disposable {
 		this._ctx.setTransform(
 			s, 0, 0, s,
 			-b.min.x * s,
-			-b.min.y * s);
+			-b.min.y * s,
+		);
 
 		// Tell paths to redraw themselves
-		this._updatePaths();
+		this._redraw();
 	}
 
 	_reset(): void {
-		this._onSettled();
-		this._updateTransform(this._center!, this._zoom!); // TODO: null safety
-		this._resetPaths();
+		this._updateCoordSpaceAndRenderFromScratch();
+		this._updateCSSTransform(this._center!, this._zoom!); // TODO: null safety
+		
+		for (const {paths, style} of this.drawOrder) {
+			for (const path of paths) {
+				const padding = style.stroke ? style.weight / 2 : 0;
 
-		if (this._postponeUpdatePaths) {
-			this._postponeUpdatePaths = false;
-			this._updatePaths();
+				path.project(this._map, padding);
+				path.render(this._ctx);
+			}
+
+			this._fillStroke(style);
 		}
 	}
 
-	_addPath(path: Path): void {
-		this._drawOrder.push(path);
-		path._reset();
-		this._requestRedraw(path);
-	}
-
-	_removePath(path: Path): void {
-		const drawIndex = this._drawOrder.indexOf(path);
-
-		if (drawIndex >= 0) {
-			this._drawOrder.splice(drawIndex, 1);
-		}
-
-		this._requestRedraw(path);
-	}
-
-	_updatePath(path: Path): void {
-		// Redraw the union of the layer's old pixel
-		// bounds and the new pixel bounds.
-		this._extendRedrawBounds(path);
-		path._project();
-		path._update();
-		// The redraw will extend the redraw bounds
-		// with the new pixel bounds.
-		this._requestRedraw(path);
-	}
-
-	_updateStyle(path: Path, style: Partial<PathOptions>): void {
-		path._mergeStyles(style);
-		this._requestRedraw(path);
-	}
-
-	_requestRedraw(path: Path): void {
-		if (!this._map) { return; }
-
-		this._extendRedrawBounds(path);
-		this._redrawFrame ||= requestAnimationFrame(() => this._redraw());
-	}
-
-	_extendRedrawBounds(path: Path): void {
-		if (path._pxBounds) {
-			const
-				paddingAmt = (path.options.weight || 0) + 1,
-				padding = new Point(paddingAmt, paddingAmt);
-
-			this._redrawBounds ||= new Bounds();
-			this._redrawBounds.extend(path._pxBounds.min.subtract(padding));
-			this._redrawBounds.extend(path._pxBounds.max.add(padding));
-		}
+	redraw(): void {
+		this._redrawFrame ||= this._map && requestAnimationFrame(() => this._redraw());
 	}
 
 	_redraw(): void {
 		this._redrawFrame = 0;
-
-		if (this._redrawBounds) {
-			this._redrawBounds.min._floor();
-			this._redrawBounds.max._ceil();
-		}
-
 		this._clear(); // clear layers in redraw bounds
 		this._draw(); // draw layers
-
-		this._redrawBounds = undefined;
 	}
 
 	_clear(): void {
 		const
 			el = this._el,
-			bounds = this._redrawBounds,
-			ctx = this._ctx;
-
-		if (bounds) {
-			const size = bounds.getSize();
-			ctx.clearRect(bounds.min.x, bounds.min.y, size.x, size.y);
-		} else {
-			ctx.save();
-			ctx.setTransform(1, 0, 0, 1, 0, 0);
-			ctx.clearRect(0, 0, el.width, el.height);
-			ctx.restore();
-		}
-	}
-
-	_draw(): void {
-		const
-			bounds = this._redrawBounds,
 			ctx = this._ctx;
 
 		ctx.save();
+		ctx.setTransform(1, 0, 0, 1, 0, 0);
+		ctx.clearRect(0, 0, el.width, el.height);
+		ctx.restore();
+	}
 
-		if (bounds) {
-			const size = bounds.getSize();
-			ctx.beginPath();
-			ctx.rect(bounds.min.x, bounds.min.y, size.x, size.y);
-			ctx.clip();
-		}
+	_draw(): void {
+		const ctx = this._ctx;
 
-		this._drawing = true;
-
-		for (const path of this._drawOrder) {
-			if (!bounds || (path._pxBounds?.intersects(bounds))) {
-				path._updatePath();
+		for (const buff of this.drawOrder) {
+			for (const path of buff.paths) {
+				path.render(ctx);
 			}
-		}
 
-		this._drawing = false;
+			this._fillStroke(buff.style);
+		}
 
 		ctx.restore();  // Restore state before clipping.
 	}
 
-	_updatePoly(poly: Polyline, closed?: boolean): void {
-		if (!this._drawing) { return; }
+	_fillStroke(style: NormalizedPathStyle): void {
+		const ctx = this._ctx;
 
-		let i, j, len2, p;
-		const
-			parts = poly._parts,
-			len = parts.length,
-			ctx = this._ctx;
-
-		if (!len) { return; }
-
-		ctx.beginPath();
-
-		for (i = 0; i < len; i++) {
-			for (j = 0, len2 = parts[i].length; j < len2; j++) {
-				p = parts[i][j];
-				ctx[j ? 'lineTo' : 'moveTo'](p.x, p.y);
-			}
-			if (closed) {
-				ctx.closePath();
-			}
+		if (style.fill) {
+			ctx.globalAlpha = style.fillOpacity;
+			ctx.fillStyle = style.fillColor || style.color;
+			// Intentionally let them give us any string to avoid TypeScript compatibility headaches
+			ctx.fill(style.fillRule as CanvasFillRule || 'evenodd');
 		}
 
-		poly._fillStroke(ctx);
-	}
-
-	_updateCircle(circle: CircleMarker): void {
-		if (!this._drawing || circle._empty()) { return; }
-
-		const
-			p = circle._point!, // TODO: null safety
-		    ctx = this._ctx,
-		    r = Math.max(Math.round(circle._radius), 1),
-		    s = (Math.max(Math.round(circle._radiusY), 1) || r) / r;
-
-		if (s !== 1) {
-			ctx.save();
-			ctx.scale(1, s);
+		if (style.stroke && style.weight !== 0) {
+			ctx.setLineDash(style.dashArray);
+			ctx.globalAlpha = style.opacity;
+			ctx.lineWidth = style.weight;
+			ctx.strokeStyle = style.color;
+			// Intentionally let them give us any string to avoid TypeScript compatibility headaches
+			ctx.lineCap = style.lineCap as CanvasLineCap;
+			// Intentionally let them give us any string to avoid TypeScript compatibility headaches
+			ctx.lineJoin = style.lineJoin as CanvasLineJoin;
+			ctx.stroke();
 		}
-
-		ctx.beginPath();
-		ctx.arc(p.x, p.y / s, r, 0, Math.PI * 2, false);
-
-		if (s !== 1) {
-			ctx.restore();
-		}
-
-		circle._fillStroke(ctx);
-	}
-
-	bringToFront(path: Path): void {
-		const
-			order = this._drawOrder,
-			index = order.indexOf(path);
-
-		if (index < 0 || index === (order.length - 1)) {
-			// Path is not present, or is already at front (last to draw)
-			return;
-		}
-
-		order.splice(index, 1);
-		order.push(path);
-
-		this._requestRedraw(path);
-	}
-
-	bringToBack(path: Path): void {
-		const
-			order = this._drawOrder,
-			index = order.indexOf(path);
-
-		if (index < 1) {
-			// Path is not present, or is already at back (first to draw)
-			return;
-		}
-
-		// Shift all items before/behind the path up one spot
-		for (let i = 0; i < index; ++i) {
-			order[i + 1] = order[i];
-		}
-
-		// Now insert the path at beginning so it draws before/behind everything else
-		order[0] = path;
-
-		this._requestRedraw(path);
 	}
 
 	_projectPaths(): void {
-		for (const path of this._drawOrder) {
-			path._project();
-		}
-	}
-
-	_resetPaths(): void {
-		for (const path of this._drawOrder) {
-			path._reset();
+		for (const {paths, style} of this.drawOrder) {
+			for (const path of paths) {
+				path.project(this._map, style.stroke ? style.weight / 2 : 0);
+			}
 		}
 	}
 
 	_onZoom(): void {
-		this._updateTransform(this._map.getCenter(), this._map._zoom);
+		this._updateCSSTransform(this._map.getCenter(), this._map._zoom);
 	}
 
 	_animateZoom(ev: ZoomAnimationEvent): void {
-		this._updateTransform(ev.center, ev.zoom);
+		this._updateCSSTransform(ev.center, ev.zoom);
 	}
 
-	_updateTransform(center: LatLng, zoom: number): void {
+	_updateCSSTransform(center: LatLng, zoom: number): void {
 		const
 			map = this._map,
 			scale = map.getZoomScale(zoom, this._zoom),
@@ -420,12 +241,12 @@ export class Canvas implements Disposable {
 		this._bounds = new Bounds(min, min.add(size.multiplyBy(1 + p*2)).round());
 		this._center = map.getCenter();
 		this._zoom = map._zoom;
-		this._updateTransform(this._center, this._zoom);
-		this._onSettled();
+		this._updateCSSTransform(this._center, this._zoom);
+		this._updateCoordSpaceAndRenderFromScratch();
 	}
 
 	dispose(): void {
-		if (!this._disposed) {
+		if (this._map) {
 			const { _map, _el } = this;
 
 			_map.off(this._events, this);
@@ -436,13 +257,14 @@ export class Canvas implements Disposable {
 
 			_el.remove();
 			_map._targets.delete(_el);
+
 			// TODO: need to make sure to remove all DOM event listeners
 			cancelAnimationFrame(this._redrawFrame);
+
 			this._ctx = undefined as any;
 			this._map = undefined as any;
 			this._el = undefined as any;
 			this._events = undefined as any;
-			this._disposed = true;
 		}
 	}
 

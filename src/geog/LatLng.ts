@@ -14,11 +14,10 @@ export class LatLng {
 
 	// Returns `true` if the given `LatLng` point is at the same position (within a small margin of error). The margin of error can be overridden by setting `maxMargin` to a small number.
 	equals(other: LatLng, maxMargin = 1.0E-9): boolean {
-		const margin = Math.max(
+		return Math.max(
 			Math.abs(this.lat - other.lat),
 			Math.abs(this.lng - other.lng),
-		);
-		return margin <= maxMargin;
+		) <= maxMargin;
 	}
 
 	clone(): LatLng {

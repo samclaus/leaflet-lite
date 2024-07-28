@@ -1,8 +1,7 @@
 import { GeomUtil, type Point } from "../../geom";
 import type { Canvas } from "./Canvas";
 import { CircleMarker } from "./CircleMarker";
-import { Polygon } from "./Polygon";
-import { Polyline } from "./Polyline";
+import { Poly } from "./Poly";
 
 export interface InteractivePath {
 	/**
@@ -17,7 +16,7 @@ export interface InteractivePath {
 	return p.distanceTo(this._point!) <= this._radius + this._clickTolerance();
 };
 
-(Polyline.prototype as any)._containsPoint = function (p: Point, closed?: boolean): boolean {
+(Poly.prototype as any)._containsPoint = function (p: Point, closed?: boolean): boolean {
 	let i, j, k, len, len2, part;
 	const w = this._clickTolerance();
 
@@ -61,7 +60,7 @@ export interface InteractivePath {
 	}
 
 	// also check if it's on polygon stroke
-	return inside || (Polyline.prototype as any)._containsPoint.call(this, p, true);
+	return inside || (Poly.prototype as any)._containsPoint.call(this, p, true);
 }
 
 /**
@@ -70,15 +69,23 @@ export interface InteractivePath {
  */
 export class CanvasEventProxy {
 
+	_mouseHoverThrottled = false;
+	_hoveredPath: any; // TODO
+
 	// Canvas obviously doesn't have mouse events for individual drawn objects,
 	// so we emulate that by calculating what's under the mouse on mousemove/click manually
 
 	constructor(
 		public _canvas: Canvas,
+		public tolerancePx = 0, // added click tolerance
 	) {
 		_canvas._el.classList.add('leaflet-interactive');
 
 		// TODO: this._initContainer(), etc. etc.
+	}
+
+	_clickTolerance(): number {
+		// TODO
 	}
 
 	_initContainer(): void {

@@ -13,7 +13,16 @@ const map = new Map(
     },
 );
 
-new TileLayer(map, 'https://tile.openstreetmap.org/{z}/{x}/{y}.png').init();
+new TileLayer(
+    map,
+    // 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
+    "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+                {
+                    // TODO: attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                    subdomains: 'abcd',
+                    maxZoom: 20
+                },
+).init();
 
 // Add behaviors
 new Drag(map);
@@ -42,5 +51,10 @@ navigator.geolocation.getCurrentPosition(pos => {
         marker.setRotation((time % 2160) / 6);
     });
 
-    new canvas.Circle(cvs, coords, pos.coords.accuracy).add();
+    cvs.drawOrder.push(
+        new canvas.PathBuffer({}, [
+            new canvas.CircleMarker(coords, pos.coords.accuracy),
+        ]),
+    );
+    cvs.redraw();
 });

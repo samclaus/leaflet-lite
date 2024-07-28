@@ -1,78 +1,58 @@
 import type { LatLng } from '../../geog';
 import { Bounds, Point } from '../../geom';
-import type { Canvas } from './Canvas.js';
-import { Path, type PathOptions } from './Path.js';
+import type { Map } from '../../map';
+import { Path, type PathStyle } from './Path.js';
 
 /**
- * A circle of a fixed size with radius specified in pixels. Extends `Path`.
+ * A circle of a fixed size (i.e., regardless of the current map zoom)
+ * with radius specified in pixels.
  */
 export class CircleMarker extends Path {
 
-	declare options: PathOptions;
+	declare options: PathStyle;
 
 	_radiusY: number = NaN; // needed for Circle inheritance
 	_point: Point | undefined;
 
 	constructor(
-		_canvas: Canvas,
 		public _latlng: LatLng,
 		public _radius = 10,
-		options?: Partial<PathOptions>,
 	) {
-		super(_canvas, {
-			fill: true,
-			...options,
-		});
+		super();
 	}
 
-	// Sets the position of a circle marker to a new location.
-	setLatLng(latlng: LatLng): this {
-		this._latlng = latlng;
-		return this.redraw();
-	}
-
-	// Sets the radius of a circle marker. Units are in pixels.
-	setRadius(radius: number): this {
-		this._radius = radius;
-		return this.redraw();
-	}
-
-	// Returns the current radius of the circle
-	getRadius(): number {
-		return this._radius;
-	}
-
-	_mergeStyles(style: Partial<PathOptions>): void {
-		super._mergeStyles(style);
-	}
-
-	_project(): void {
-		this._point = this._canvas._map.latLngToLayerPoint(this._latlng);
-		this._updateBounds();
-	}
-
-	_updateBounds(): void {
+	_recomputeBounds(padding: number): void {
 		const
 			point = this._point!, // TODO: null safety
 			r = this._radius,
 		    r2 = this._radiusY || r,
-		    w = this._clickTolerance(),
-		    p = new Point(r + w, r2 + w);
+		    p = new Point(r + padding, r2 + padding);
 
 		this._pxBounds = new Bounds(point.subtract(p), point.add(p));
 	}
 
-	_update(): void {
-		this._updatePath();
+	project(map: Map, padding: number): void {
+		this._point = map.latLngToLayerPoint(this._latlng);
+		this._recomputeBounds(padding);
 	}
 
-	_updatePath(): void {
-		this._canvas._updateCircle(this);
-	}
+	render(ctx: CanvasRenderingContext2D): void {
+		const
+			p = this._point!, // TODO: null safety
+		    r = Math.max(Math.round(this._radius), 1),
+		    s = (Math.max(Math.round(this._radiusY), 1) || r) / r;
 
-	_empty(): boolean {
-		// TODO: null safety
-		return !!this._radius && !this._canvas._bounds!.intersects(this._pxBounds!);
+		if (s !== 1) {
+			ctx.save();
+			ctx.scale(1, s);
+		}
+
+		ctx.beginPath();
+		ctx.arc(p.x, p.y / s, r, 0, Math.PI * 2, false);
+
+		if (s !== 1) {
+			ctx.restore();
+		}
 	}
 
 }

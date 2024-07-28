@@ -1,16 +1,10 @@
 import type { DomElement } from '.';
-import { Browser, Evented, Util } from '../core';
+import { Browser, Evented } from '../core';
 import { Point } from '../geom';
 import * as DomEvent from './DomEvent.js';
 import * as DomUtil from './DomUtil.js';
 
 const START = Browser.touch ? 'touchstart mousedown' : 'mousedown';
-
-export interface DraggableOptions {
-	// The max number of pixels a user can shift the mouse pointer during a click
-	// for it to be considered a valid click (as opposed to a mouse drag).
-	clickTolerance: number;
-}
 
 /**
  * A class for making DOM elements draggable (including touch support).
@@ -26,9 +20,6 @@ export class Draggable extends Evented {
 
 	static _dragging: Draggable | undefined;
 
-	options: DraggableOptions = {
-		clickTolerance: 3,
-	};
 	_enabled = false;
 	_moved = false;
 	_moving = false;
@@ -47,11 +38,11 @@ export class Draggable extends Evented {
 		public _element: DomElement,
 		public _dragStartTarget = _element,
 		public _preventOutline = false,
-		options?: Partial<DraggableOptions>,
+		// The max number of pixels a user can shift the mouse pointer during a click
+		// for it to be considered a valid click (as opposed to a mouse drag).
+		public _clickTolerance = 3,
 	) {
 		super();
-
-		Util.setOptions(this, options);
 	}
 
 	// Enables the dragging ability
@@ -155,7 +146,7 @@ export class Draggable extends Evented {
 
 		if (
 			(!offset.x && !offset.y) ||
-			(Math.abs(offset.x) + Math.abs(offset.y) < this.options.clickTolerance)
+			(Math.abs(offset.x) + Math.abs(offset.y) < this._clickTolerance)
 		) {
 			return;
 		}

@@ -16,6 +16,7 @@
 
 .leaflet-container {
 	overflow: hidden;
+	contain: strict;
 }
 
 .leaflet-tile,

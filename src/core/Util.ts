@@ -6,6 +6,8 @@ export let lastId = 0;
 
 /**
  * Returns the unique ID of an object, assigning it one if it doesn't have it.
+ * 
+ * @deprecated
  */
 export function stamp(obj: any): number {
 	if (typeof obj._leaflet_id !== "number") {
