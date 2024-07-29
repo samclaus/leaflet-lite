@@ -1,4 +1,4 @@
-import { BoxZoom, Drag, Keyboard, LatLng, Map, NodeDrag, TapHold, TileLayer, TouchZoom, canvas, defaultMarkerIcon, enableDoubleClickZoom, enableScrollWheelZoom, getCenterAndZoomForGeolocation } from '.';
+import { BoxZoom, CanvasRenderer, CircleMarker, Drag, Keyboard, LatLng, Map, NodeDrag, PathBuffer, TapHold, TileLayer, TouchZoom, defaultMarkerIcon, enableDoubleClickZoom, enableScrollWheelZoom, getCenterAndZoomForGeolocation } from '.';
 import defaultMarkerURL from '../assets/marker.svg';
 import './demo-app.css';
 
@@ -33,7 +33,7 @@ new BoxZoom(map);
 new Keyboard(map);
 new TapHold(map);
 
-const cvs = new canvas.Canvas(map);
+const cvs = new CanvasRenderer(map);
 
 navigator.geolocation.getCurrentPosition(pos => {
     const [coords, smartZoom] = getCenterAndZoomForGeolocation(map, pos.coords);
@@ -52,8 +52,8 @@ navigator.geolocation.getCurrentPosition(pos => {
     });
 
     cvs.drawOrder.push(
-        new canvas.PathBuffer({}, [
-            new canvas.CircleMarker(coords, pos.coords.accuracy),
+        new PathBuffer({}, [
+            new CircleMarker(coords, pos.coords.accuracy),
         ]),
     );
     cvs.redraw();

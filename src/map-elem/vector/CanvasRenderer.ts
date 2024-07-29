@@ -1,11 +1,11 @@
-import { Util, type Disposable, type HandlerMap } from '../../core';
-import { DomUtil } from '../../dom';
-import type { LatLng } from '../../geog';
-import { Bounds, Point } from '../../geom';
-import type { Map, ZoomAnimationEvent } from '../../map';
+import { Util, type Disposable, type HandlerMap } from '../../core/index.js';
+import { DomUtil } from '../../dom/index.js';
+import type { LatLng } from '../../geog/index.js';
+import { Bounds, Point } from '../../geom/index.js';
+import type { Map, ZoomAnimationEvent } from '../../map/index.js';
 import type { NormalizedPathStyle, PathBuffer } from './Path.js';
 
-export interface CanvasOptions {
+export interface CanvasRendererOptions {
 	/**
 	 * Which map pane to position the area within. 'overlay' by default.
 	 */
@@ -20,30 +20,23 @@ export interface CanvasOptions {
 const ctxScale = window.devicePixelRatio;
 
 /**
- * TODO: update this doc comment.
+ * `CanvasRenderer` uses a `<canvas>` element to render vector paths.
  * 
- * `ViewPortArea` is the same as `Area` (see `Area` documentation for more info),
- * but it automatically adjusts itself to cover the current viewport of the map
- * every time the map settles (at the end of a pan and/or zoom animation).
- * 
- * `ViewPortArea` is only really useful for Canvas/SVG renderers, and trades
- * perfect-world UX for performance. The trade-off revolves around CSS transforms,
- * which are often GPU accelerated. Because Leaflet is usually just modifying the
- * transforms of DOM elements as the user interacts with the map, performance is
- * excellent. However, as soon as you, say, start messing with an SVG's coordinate
- * space or clearing and redrawing an entire `<canvas>`'s content from scratch on
- * every frame, you can run into performance problems. `ViewPortArea` solves this
- * by only updating the transform on the 'floating' `<canvas>` or `<svg>` element
- * on every frame, and updates their content whenever the map stops moving. The
- * trade-off is that dragging the map too far will take you out of the bounds of
- * the `<canvas>` or `<svg>`, so you will see the polylines and whatnot end abruptly,
- * and you will only be able to see further portions of them once you stop panning
- * or zooming and let the map settle.
- * 
- * Allows vector layers to be displayed with
- * [`<canvas>`](https://developer.mozilla.org/docs/Web/API/Canvas_API).
+ * Currently, `CanvasRenderer` behaves similarly to `Area` (see `Area`
+ * documentation for more info), but it automatically adjusts itself to cover the
+ * current viewport of the map every time the map settles (at the end of a pan
+ * and/or zoom animation). This is so that vector paths don't need to be constantly
+ * redrawn as the map is panned (because the whole `<canvas>` element just gets
+ * translated via the CSS `transform` property), but the trade-off is that you will
+ * see the vectors get "chopped off" abruptly when you pan outside of the rendered
+ * bounds without letting the map sit still. Zoom animations also look clunky.
+ * Because the 2D `<canvas>` API is GPU-accelerated in all modern browsers, this
+ * strategy is deprecated. Eventually the `<canvas>` element will be statically
+ * positioned to fill the map container and will be cleared/re-rendered from
+ * scratch as necessary. This will be a great simplification to the code base and
+ * will result in nicer UX.
  */
-export class Canvas implements Disposable {
+export class CanvasRenderer implements Disposable {
 
 	_events: HandlerMap = {
 		viewreset: this._reset,
@@ -64,7 +57,7 @@ export class Canvas implements Disposable {
 
 	constructor(
 		public _map: Map,
-		opts?: Partial<CanvasOptions>,
+		opts?: Partial<CanvasRendererOptions>,
 	) {
 		const el = document.createElement('canvas');
 
@@ -142,10 +135,6 @@ export class Canvas implements Disposable {
 
 			this._fillStroke(style);
 		}
-	}
-
-	redraw(): void {
-		this._redrawFrame ||= this._map && requestAnimationFrame(() => this._redraw());
 	}
 
 	_redraw(): void {
@@ -243,6 +232,10 @@ export class Canvas implements Disposable {
 		this._zoom = map._zoom;
 		this._updateCSSTransform(this._center, this._zoom);
 		this._updateCoordSpaceAndRenderFromScratch();
+	}
+
+	redraw(): void {
+		this._redrawFrame ||= this._map && requestAnimationFrame(() => this._redraw());
 	}
 
 	dispose(): void {

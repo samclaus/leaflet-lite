@@ -1,7 +1,7 @@
-import { GeomUtil, type Point } from "../../geom";
-import type { Canvas } from "./Canvas";
-import { CircleMarker } from "./CircleMarker";
-import { Poly } from "./Poly";
+import { GeomUtil, type Point } from '../../geom';
+import type { CanvasRenderer } from './CanvasRenderer';
+import { CircleMarker } from './CircleMarker';
+import { Poly } from './Poly';
 
 export interface InteractivePath {
 	/**
@@ -76,7 +76,7 @@ export class CanvasEventProxy {
 	// so we emulate that by calculating what's under the mouse on mousemove/click manually
 
 	constructor(
-		public _canvas: Canvas,
+		public _canvas: CanvasRenderer,
 		public tolerancePx = 0, // added click tolerance
 	) {
 		_canvas._el.classList.add('leaflet-interactive');
