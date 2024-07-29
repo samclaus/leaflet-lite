@@ -10,30 +10,28 @@ export interface GridLayerOptions {
 	 */
 	tileSize: number | Point;
 	/**
-	 * Opacity of the tiles. Can be used in the `createTile()` function.
-	 */
-	opacity: number;
-	/**
 	 * Load new tiles only when panning ends. True by default on mobile browsers, in order
 	 * to avoid too many requests and keep smooth navigation. False otherwise in order to
 	 * display new tiles _during_ panning, since it is easy to pan outside the
 	 * [`keepBuffer`](#gridlayer-keepbuffer) option in desktop browsers.
+	 * 
+	 * @deprecated Need way to track current map velocity, and just not load tiles if the
+	 * map is moving faster than a certain threshold.
 	 */
 	updateWhenIdle: boolean;
 	/**
 	 * By default, a smooth zoom animation (during a [touch zoom](#map-touchzoom) or a
 	 * [`flyTo()`](#map-flyto)) will update grid layers every integer zoom level. Setting
 	 * this option to false will update the grid layer only when the smooth animation ends.
+	 * 
+	 * @deprecated Need way to track current map velocity, and just not load tiles if the
+	 * map is moving faster than a certain threshold.
 	 */
 	updateWhenZooming: boolean;
 	/**
 	 * Tiles will not update more than once every `updateInterval` milliseconds when panning.
 	 */
 	updateInterval: 200;
-	/**
-	 * The explicit zIndex of the tile layer. 1 by default.
-	 */
-	zIndex: number;
 	/** If set, tiles will only be loaded inside these bounds. */
 	bounds: LatLngBounds | undefined;
 	/**
@@ -153,16 +151,12 @@ export abstract class GridLayer extends Evented implements Disposable {
 	options: GridLayerOptions;
 
 	/** DOM element that contains the tiles for this layer. */
-	_container: HTMLElement;
+	_el: HTMLElement;
 	/** Tile size from options, normalized so that it's always a Point, even if width/height are the same. */
 	_tileSize: Point;
 	_tileZoom: number | undefined;
 	_levels = new Map<number, LevelModel>();
 	_tiles = new Map<string, TileModel>();
-	_onOpaqueTile: (tile: TileModel) => void = Util.falseFn;
-	_onUpdateLevel: (levelID: number) => void = Util.falseFn;
-	_onRemoveLevel: (levelID: number) => void = Util.falseFn;
-	_onCreateLevel: (level: LevelModel) => void = Util.falseFn;
 	_noPrune = false;
 	_loading = false;
 	_onMove: (() => void) | undefined;
@@ -181,11 +175,9 @@ export abstract class GridLayer extends Evented implements Disposable {
 
 		this.options = {
 			tileSize: 256,
-			opacity: 1,
 			updateWhenIdle: Browser.mobile,
 			updateWhenZooming: true,
 			updateInterval: 200,
-			zIndex: 1,
 			bounds: undefined,
 			minZoom: 0,
 			maxZoom: undefined,
@@ -198,16 +190,10 @@ export abstract class GridLayer extends Evented implements Disposable {
 			...options,
 		};
 
-		this._container = DomUtil.create('div', `leaflet-layer ${this.options.className || ''}`);
+		this._el = DomUtil.create('div', `leaflet-layer ${this.options.className || ''}`);
 
 		const s = this.options.tileSize;
 		this._tileSize = s instanceof Point ? s : new Point(s, s);
-
-		this._updateZIndex();
-
-		if (this.options.opacity < 1) {
-			this._updateOpacity();
-		}
 
 		const events: HandlerMap = {
 			viewprereset: this._invalidateAll,
@@ -229,7 +215,7 @@ export abstract class GridLayer extends Evented implements Disposable {
 
 		this._mapEvents = events;
 
-		_map.pane(this.options.pane).appendChild(this._container);
+		_map.pane(this.options.pane).appendChild(this._el);
 		_map.on(events, this);
 	}
 
@@ -244,46 +230,13 @@ export abstract class GridLayer extends Evented implements Disposable {
 	_abortLoading?(): void;
 
 	dispose(): void {
-		if (this._container) {
+		if (this._el) {
 			this._map.off(this._mapEvents, this);
 			this._removeAllTiles();
-			this._container.remove();
-			this._container = undefined as any;
+			this._el.remove();
+			this._el = undefined as any;
 			this._tileZoom = undefined;
 		}
-	}
-
-	// Brings the tile layer to the top of all tile layers.
-	bringToFront(): this {
-		DomUtil.toFront(this._container);
-		this._setAutoZIndex(Math.max);
-		return this;
-	}
-
-	// Brings the tile layer to the bottom of all tile layers.
-	bringToBack(): this {
-		DomUtil.toBack(this._container);
-		this._setAutoZIndex(Math.min);
-		return this;
-	}
-
-	// Returns the HTML element that contains the tiles for this layer.
-	getContainer(): HTMLElement | undefined {
-		return this._container;
-	}
-
-	// Changes the [opacity](#gridlayer-opacity) of the grid layer.
-	setOpacity(opacity: number): this {
-		this.options.opacity = opacity;
-		this._updateOpacity();
-		return this;
-	}
-
-	// Changes the [zIndex](#gridlayer-zindex) of the grid layer.
-	setZIndex(zIndex: number): this {
-		this.options.zIndex = zIndex;
-		this._updateZIndex();
-		return this;
 	}
 
 	// Returns `true` if any tile in the grid layer has not finished loading.
@@ -303,37 +256,9 @@ export abstract class GridLayer extends Evented implements Disposable {
 		return this;
 	}
 
-	_updateZIndex(): void {
-		if (this._container && this.options.zIndex !== undefined && this.options.zIndex !== null) {
-			this._container.style.zIndex = this.options.zIndex as any; // automatically coerced to string
-		}
-	}
-
-	_setAutoZIndex(compare: (a: number, b: number) => number): void {
-		// go through all other layers of the same pane, set zIndex to max + 1 (front) or min - 1 (back)
-		const layers = this._container.parentNode!.children; // TODO: null safety
-
-		let edgeZIndex = -compare(-Infinity, Infinity); // -Infinity for max, Infinity for min
-
-		for (let i = 0, len = layers.length, zIndex; i < len; i++) {
-
-			zIndex = (layers[i] as HTMLElement).style.zIndex;
-
-			if (layers[i] !== this._container && zIndex) {
-				edgeZIndex = compare(edgeZIndex, +zIndex);
-			}
-		}
-
-		if (isFinite(edgeZIndex)) {
-			this.options.zIndex = edgeZIndex + compare(-1, 1);
-			this._updateZIndex();
-		}
-	}
-
 	_updateOpacity(): void {
-		this._container.style.opacity = this.options.opacity as any; // automatically coerced to string
-
 		const now = Date.now();
+
 		let nextFrame = false,
 		    willPrune = false;
 
@@ -349,8 +274,6 @@ export abstract class GridLayer extends Evented implements Disposable {
 			} else {
 				if (tile.active) {
 					willPrune = true;
-				} else {
-					this._onOpaqueTile(tile);
 				}
 				tile.active = true;
 			}
@@ -375,11 +298,9 @@ export abstract class GridLayer extends Evented implements Disposable {
 			if (level.el.children.length || z === zoom) {
 				// TODO: null safety for maxZoom
 				level.el.style.zIndex = (maxZoom! - Math.abs(zoom - z)) as any; // automatically coerced to string
-				this._onUpdateLevel(z);
 			} else {
 				level.el.remove();
 				this._removeTilesAtZoom(z);
-				this._onRemoveLevel(z);
 				this._levels.delete(z);
 			}
 		}
@@ -390,7 +311,7 @@ export abstract class GridLayer extends Evented implements Disposable {
 
 		if (!level) {
 			level = {
-				el: DomUtil.create('div', 'leaflet-tile-container leaflet-zoom-animated', this._container),
+				el: DomUtil.create('div', 'leaflet-tile-container leaflet-zoom-animated', this._el),
 				origin: map.project(map.unproject(map.getPixelOrigin()), zoom).round(),
 				zoom,
 			};
@@ -401,8 +322,6 @@ export abstract class GridLayer extends Evented implements Disposable {
 
 			// force reading offsetWidth so the browser considers the newly added element for transition
 			(Util.falseFn as any)(level.el.offsetWidth);
-
-			this._onCreateLevel(level);
 		}
 
 		this._level = level;
@@ -455,7 +374,6 @@ export abstract class GridLayer extends Evented implements Disposable {
 	_invalidateAll(): void {
 		for (const [z, level] of this._levels) {
 			level.el.remove();
-			this._onRemoveLevel(z);
 			this._levels.delete(z);
 		}
 
@@ -553,10 +471,7 @@ export abstract class GridLayer extends Evented implements Disposable {
 
 			this._tileZoom = tileZoom;
 
-			if (this._abortLoading) {
-				this._abortLoading();
-			}
-
+			this._abortLoading?.();
 			this._updateLevels();
 			this._resetGrid();
 

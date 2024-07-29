@@ -85,7 +85,6 @@ import type { FitBoundsOptions, InvalidateSizeOptions, MapOptions, PanOptions, Z
  *     <div class="leaflet-pane leaflet-root-pane">
  *         <div class="leaflet-pane leaflet-tile-pane"></div>
  *         <div class="leaflet-pane leaflet-overlay-pane"></div>
- *         <div class="leaflet-pane leaflet-tooltip-pane"></div>
  *         <div class="leaflet-pane leaflet-marker-pane"></div>
  *         <div class="leaflet-proxy leaflet-zoom-animated"></div>
  *     </div>
@@ -103,7 +102,6 @@ import type { FitBoundsOptions, InvalidateSizeOptions, MapOptions, PanOptions, Z
  * @pane overlay (400): Pane for vectors (`Path`s, like `Polyline`s and `Polygon`s),
  * 						`ImageOverlay`s and `VideoOverlay`s
  * @pane marker (600): Pane for `Icon`s of `Marker`s
- * @pane tooltip (650): Pane for `Tooltip`s.
  * 
  * @event click: MouseEvent
  * @event dblclick: MouseEvent
@@ -235,7 +233,6 @@ export class Map extends Evented implements Disposable {
 		// Force eager creation of these map panes
 		this.pane('tile');
 		this.pane('overlay');
-		this.pane('tooltip');
 		this.pane('marker');
 
 		DomEvent.on(

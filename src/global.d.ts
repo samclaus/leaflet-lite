@@ -10,9 +10,6 @@ interface EventTarget {
     _leaflet_events?: Dict<any>;
 }
 
-interface HTMLElement {
-}
-
 interface Window {
     SVGElementInstance: any;
 }
