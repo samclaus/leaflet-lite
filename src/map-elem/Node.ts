@@ -1,9 +1,8 @@
-import type { HandlerMap } from '../core';
+import type { Disposable, HandlerMap } from '../core';
 import { DomUtil, type DomElement } from '../dom';
 import { LatLng } from '../geog';
 import { Point } from '../geom';
 import type { Map, ZoomAnimationEvent } from '../map';
-import { Elem } from './Elem';
 
 export interface NodeOptions {
 	/**
@@ -80,8 +79,30 @@ export interface NodeOptions {
  * element if `autoPanOnFocus` is true, but it does not call `preventDefault()` or
  * `stopPropagation()`.
  */
-export class Node<El extends DomElement = DomElement> extends Elem<El> {
+export class Node<El extends DomElement = DomElement> implements Disposable {
 	// TODO: rename to "Point"
+
+	/**
+	 * This field exists purely for the application's use. Leaflet Lite does not use
+	 * read or write to it. It should generally be used to associate app-specific IDs
+	 * with Leaflet elements for the sake of event handling.
+	 * 
+	 * For example, let's say you load a list of restaurants from your server, as a
+	 * JSON array. Each restaurant has a randomly generated string ID for referencing
+	 * it in the database on the server. Your application JavaScript can loop over the
+	 * array of restaurant objects (JSON), creating a marker on the map for each one,
+	 * but also setting the 'data' field to the restaurant ID. Then, when Leaflet tells
+	 * you that a marker was clicked, you can grab the restaurant ID from the 'data'
+	 * field of the marker associated with the event, and pull some additional info
+	 * about the restaurant from your server to show in a pop-up UI.
+	 */
+	appData: any;
+
+	_events: HandlerMap = {
+		zoom: this._update,
+		viewreset: this._update,
+	};
+	_disposed = false;
 
 	/**
 	 * 2D rotation of the marker, in degrees. 0 by default.
@@ -91,40 +112,39 @@ export class Node<El extends DomElement = DomElement> extends Elem<El> {
 	_anchor: Point;
 
 	constructor(
-		map: Map,
-		el: El,
+		public _map: Map,
+		public _el: El,
 		public _latlng: LatLng,
 		size: Point,
 		anchor: Point,
 		opts?: Partial<NodeOptions>,
 	) {
-		super(map, el, opts?.pane ?? 'marker', opts?.interactive ?? true);
+		_map.on(this._events, this);
+
+		if (_map._zoomAnimated) {
+			_el.classList.add('leaflet-zoom-animated')
+			_map.on('zoomanim', this._animateZoom, this);
+		}
+		if (opts?.interactive) {
+			_el.classList.add('leaflet-interactive');
+		}
 
 		this._size = size.clone();
 		this._anchor = anchor.clone();
 
-		el.classList.add('leaflet-marker-icon');
-		el.style.width  = `${size.x}px`;
-		el.style.height = `${size.y}px`;
-		el.style.marginLeft = `-${anchor.x}px`;
-		el.style.marginTop  = `-${anchor.y}px`;
+		_el.classList.add('leaflet-marker-icon');
+		_el.style.width  = `${size.x}px`;
+		_el.style.height = `${size.y}px`;
+		_el.style.marginLeft = `-${anchor.x}px`;
+		_el.style.marginTop  = `-${anchor.y}px`;
 
 		if (!this._map._zoomAnimated) {
-			el.classList.add('leaflet-zoom-hide');
+			_el.classList.add('leaflet-zoom-hide');
 		}
 
 		this._update();
-	}
 
-	_mapEvents(): HandlerMap {
-		return {
-			zoom: this._update,
-			viewreset: this._update,
-		};
-	}
-
-	_init(): void {
-		// 
+		_map.pane(opts?.pane ?? 'marker').appendChild(_el);
 	}
 
 	_update(): this {
@@ -159,6 +179,25 @@ export class Node<El extends DomElement = DomElement> extends Elem<El> {
 	setRotation(degrees: number): this {
 		this._rotation = degrees;
 		return this._update();
+	}
+
+	dispose(): void {
+		if (!this._disposed) {
+			const { _map, _el } = this;
+
+			_map.off(this._events, this);
+
+			if (_map._zoomAnimated) {
+				_map.off('zoomanim', this._animateZoom, this);
+			}
+
+			_el.remove();
+	
+			this._map = undefined as any;
+			this._el = undefined as any;
+			this._events = undefined as any;
+			this._disposed = true;
+		}
 	}
 
 }
