@@ -1,6 +1,6 @@
 
 import type { HandlerFn } from '../core';
-import { DomEvent, DomUtil } from '../dom';
+import { DomUtil } from '../dom';
 import type { Map } from '../map';
 import { Control } from './Control.js';
 
@@ -104,10 +104,10 @@ export class Zoom extends Control {
 		link.setAttribute('role', 'button');
 		link.setAttribute('aria-label', title);
 
-		DomEvent.disableClickPropagation(link);
-		DomEvent.on(link, 'click', DomEvent.stop);
-		DomEvent.on(link, 'click', onClick, this);
-		DomEvent.on(link, 'click', this._refocusOnMap, this);
+		disableClickPropagation(link);
+		on(link, 'click', stop);
+		on(link, 'click', onClick, this);
+		on(link, 'click', this._refocusOnMap, this);
 
 		return link;
 	}

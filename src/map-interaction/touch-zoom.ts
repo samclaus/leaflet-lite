@@ -1,4 +1,4 @@
-import { DomEvent } from '../dom';
+import { EventSink, on } from '../dom';
 import type { LatLng } from '../geog';
 import type { Point } from '../geom';
 import type { Map } from '../map';
@@ -23,6 +23,8 @@ export interface TouchZoomOptions {
  */
 export class TouchZoom extends BehaviorBase {
 
+	_docEvents = new EventSink(document);
+	_mapEvents: EventSink;
 	_moved = false;
 	_zooming = false;
 	_animFrame = 0;
@@ -49,12 +51,12 @@ export class TouchZoom extends BehaviorBase {
 		};
 
 		map._container.classList.add('leaflet-touch-zoom');
-		DomEvent.on(map._container, 'touchstart', this._onTouchStart, this);
+		this._mapEvents = on(map._container, 'touchstart', this._onTouchStart, this);
 	}
 
 	_removeHooks(): void {
 		this._map._container.classList.remove('leaflet-touch-zoom');
-		DomEvent.off(this._map._container, 'touchstart', this._onTouchStart, this);
+		this._mapEvents.dispose();
 	}
 
 	_onTouchStart(e: TouchEvent): void {
@@ -80,9 +82,10 @@ export class TouchZoom extends BehaviorBase {
 
 		map._stop();
 
-		DomEvent.on(document, 'touchmove', this._onTouchMove, this);
-		DomEvent.on(document, 'touchend touchcancel', this._onTouchEnd, this);
-		DomEvent.preventDefault(e);
+		this._docEvents.onAll('touchmove', this._onTouchMove, this);
+		this._docEvents.onAll('touchend touchcancel', this._onTouchEnd, this);
+
+		e.preventDefault();
 	}
 
 	_onTouchMove(e: TouchEvent): void {
@@ -125,7 +128,7 @@ export class TouchZoom extends BehaviorBase {
 		const moveFn = map._move.bind(map, this._center!, this._zoom, {pinch: true, round: false}, undefined);
 		this._animFrame = requestAnimationFrame(moveFn.bind(this));
 
-		DomEvent.preventDefault(e);
+		e.preventDefault();
 	}
 
 	_onTouchEnd(): void {
@@ -137,8 +140,7 @@ export class TouchZoom extends BehaviorBase {
 		this._zooming = false;
 		cancelAnimationFrame(this._animFrame);
 
-		DomEvent.off(document, 'touchmove', this._onTouchMove, this);
-		DomEvent.off(document, 'touchend touchcancel', this._onTouchEnd, this);
+		this._docEvents.dispose();
 
 		// Pinch updates GridLayers' levels only when zoomSnap is off, so zoomSnap becomes noUpdate.
 		if (this._map.options.zoomAnimationThreshold > 0) {

@@ -579,12 +579,12 @@ export class Tooltip extends Layer {
 	// 	const el = layer.getElement?.();
 
 	// 	if (el) {
-	// 		DomEvent.on(el, 'focus', () => {
+	// 		on(el, 'focus', () => {
 	// 			// TODO: null safety
 	// 			this._tooltip!._source = layer;
 	// 			this.openTooltip();
 	// 		});
-	// 		DomEvent.on(el, 'blur', this.closeTooltip, this);
+	// 		on(el, 'blur', this.closeTooltip, this);
 	// 	}
 	// }
 

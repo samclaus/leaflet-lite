@@ -1,3 +1,5 @@
+import type { Disposable } from '../../core';
+import { EventSink, on } from '../../dom';
 import { GeomUtil, type Point } from '../../geom';
 import type { CanvasRenderer } from './CanvasRenderer';
 import { CircleMarker } from './CircleMarker';
@@ -67,10 +69,11 @@ export interface InteractivePath {
  * TODO: this class will implement mouse event -> path mapping, which was
  * always included on the Canvas renderer before.
  */
-export class CanvasEventProxy {
+export class CanvasEventProxy implements Disposable {
 
 	_mouseHoverThrottled = false;
 	_hoveredPath: any; // TODO
+	_canvasEvents: EventSink;
 
 	// Canvas obviously doesn't have mouse events for individual drawn objects,
 	// so we emulate that by calculating what's under the mouse on mousemove/click manually
@@ -80,23 +83,15 @@ export class CanvasEventProxy {
 		public tolerancePx = 0, // added click tolerance
 	) {
 		_canvas._el.classList.add('leaflet-interactive');
+		// _canvas._el._leaflet_disable_events = true;
 
-		// TODO: this._initContainer(), etc. etc.
+		this._canvasEvents = on(_canvas._el, 'mousemove', this._onMouseMove, this);
+		this._canvasEvents.onAll('click dblclick mousedown mouseup contextmenu', this._onClick, this);
+		this._canvasEvents.onAll('mouseout', this._handleMouseOut, this);
 	}
 
 	_clickTolerance(): number {
 		// TODO
-	}
-
-	_initContainer(): void {
-		DomEvent.on(this._el, 'mousemove', this._onMouseMove, this);
-		DomEvent.on(this._el, 'click dblclick mousedown mouseup contextmenu', this._onClick, this);
-		DomEvent.on(this._el, 'mouseout', this._handleMouseOut, this);
-		this._el['_leaflet_disable_events'] = true;
-		// TODO: need to remove all these event handlers now that this is no longer integrated
-		// with BlanketOverlay (which has been removed), since BlanketOverlay used to call
-		// DomEvent.off() to remove all event handlers, but I would like to not store event
-		// handlers in the first place
 	}
 
 	_onClick(e: any): void {
@@ -173,6 +168,10 @@ export class CanvasEventProxy {
 	_fireEvent(e: any, type?: string, paths?: Path[]): void {
 		// TODO: null safety
 		this._map!._fireDOMEvent(e, type || e.type, paths); // TODO: paths are no longer Eventeds because they do not inherit Layer and I want to keep them lightweight
+	}
+
+	dispose(): void {
+		this._canvasEvents.dispose();
 	}
 
 }

@@ -1,5 +1,5 @@
 import { Browser, Util } from '../../core';
-import { DomEvent } from '../../dom';
+import { on } from '../../dom';
 import type { Point } from '../../geom';
 import type { Map } from '../../map';
 import { GridLayer, type DoneFn, type GridLayerOptions } from './GridLayer.js';
@@ -159,8 +159,8 @@ export class TileLayer extends GridLayer {
 	createTile(coords: Point, done: DoneFn = Util.falseFn): HTMLImageElement {
 		const tile = document.createElement('img');
 
-		DomEvent.on(tile, 'load', this._tileOnLoad.bind(this, done, tile));
-		DomEvent.on(tile, 'error', this._tileOnError.bind(this, done, tile));
+		on(tile, 'load', this._tileOnLoad.bind(this, done, tile));
+		on(tile, 'error', this._tileOnError.bind(this, done, tile));
 
 		if (this.options.crossOrigin || this.options.crossOrigin === '') {
 			tile.crossOrigin = this.options.crossOrigin;

@@ -1,4 +1,4 @@
-import { DomEvent } from '../dom';
+import { EventSink, cancelEvent, on } from '../dom';
 import { Point } from '../geom';
 import type { Map } from '../map';
 import { BehaviorBase } from './_behavior-base';
@@ -33,6 +33,8 @@ const keyCodes = {
  */
 export class Keyboard extends BehaviorBase {
 
+	_docEvents = new EventSink(document);
+	_containerEvents: EventSink;
 	_focused = false;
 	_panKeys: Dict<Point> = Object.create(null);
 	_zoomKeys: Dict<number> = Object.create(null);
@@ -55,10 +57,10 @@ export class Keyboard extends BehaviorBase {
 			container.tabIndex = 0;
 		}
 
-		DomEvent.on(container, {
+		this._containerEvents = on(container, {
 			focus: this._onFocus,
 			blur: this._onBlur,
-			pointerdown: this._onPointerDown
+			pointerdown: this._onPointerDown,
 		}, this);
 
 		map.on({
@@ -68,29 +70,23 @@ export class Keyboard extends BehaviorBase {
 	}
 
 	_addKeydownListener(): void {
-		DomEvent.on(document, 'keydown', this._onKeyDown, this);
+		this._docEvents.onAll('keydown', this._onKeyDown, this);
 	}
 
 	_removeKeydownListener(): void {
-		DomEvent.off(document, 'keydown', this._onKeyDown, this);
+		this._docEvents.dispose();
 	}
 
 	_removeHooks(): void {
 		this._removeKeydownListener();
-
-		DomEvent.off(this._map._container, {
-			focus: this._onFocus,
-			blur: this._onBlur,
-			pointerdown: this._onPointerDown
-		}, this);
-
+		this._containerEvents.dispose();
 		this._map.off({
 			focus: this._addKeydownListener,
 			blur: this._removeKeydownListener
 		}, this);
 	}
 
-	//  acquire/lose focus #594, #1228, #1540
+	// acquire/lose focus #594, #1228, #1540
 	_onPointerDown() {
 		if (this._focused) { return; }
 
@@ -184,7 +180,7 @@ export class Keyboard extends BehaviorBase {
 			return; // Don't stop event propagation or prevent it's default behavior
 		}
 
-		DomEvent.stop(e);
+		cancelEvent(e);
 	}
 
 }

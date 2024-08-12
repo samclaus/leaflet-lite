@@ -1,8 +1,8 @@
-import type { DomElement } from '.';
 import { Browser, Evented } from '../core';
 import { Point } from '../geom';
-import * as DomEvent from './DomEvent.js';
+import { getScale, type DomElement, type ElementScale } from './DomElement.js';
 import * as DomUtil from './DomUtil.js';
+import { EventSink } from './dom-events.js';
 
 const START = Browser.touch ? 'touchstart mousedown' : 'mousedown';
 
@@ -20,6 +20,8 @@ export class Draggable extends Evented {
 
 	static _dragging: Draggable | undefined;
 
+	_docEvents = new EventSink(document);
+	_elEvents: EventSink;
 	_enabled = false;
 	_moved = false;
 	_moving = false;
@@ -28,7 +30,7 @@ export class Draggable extends Evented {
 	_startPos: Point | undefined;
 
 	// TODO
-	_parentScale: any;
+	_parentScale: ElementScale | undefined;
 	_lastEvent: any;
 	_newPos: Point | undefined;
 
@@ -43,31 +45,31 @@ export class Draggable extends Evented {
 		public _clickTolerance = 3,
 	) {
 		super();
+
+		this._elEvents = new EventSink(_dragStartTarget);
 	}
 
 	// Enables the dragging ability
 	enable(): void {
-		if (this._enabled) { return; }
-
-		DomEvent.on(this._dragStartTarget, START, this._onDown, this);
-
-		this._enabled = true;
+		if (!this._enabled) {
+			this._elEvents.onAll(START, this._onDown, this);
+			this._enabled = true;
+		}
 	}
 
 	// Disables the dragging ability
 	disable(): void {
-		if (!this._enabled) { return; }
+		if (this._enabled) {
+			// If we're currently dragging this draggable,
+			// disabling it counts as first ending the drag.
+			if (Draggable._dragging === this) {
+				this.finishDrag(true);
+			}
 
-		// If we're currently dragging this draggable,
-		// disabling it counts as first ending the drag.
-		if (Draggable._dragging === this) {
-			this.finishDrag(true);
+			this._elEvents.dispose();
+			this._moved = false;
+			this._enabled = false;
 		}
-
-		DomEvent.off(this._dragStartTarget, START, this._onDown, this);
-
-		this._enabled = false;
-		this._moved = false;
 	}
 
 	// TODO: it is either MouseEvent OR TouchEvent, not both, but suppress TS errors for now
@@ -117,12 +119,12 @@ export class Draggable extends Evented {
 		this._startPos = DomUtil.getPosition(this._element);
 
 		// Cache the scale, so that we can continuously compensate for it during drag (_onMove).
-		this._parentScale = DomUtil.getScale(sizedParent);
+		this._parentScale = getScale(sizedParent);
 
 		const mouseevent = e.type === 'mousedown';
 
-		DomEvent.on(document, mouseevent ? 'mousemove' : 'touchmove', this._onMove, this);
-		DomEvent.on(document, mouseevent ? 'mouseup' : 'touchend touchcancel', this._onUp, this);
+		this._docEvents.onAll(mouseevent ? 'mousemove' : 'touchmove', this._onMove, this);
+		this._docEvents.onAll(mouseevent ? 'mouseup' : 'touchend touchcancel', this._onUp, this);
 	}
 
 	_onMove(e: MouseEvent | TouchEvent) {
@@ -154,10 +156,10 @@ export class Draggable extends Evented {
 		// We assume that the parent container's position, border and scale do not change for the duration of the drag.
 		// Therefore there is no need to account for the position and border (they are eliminated by the subtraction)
 		// and we can use the cached value for the scale.
-		offset.x /= this._parentScale.x;
-		offset.y /= this._parentScale.y;
+		offset.x /= this._parentScale!.x;
+		offset.y /= this._parentScale!.y;
 
-		DomEvent.preventDefault(e);
+		e.preventDefault();
 
 		if (!this._moved) {
 			// @event dragstart: Event
@@ -215,8 +217,7 @@ export class Draggable extends Evented {
 			this._lastTarget = undefined;
 		}
 
-		DomEvent.off(document, 'mousemove touchmove', this._onMove, this);
-		DomEvent.off(document, 'mouseup touchend touchcancel', this._onUp, this);
+		this._docEvents.dispose();
 
 		DomUtil.enableImageDrag();
 		DomUtil.enableTextSelection();

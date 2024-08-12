@@ -1,4 +1,4 @@
-import { DomEvent, DomUtil } from '../dom';
+import { DomUtil, EventSink, cancelEvent, on } from '../dom';
 import { LatLngBounds } from '../geog';
 import { Bounds, type Point } from '../geom';
 import type { Map } from '../map';
@@ -9,8 +9,10 @@ import { BehaviorBase } from './_behavior-base';
  */
 export class BoxZoom extends BehaviorBase {
 
+	_docEvents = new EventSink(document);
 	_container: HTMLElement;
-	_pane: any; // TODO: type?
+	_containerEvents: EventSink;
+	_pane: HTMLElement;
 	_resetStateTimeout = 0;
 	_moved = false;
 	_startPoint: Point | undefined;
@@ -26,16 +28,14 @@ export class BoxZoom extends BehaviorBase {
 		map.boxZoom = this;
 
 		this._container = map._container;
+		this._containerEvents = on(this._container, 'mousedown', this._onMouseDown, this);
 		this._pane = map.pane('overlay');
-
-		DomEvent.on(this._container, 'mousedown', this._onMouseDown, this);
 	}
 
 	_removeHooks(): void {
 		this._pane.remove();
-		this._pane = undefined;
-
-		DomEvent.off(this._container, 'mousedown', this._onMouseDown, this);
+		this._pane = undefined as any;
+		this._containerEvents.dispose();
 	}
 
 	_resetState(): void {
@@ -60,9 +60,8 @@ export class BoxZoom extends BehaviorBase {
 		DomUtil.disableImageDrag();
 
 		this._startPoint = this._map.mouseEventToContainerPoint(e);
-
-		DomEvent.on(document, {
-			contextmenu: DomEvent.stop,
+		this._docEvents.onAll({
+			contextmenu: cancelEvent,
 			mousemove: this._onMouseMove,
 			mouseup: this._onMouseUp,
 			keydown: this._onKeyDown
@@ -99,12 +98,7 @@ export class BoxZoom extends BehaviorBase {
 		DomUtil.enableTextSelection();
 		DomUtil.enableImageDrag();
 
-		DomEvent.off(document, {
-			contextmenu: DomEvent.stop,
-			mousemove: this._onMouseMove,
-			mouseup: this._onMouseUp,
-			keydown: this._onKeyDown
-		}, this);
+		this._docEvents.dispose();
 	}
 
 	_onMouseUp(e: MouseEvent): void {

@@ -1,9 +1,13 @@
 import { Browser, Evented, type Disposable } from '../core';
-import { DomEvent, DomUtil, PosAnimation } from '../dom';
+import { DomUtil, EventSink, PosAnimation, getMousePosition, isExternalTarget, on, type MouseEventLike } from '../dom';
 import { LatLng, LatLngBounds } from '../geog';
 import { EPSG3857 } from '../geog/crs';
 import { Bounds, Point } from '../geom';
 import type { FitBoundsOptions, InvalidateSizeOptions, MapOptions, PanOptions, ZoomOptions, ZoomPanOptions } from './map-options';
+
+const enhancedDomEvents =
+	'click dblclick mousedown mouseup mouseover mouseout ' +
+	'mousemove contextmenu keypress keydown keyup';
 
 /**
  * `Map` is the core class for the library and serves these main purposes:
@@ -131,6 +135,7 @@ export class Map extends Evented implements Disposable {
 	// Options, DOM elements, and other core properties that only get assigned up-front
 	options: MapOptions;
 	_container: HTMLElement;
+	_containerEvents: EventSink;
 	_panes: Dict<HTMLElement> = Object.create(null);
 	_targets = new WeakMap<WeakKey, unknown>();
 	_rootPane: HTMLElement;
@@ -209,8 +214,6 @@ export class Map extends Evented implements Disposable {
 
 		this._container = container;
 		this._targets.set(container, this);
-
-		DomEvent.on(container, 'scroll', this._onScroll, this);
 	
 		const classes = ['leaflet-container'];
 
@@ -235,14 +238,8 @@ export class Map extends Evented implements Disposable {
 		this.pane('overlay');
 		this.pane('marker');
 
-		DomEvent.on(
-			this._container,
-			'click dblclick mousedown mouseup mouseover mouseout ' +
-			'mousemove contextmenu keypress keydown keyup',
-			this._handleDOMEvent,
-			this,
-		);
-
+		this._containerEvents = on(container, 'scroll', this._onScroll, this);
+		this._containerEvents.onAll(enhancedDomEvents, this._handleDOMEvent, this);
 		this._resizeObserver.observe(this._container);
 
 		if (resolvedOpts.transform3DLimit) {
@@ -292,12 +289,12 @@ export class Map extends Evented implements Disposable {
 				}
 			};
 
-			DomEvent.on(animProxy, 'transitionend', catchTransitionEnd);
+			animProxy.addEventListener('transitionend', catchTransitionEnd);
 
 			// Handle all cleanup within a closure here so we do not need to add class properties
 			// to reference the proxy element later
 			this.on('dispose', (): void => {
-				DomEvent.off(animProxy, 'transitionend', catchTransitionEnd);
+				animProxy.removeEventListener('transitionend', catchTransitionEnd);
 				animProxy.remove();
 			});
 		}
@@ -630,18 +627,8 @@ export class Map extends Evented implements Disposable {
 	 * to the old map so that it can be garbage collected.
 	 */
 	dispose(): void {
-		DomEvent.off(
-			this._container,
-			'click dblclick mousedown mouseup mouseover mouseout ' +
-			'mousemove contextmenu keypress keydown keyup',
-			this._handleDOMEvent,
-			this,
-		);
-
+		this._containerEvents.dispose();
 		this._resizeObserver.disconnect();
-
-		delete this._container._leaflet_id;
-
 		this._stop();
 		this._rootPane.remove();
 
@@ -866,19 +853,19 @@ export class Map extends Evented implements Disposable {
 
 	// Given a MouseEvent object, returns the pixel coordinate relative to the
 	// map container where the event took place.
-	mouseEventToContainerPoint(e: DomEvent.MouseEventLike): Point {
-		return DomEvent.getMousePosition(e, this._container);
+	mouseEventToContainerPoint(e: MouseEventLike): Point {
+		return getMousePosition(e, this._container);
 	}
 
 	// Given a MouseEvent object, returns the pixel coordinate relative to
 	// the [origin pixel](#map-getpixelorigin) where the event took place.
-	mouseEventToLayerPoint(e: DomEvent.MouseEventLike): Point {
+	mouseEventToLayerPoint(e: MouseEventLike): Point {
 		return this.containerPointToLayerPoint(this.mouseEventToContainerPoint(e));
 	}
 
 	// Given a MouseEvent object, returns geographical coordinate where the
 	// event took place.
-	mouseEventToLatLng(e: DomEvent.MouseEventLike): LatLng {
+	mouseEventToLatLng(e: MouseEventLike): LatLng {
 		return this.layerPointToLatLng(this.mouseEventToLayerPoint(e));
 	}
 
@@ -1015,7 +1002,7 @@ export class Map extends Evented implements Disposable {
 
 			// TODO: fix this code
 			if (target instanceof Evented && target.listens(type, true)) {
-				if (isHover && !DomEvent.isExternalTarget(src, e)) {
+				if (isHover && !isExternalTarget(src, e)) {
 					break;
 				}
 
@@ -1048,27 +1035,10 @@ export class Map extends Evented implements Disposable {
 		return obj.dragging?.moved() || !!(this.boxZoom?._moved);
 	}
 
-	_isClickDisabled(el: HTMLElement): boolean {
-		while (el && el !== this._container) {
-			if (el._leaflet_disable_click) {
-				return true;
-			}
-			el = el.parentNode as HTMLElement;
-		}
-		return false;
-	}
-
 	_handleDOMEvent(e: Event): void {
-		const el = (e.target || e.srcElement) as HTMLElement;
-
-		if (
-			el._leaflet_disable_events ||
-			e.type === 'click' && this._isClickDisabled(el)
-		) {
-			return;
-		}
-
-		const type = e.type;
+		const
+			el = (e.target || e.srcElement) as HTMLElement,
+			type = e.type;
 
 		if (type === 'mousedown') {
 			// prevents outline when clicking on keyboard-focusable element
@@ -1076,7 +1046,7 @@ export class Map extends Evented implements Disposable {
 		}
 
 		this._fireDOMEvent(e, type);
-	}
+	};
 
 	_mouseEvents = ['click', 'dblclick', 'mouseover', 'mouseout', 'contextmenu'];
 
@@ -1099,7 +1069,7 @@ export class Map extends Evented implements Disposable {
 		if (!targets.length) { return; }
 
 		if (type === 'contextmenu') {
-			DomEvent.preventDefault(e);
+			e.preventDefault();
 		}
 
 		const first = targets[0];

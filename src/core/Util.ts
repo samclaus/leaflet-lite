@@ -1,22 +1,5 @@
 
 /**
- * Last unique ID used by [`stamp()`](#util-stamp).
- */
-export let lastId = 0;
-
-/**
- * Returns the unique ID of an object, assigning it one if it doesn't have it.
- * 
- * @deprecated
- */
-export function stamp(obj: any): number {
-	if (typeof obj._leaflet_id !== "number") {
-		obj._leaflet_id = ++lastId;
-	}
-	return obj._leaflet_id;
-}
-
-/**
  * Returns a function which executes function `fn` with the given scope `context`
  * (so that the `this` keyword refers to `context` inside `fn`'s code). The function
  * `fn` will be called no more than one time per given amount of `time`. The arguments

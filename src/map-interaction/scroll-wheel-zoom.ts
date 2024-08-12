@@ -1,5 +1,5 @@
 import type { DisposeFn } from '../core';
-import { DomEvent } from '../dom';
+import { cancelEvent, getWheelDelta } from '../dom';
 import { Point } from '../geom';
 import type { Map } from '../map';
 
@@ -11,7 +11,7 @@ export interface ScrollWheelZoomOptions {
 	 */
 	debounceTime: number;
 	/**
-	 * How many scroll pixels (as reported by [DomEvent.getWheelDelta](#domevent-getwheeldelta))
+	 * How many scroll pixels (as reported by `getWheelDelta()`)
 	 * mean a change of one full zoom level. Smaller values will make wheel-zooming
 	 * faster (and vice versa). Default is 60.
 	 */
@@ -65,7 +65,7 @@ export function enableScrollWheelZoom(map: Map, options: Partial<ScrollWheelZoom
 	}
 
 	function onWheelScroll(e: WheelEvent): void {
-		delta += DomEvent.getWheelDelta(e);
+		delta += getWheelDelta(e);
 		lastMousePos = map.mouseEventToContainerPoint(e);
 		startTime ||= Date.now();
 
@@ -74,14 +74,15 @@ export function enableScrollWheelZoom(map: Map, options: Partial<ScrollWheelZoom
 		clearTimeout(timer);
 		timer = setTimeout(performZoom, left);
 
-		DomEvent.stop(e);
+		cancelEvent(e);
 	}
 
 	function disableScrollWheelZoom(): void {
-		DomEvent.off(map._container, 'wheel', onWheelScroll);
+		map._container.removeEventListener('wheel', onWheelScroll);
 	}
 
-	DomEvent.on(map._container, 'wheel', onWheelScroll);
+	// TODO: can this be passive?
+	map._container.addEventListener('wheel', onWheelScroll, { passive: false });
 	map.on('dispose', disableScrollWheelZoom, undefined, true);
 	
 	return disableScrollWheelZoom;

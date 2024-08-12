@@ -1,9 +1,6 @@
 import { Point } from '../geom';
 import type { DomElement } from './DomElement.js';
-import * as DomEvent from './DomEvent.js';
-
-// TODO: this is just a temporary fix to break a circular dependency
-export { getScale } from './get-scale.js';
+import { preventDefault } from './dom-events.js';
 
 /**
  * Creates an HTML element with `tagName`, sets its class to `className`,
@@ -131,14 +128,14 @@ export function enableTextSelection(): void {
  * when the user drags an image.
  */
 export function disableImageDrag(): void {
-	DomEvent.on(window, 'dragstart', DomEvent.preventDefault);
+	window.addEventListener('dragstart', preventDefault);
 }
 
 /**
  * Cancels the effects of a previous `disableImageDrag()` call.
  */
 export function enableImageDrag(): void {
-	DomEvent.off(window, 'dragstart', DomEvent.preventDefault);
+	window.removeEventListener('dragstart', preventDefault);
 }
 
 let
@@ -164,7 +161,7 @@ export function preventOutline(element: DomElement): void {
 	_outlineElement = element;
 	_outlineStyle = element.style.outlineStyle;
 	element.style.outlineStyle = 'none';
-	DomEvent.on(window, 'keydown', restoreOutline);
+	window.addEventListener('keydown', restoreOutline);
 }
 
 /**
@@ -176,7 +173,7 @@ export function restoreOutline(): void {
 		_outlineElement = undefined;
 		_outlineStyle = undefined;
 
-		DomEvent.off(window, 'keydown', restoreOutline);
+		window.removeEventListener('keydown', restoreOutline);
 	}
 }
 

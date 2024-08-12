@@ -1,4 +1,4 @@
-import { DomEvent } from '../dom';
+import { EventSink, on, preventDefault } from '../dom';
 import { Point } from '../geom';
 import type { Map } from '../map';
 import { BehaviorBase } from './_behavior-base';
@@ -13,9 +13,10 @@ export interface TapHoldOptions {
 	tolerance: number;
 }
 
+const _clickPreventEvents = new EventSink(document);
+
 function _cancelClickPrevent(): void {
-	DomEvent.off(document, 'touchend', DomEvent.preventDefault);
-	DomEvent.off(document, 'touchend touchcancel', _cancelClickPrevent);
+	_clickPreventEvents.dispose();
 }
 
 /**
@@ -34,6 +35,8 @@ function _cancelClickPrevent(): void {
  */
 export class TapHold extends BehaviorBase {
 
+	_docEvents = new EventSink(document);
+	_containerEvents: EventSink;
 	_holdTimeout: number | undefined;
 	_startPos!: Point; // TODO: null safety
 	_newPos!: Point; // TODO: null safety
@@ -46,12 +49,11 @@ export class TapHold extends BehaviorBase {
 		super(map);
 
 		this._tolerance = tolerance;
-
-		DomEvent.on(map._container, 'touchstart', this._onDown, this);
+		this._containerEvents = on(map._container, 'touchstart', this._onDown, this);
 	}
 
 	_removeHooks(): void {
-		DomEvent.off(this._map._container, 'touchstart', this._onDown, this);
+		this._containerEvents.dispose();
 	}
 
 	_onDown(e: TouchEvent): void {
@@ -69,19 +71,19 @@ export class TapHold extends BehaviorBase {
 			}
 
 			// prevent simulated mouse events https://w3c.github.io/touch-events/#mouse-events
-			DomEvent.on(document, 'touchend', DomEvent.preventDefault);
-			DomEvent.on(document, 'touchend touchcancel', _cancelClickPrevent);
+			_clickPreventEvents.onAll('touchend', preventDefault);
+			_clickPreventEvents.onAll('touchend touchcancel', _cancelClickPrevent);
+
 			this._simulateEvent('contextmenu', first);
 		}), tapHoldDelay);
 
-		DomEvent.on(document, 'touchend touchcancel contextmenu', this._cancel, this);
-		DomEvent.on(document, 'touchmove', this._onMove, this);
+		this._docEvents.onAll('touchend touchcancel contextmenu', this._cancel, this);
+		this._docEvents.onAll('touchmove', this._onMove, this);
 	}
 
 	_cancel(): void {
 		clearTimeout(this._holdTimeout);
-		DomEvent.off(document, 'touchend touchcancel contextmenu', this._cancel, this);
-		DomEvent.off(document, 'touchmove', this._onMove, this);
+		this._docEvents.dispose();
 	}
 
 	_onMove(e: TouchEvent): void {
