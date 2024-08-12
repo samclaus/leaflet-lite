@@ -64,6 +64,7 @@ export class Area<El extends DomElement = DomElement> implements Disposable {
 	appData: any;
 
 	_events: HandlerMap = {
+		zoomanim: this._animateZoom,
 		zoom: this._reset,
 		viewreset: this._reset,
 	};
@@ -75,23 +76,19 @@ export class Area<El extends DomElement = DomElement> implements Disposable {
 		public _bounds: LatLngBounds,
 		opts?: Partial<AreaOptions>,
 	) {
-		_el.classList.add('leaflet-image-layer');
+		_el.classList.add('leaflet-image-layer', 'leaflet-zoom-animated');
 		_el.onselectstart = Util.falseFn;
 		_el.onmousemove = Util.falseFn;
 
 		_map.on(this._events, this);
 
-		if (_map._zoomAnimated) {
-			_el.classList.add('leaflet-zoom-animated')
-			_map.on('zoomanim', this._animateZoom, this);
-		}
 		if (opts?.interactive) {
 			_el.classList.add('leaflet-interactive');
 		}
 
-		_map.pane(opts?.pane ?? 'overlay').appendChild(_el);
+		this._reset();
 
-		this._reset()
+		_map.pane(opts?.pane ?? 'overlay').appendChild(_el);
 	}
 
 	_animateZoom(e: any): void {
@@ -133,17 +130,9 @@ export class Area<El extends DomElement = DomElement> implements Disposable {
 
 	dispose(): void {
 		if (!this._disposed) {
-			const { _map, _el } = this;
-
-			_map.off(this._events, this);
-
-			if (_map._zoomAnimated) {
-				_map.off('zoomanim', this._animateZoom, this);
-			}
-
-			_el.remove();
-
+			this._map.off(this._events, this);
 			this._map = undefined as any;
+			this._el.remove();
 			this._el = undefined as any;
 			this._events = undefined as any;
 			this._disposed = true;

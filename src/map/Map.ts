@@ -114,7 +114,6 @@ export class Map extends Evented implements Disposable {
 	_containerEvents: EventSink;
 	_panes: Dict<HTMLElement> = Object.create(null);
 	_rootPane: HTMLElement;
-	_zoomAnimated: boolean;
 
 	// Core mutable state for the current map view
 	_zoom: number;
@@ -213,48 +212,43 @@ export class Map extends Evented implements Disposable {
 		this._lastCenter = initialCenter;
 		this._pixelOrigin = this._getNewPixelOrigin(initialCenter);
 
-		// don't animate on browsers without hardware-accelerated transitions or old Android
-		this._zoomAnimated = resolvedOpts.zoomAnimationThreshold > 0;
-
 		// zoom transitions run with the same duration for all layers, so if one of transitionend events
 		// happens after starting zoom animation (propagating to the map pane), we know that it ended globally
-		if (this._zoomAnimated) {
-			const animProxy = DomUtil.create('div', 'leaflet-proxy leaflet-zoom-animated');
-			this._rootPane.appendChild(animProxy);
+		const animProxy = DomUtil.create('div', 'leaflet-proxy leaflet-zoom-animated');
+		this._rootPane.appendChild(animProxy);
 
-			this.on('zoomanim', (e: any): void => {
-				const transform = animProxy.style.transform;
+		this.on('zoomanim', (e: any): void => {
+			const transform = animProxy.style.transform;
 
-				DomUtil.setTransform(animProxy, this.project(e.center, e.zoom), this.getZoomScale(e.zoom, 1));
+			DomUtil.setTransform(animProxy, this.project(e.center, e.zoom), this.getZoomScale(e.zoom, 1));
 
-				// workaround for case when transform is the same and so transitionend event is not fired
-				if (transform === animProxy.style.transform && this._animatingZoom) {
-					this._onZoomTransitionEnd();
-				}
-			});
-			this.on('moveend', (): void => {
-				const
-					c = this.getCenter(),
-					z = this._zoom;
+			// workaround for case when transform is the same and so transitionend event is not fired
+			if (transform === animProxy.style.transform && this._animatingZoom) {
+				this._onZoomTransitionEnd();
+			}
+		});
+		this.on('moveend', (): void => {
+			const
+				c = this.getCenter(),
+				z = this._zoom;
 
-				DomUtil.setTransform(animProxy, this.project(c, z), this.getZoomScale(z, 1));
-			});
+			DomUtil.setTransform(animProxy, this.project(c, z), this.getZoomScale(z, 1));
+		});
 
-			const catchTransitionEnd = (e: TransitionEvent): void => {
-				if (this._animatingZoom && e.propertyName.includes('transform')) {
-					this._onZoomTransitionEnd();
-				}
-			};
+		const catchTransitionEnd = (e: TransitionEvent): void => {
+			if (this._animatingZoom && e.propertyName.includes('transform')) {
+				this._onZoomTransitionEnd();
+			}
+		};
 
-			animProxy.addEventListener('transitionend', catchTransitionEnd);
+		animProxy.addEventListener('transitionend', catchTransitionEnd);
 
-			// Handle all cleanup within a closure here so we do not need to add class properties
-			// to reference the proxy element later
-			this.on('dispose', (): void => {
-				animProxy.removeEventListener('transitionend', catchTransitionEnd);
-				animProxy.remove();
-			});
-		}
+		// Handle all cleanup within a closure here so we do not need to add class properties
+		// to reference the proxy element later
+		this.on('dispose', (): void => {
+			animProxy.removeEventListener('transitionend', catchTransitionEnd);
+			animProxy.remove();
+		});
 	}
 
 	// @section Methods for modifying map state
@@ -1095,9 +1089,8 @@ export class Map extends Evented implements Disposable {
 			return true;
 		}
 
-		// don't animate if disabled, not supported or zoom difference is too large
+		// don't animate if disabled or zoom difference is too large
 		if (
-			!this._zoomAnimated ||
 			options.animate === false ||
 		    Math.abs(zoom - this._zoom) > this.options.zoomAnimationThreshold
 		) {

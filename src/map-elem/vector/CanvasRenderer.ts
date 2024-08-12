@@ -40,6 +40,7 @@ export class CanvasRenderer implements Disposable {
 
 	_events: HandlerMap = {
 		viewreset: this._reset,
+		zoomanim: this._animateZoom,
 		zoom: this._onZoom,
 		moveend: this._onMoveEnd,
 		resize: this._resizeContainer,
@@ -69,10 +70,6 @@ export class CanvasRenderer implements Disposable {
 		this._el = el;
 		this._padding = opts?.padding ?? 0.1;
 		this._ctx = this._el.getContext('2d')!;
-		
-		if (_map._zoomAnimated) {
-			_map.on('zoomanim', this._animateZoom, this);
-		}
 
 		_map.pane(opts?.pane || 'overlay').appendChild(el);
 		_map.on(this._events, this);
@@ -239,21 +236,13 @@ export class CanvasRenderer implements Disposable {
 
 	dispose(): void {
 		if (this._map) {
-			const { _map, _el } = this;
-
-			_map.off(this._events, this);
-
-			if (_map._zoomAnimated) {
-				_map.off('zoomanim', this._animateZoom, this);
-			}
-
-			_el.remove();
-
-			// TODO: need to make sure to remove all DOM event listeners
 			cancelAnimationFrame(this._redrawFrame);
 
+			this._redrawFrame = 0;
 			this._ctx = undefined as any;
+			this._map.off(this._events, this);
 			this._map = undefined as any;
+			this._el.remove();
 			this._el = undefined as any;
 			this._events = undefined as any;
 		}

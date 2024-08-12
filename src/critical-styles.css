@@ -138,10 +138,6 @@ svg.leaflet-zoom-animated {
 	transition: none;
 }
 
-.leaflet-zoom-anim .leaflet-zoom-hide {
-	visibility: hidden;
-}
-
 /* cursors */
 
 .leaflet-interactive {

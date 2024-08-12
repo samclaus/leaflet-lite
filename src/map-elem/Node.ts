@@ -99,6 +99,7 @@ export class Node<El extends DomElement = DomElement> implements Disposable {
 	appData: any;
 
 	_events: HandlerMap = {
+		zoomanim: this._animateZoom,
 		zoom: this._update,
 		viewreset: this._update,
 	};
@@ -121,10 +122,6 @@ export class Node<El extends DomElement = DomElement> implements Disposable {
 	) {
 		_map.on(this._events, this);
 
-		if (_map._zoomAnimated) {
-			_el.classList.add('leaflet-zoom-animated')
-			_map.on('zoomanim', this._animateZoom, this);
-		}
 		if (opts?.interactive) {
 			_el.classList.add('leaflet-interactive');
 		}
@@ -132,15 +129,11 @@ export class Node<El extends DomElement = DomElement> implements Disposable {
 		this._size = size.clone();
 		this._anchor = anchor.clone();
 
-		_el.classList.add('leaflet-marker-icon');
+		_el.classList.add('leaflet-marker-icon', 'leaflet-zoom-animated');
 		_el.style.width  = `${size.x}px`;
 		_el.style.height = `${size.y}px`;
 		_el.style.marginLeft = `-${anchor.x}px`;
 		_el.style.marginTop  = `-${anchor.y}px`;
-
-		if (!this._map._zoomAnimated) {
-			_el.classList.add('leaflet-zoom-hide');
-		}
 
 		this._update();
 
@@ -183,17 +176,9 @@ export class Node<El extends DomElement = DomElement> implements Disposable {
 
 	dispose(): void {
 		if (!this._disposed) {
-			const { _map, _el } = this;
-
-			_map.off(this._events, this);
-
-			if (_map._zoomAnimated) {
-				_map.off('zoomanim', this._animateZoom, this);
-			}
-
-			_el.remove();
-	
+			this._map.off(this._events, this);
 			this._map = undefined as any;
+			this._el.remove();
 			this._el = undefined as any;
 			this._events = undefined as any;
 			this._disposed = true;

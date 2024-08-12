@@ -198,6 +198,7 @@ export abstract class GridLayer extends Evented implements Disposable {
 		const events: HandlerMap = {
 			viewprereset: this._invalidateAll,
 			viewreset: this._resetView,
+			zoomanim: this._animateZoom,
 			zoom: this._resetView,
 			moveend: this._onMoveEnd
 		};
@@ -207,10 +208,6 @@ export abstract class GridLayer extends Evented implements Disposable {
 			this._onMove ||= Util.throttle(this._onMoveEnd, this.options.updateInterval, this);
 
 			events.move = this._onMove;
-		}
-
-		if (this._map._zoomAnimated) {
-			events.zoomanim = this._animateZoom;
 		}
 
 		this._mapEvents = events;
