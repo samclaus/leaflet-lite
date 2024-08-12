@@ -63,11 +63,6 @@ export class Drag extends BehaviorBase {
 	) {
 		super(map);
 
-		// TODO: remove Map.dragging property and then remove this line. Core code should not depend
-		// on the drag-to-pan behavior instance to check the state of the map; drag-to-pan should be
-		// a completely decoupled, higher-level feature that builds on top of core features
-		map.dragging = this;
-
 		this.options = {
 			inertia: true,
 			inertiaDeceleration: 3400,
@@ -102,14 +97,6 @@ export class Drag extends BehaviorBase {
 	_removeHooks(): void {
 		this._map._container.classList.remove('leaflet-grab', 'leaflet-touch-drag');
 		this._draggable.disable();
-	}
-
-	/**
-	 * @deprecated This is only here for the _draggableMoved() method of Map, which needs to
-	 * be investigated and refactored.
-	 */
-	enabled(): boolean {
-		return this._draggable._enabled;
 	}
 
 	moved(): boolean {

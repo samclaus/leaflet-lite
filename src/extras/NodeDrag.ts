@@ -35,12 +35,6 @@ export class NodeDrag<El extends DomElement> extends Evented implements Disposab
 	) {
 		super();
 
-		/**
-		 * @deprecated This is only here for the _draggableMoved() method of Map, which needs to
-		 * be investigated and refactored.
-		 */
-		_marker.dragging = this;
-
 		const icon = this._marker._el;
 
 		this._draggable = new Draggable(icon, icon, true);
@@ -63,14 +57,6 @@ export class NodeDrag<El extends DomElement> extends Evented implements Disposab
 		}, this).disable();
 
 		this._marker._el.classList.remove('leaflet-marker-draggable');
-	}
-
-	/**
-	 * @deprecated This is only here for the _draggableMoved() method of Map, which needs to
-	 * be investigated and refactored.
-	 */
-	enabled(): boolean {
-		return this._draggable._enabled;
 	}
 
 	moved(): boolean {

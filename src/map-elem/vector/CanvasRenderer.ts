@@ -74,7 +74,6 @@ export class CanvasRenderer implements Disposable {
 			_map.on('zoomanim', this._animateZoom, this);
 		}
 
-		_map._targets.set(el, this);
 		_map.pane(opts?.pane || 'overlay').appendChild(el);
 		_map.on(this._events, this);
 
@@ -249,7 +248,6 @@ export class CanvasRenderer implements Disposable {
 			}
 
 			_el.remove();
-			_map._targets.delete(_el);
 
 			// TODO: need to make sure to remove all DOM event listeners
 			cancelAnimationFrame(this._redrawFrame);

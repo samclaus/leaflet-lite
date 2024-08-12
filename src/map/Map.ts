@@ -1,13 +1,9 @@
 import { Browser, Evented, type Disposable } from '../core';
-import { DomUtil, EventSink, PosAnimation, getMousePosition, isExternalTarget, on, type MouseEventLike } from '../dom';
+import { DomUtil, EventSink, PosAnimation, getMousePosition, on, type MouseEventLike } from '../dom';
 import { LatLng, LatLngBounds } from '../geog';
 import { EPSG3857 } from '../geog/crs';
 import { Bounds, Point } from '../geom';
 import type { FitBoundsOptions, InvalidateSizeOptions, MapOptions, PanOptions, ZoomOptions, ZoomPanOptions } from './map-options';
-
-const enhancedDomEvents =
-	'click dblclick mousedown mouseup mouseover mouseout ' +
-	'mousemove contextmenu keypress keydown keyup';
 
 /**
  * `Map` is the core class for the library and serves these main purposes:
@@ -107,26 +103,6 @@ const enhancedDomEvents =
  * 						`ImageOverlay`s and `VideoOverlay`s
  * @pane marker (600): Pane for `Icon`s of `Marker`s
  * 
- * @event click: MouseEvent
- * @event dblclick: MouseEvent
- * @event mousedown: MouseEvent
- * @event mouseup: MouseEvent
- * @event mouseover: MouseEvent
- * @event mouseout: MouseEvent
- * @event mousemove: MouseEvent
- * @event contextmenu: MouseEvent
- * Fired when the user pushes the right mouse button on the map, prevents
- * default browser context menu from showing if there are listeners on
- * this event. Also fired on mobile when the user holds a single touch
- * for a second (also called long press).
- * @event keypress: KeyboardEvent
- * Fired when the user presses a key from the keyboard that produces a character value while map is focused.
- * @event keydown: KeyboardEvent
- * Fired when the user presses a key from the keyboard while the map is focused. Unlike theypress` event,
- * the `keydown` event is fired for keys that produce a character value and for keys
- * that do not produce a character value.
- * @event keyup: KeyboardEvent
- * Fired when the user releases a key from the keyboard while the map is focused.
  * @event dispose: Event
  * Fired when the map is destroyed with the dispose() method.
  */
@@ -137,7 +113,6 @@ export class Map extends Evented implements Disposable {
 	_container: HTMLElement;
 	_containerEvents: EventSink;
 	_panes: Dict<HTMLElement> = Object.create(null);
-	_targets = new WeakMap<WeakKey, unknown>();
 	_rootPane: HTMLElement;
 	_zoomAnimated: boolean;
 
@@ -174,22 +149,6 @@ export class Map extends Evented implements Disposable {
 	 * be a generic utility useable by all external animation code so that things are tree shakeable.
 	 */
 	_panAnim: PosAnimation | undefined;
-	/**
-	 * @deprecated TODO: this is a relic left over from Leaflet where some of the code depends on
-	 * having access to the drag-to-pan behavior class instance, so all such "handlers" registered
-	 * themselves as properties on the map. I need to investigate WHY the instance was being accessed
-	 * and provide a generic API on the map so any code can safely check if the map is currently
-	 * panning, etc.
-	 */
-	dragging?: any;
-	/**
-	 * @deprecated TODO: this is a relic left over from Leaflet where some of the code depends on
-	 * having access to the box zoom behavior class instance, so all such "handlers" registered
-	 * themselves as properties on the map. I need to investigate WHY the instance was being accessed
-	 * and provide a generic API on the map so any code can safely check if the map is currently
-	 * being zoomed, etc.
-	 */
-	boxZoom?: any;
 
 	constructor(
 		container: HTMLElement,
@@ -213,7 +172,6 @@ export class Map extends Evented implements Disposable {
 		};
 
 		this._container = container;
-		this._targets.set(container, this);
 	
 		const classes = ['leaflet-container'];
 
@@ -239,7 +197,6 @@ export class Map extends Evented implements Disposable {
 		this.pane('marker');
 
 		this._containerEvents = on(container, 'scroll', this._onScroll, this);
-		this._containerEvents.onAll(enhancedDomEvents, this._handleDOMEvent, this);
 		this._resizeObserver.observe(this._container);
 
 		if (resolvedOpts.transform3DLimit) {
@@ -970,132 +927,24 @@ export class Map extends Evented implements Disposable {
 		}
 	}
 
-	_findEventTargets(e: any, type: string, canvasTargets?: Evented[]): Evented[] {
-		const
-			targets: Evented[] = [],
-			isHover = type === 'mouseout' || type === 'mouseover';
-
-		// Put vector layers at the beginning
-		if (canvasTargets) {
-			for (const path of canvasTargets) {
-				if (path.listens(type, true)) {
-					targets.push(path);
-				}
-			}
-		}
-
-		let src = e.target || e.srcElement;
-		let dragging = false;
-
-		while (src) {
-			const target = this._targets.get(src);
-
-			if (
-				target &&
-				(type === 'click' || type === 'preclick') &&
-				this._draggableMoved(target)
-			) {
-				// Prevent firing click after you just dragged an object.
-				dragging = true;
-				break;
-			}
-
-			// TODO: fix this code
-			if (target instanceof Evented && target.listens(type, true)) {
-				if (isHover && !isExternalTarget(src, e)) {
-					break;
-				}
-
-				targets.push(target);
-
-				if (isHover) {
-					break;
-				}
-			}
-
-			if (src === this._container) {
-				break;
-			}
-
-			src = src.parentNode;
-		}
-
-		if (!targets.length && !dragging && !isHover && this.listens(type, true)) {
-			targets.push(this);
-		}
-
-		return targets;
-	}
-
-	_draggableMoved(obj: any): boolean {
-		// TODO: this code currently depends on the drag-to-pan and box zoom behavior
-		// instances, which is problematic because those are supposed to be higher-level
-		// features which are completely decoupled from the core code.
-		obj = obj.dragging?.enabled() ? obj : this;
-		return obj.dragging?.moved() || !!(this.boxZoom?._moved);
-	}
-
-	_handleDOMEvent(e: Event): void {
-		const
-			el = (e.target || e.srcElement) as HTMLElement,
-			type = e.type;
-
-		if (type === 'mousedown') {
-			// prevents outline when clicking on keyboard-focusable element
-			DomUtil.preventOutline(el);
-		}
-
-		this._fireDOMEvent(e, type);
-	};
-
 	_mouseEvents = ['click', 'dblclick', 'mouseover', 'mouseout', 'contextmenu'];
 
-	_fireDOMEvent(e: any, type: string, canvasTargets?: Evented[]) {
+	// TODO: this code is pulled from the old _fireDOMEvent() method; the map was constantly
+	// listening for all sorts of DOM events and computing the information for every single one,
+	// rather than just providing a utility for computing relevant information ON DEMAND; this
+	// API still needs work and consideration I'm sure
+	wrapMouseEv(e: MouseEventLike): any { // TODO: type
+		const
+			containerPoint = this.mouseEventToContainerPoint(e),
+			layerPoint = this.containerPointToLayerPoint(containerPoint),
+			latlng = this.layerPointToLatLng(layerPoint);
 
-		if (e.type === 'click') {
-			// Fire a synthetic 'preclick' event which propagates up (mainly for closing tooltips).
-			// @event preclick: MouseEvent
-			// Fired before mouse click on the map (sometimes useful when you
-			// want something to happen on click before any existing click
-			// handlers start running).
-			const synth = { ...e };
-			synth.type = 'preclick';
-			this._fireDOMEvent(synth, synth.type, canvasTargets);
-		}
-
-		// Find the layer the event is propagating from and its parents.
-		const targets: any[] = this._findEventTargets(e, type, canvasTargets);
-
-		if (!targets.length) { return; }
-
-		if (type === 'contextmenu') {
-			e.preventDefault();
-		}
-
-		const first = targets[0];
-		const data: any = { // TODO: strong typing
-			originalEvent: e
+		return {
+			originalEvent: e,
+			containerPoint,
+			layerPoint,
+			latlng,
 		};
-
-		if (e.type !== 'keypress' && e.type !== 'keydown' && e.type !== 'keyup') {
-			const isMarker = first._latlng && (!first._radius || first._radius <= 10);
-			data.containerPoint = isMarker
-				? this.latLngToContainerPoint(first._latlng)
-				: this.mouseEventToContainerPoint(e);
-			data.layerPoint = this.containerPointToLayerPoint(data.containerPoint);
-			data.latlng = isMarker ? first._latlng : this.layerPointToLatLng(data.layerPoint);
-		}
-
-		for (const target of targets) {
-			target.fire(type, data, true);
-
-			if (
-				data.originalEvent._stopped ||
-				(target.options.bubblingMouseEvents === false && this._mouseEvents.includes(type))
-			) {
-				return;
-			}
-		}
 	}
 
 	// private methods for getting map state

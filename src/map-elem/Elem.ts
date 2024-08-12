@@ -48,7 +48,6 @@ export abstract class Elem<El extends DomElement> implements Disposable {
 
 		// TODO: this._init();
 
-		_map._targets.set(_el, this);
 		_map.pane(pane).appendChild(_el);
 	}
 
@@ -107,7 +106,6 @@ export abstract class Elem<El extends DomElement> implements Disposable {
 			}
 
 			_el.remove();
-			_map._targets.delete(_el);
 			this._deinit?.();
 			this._map = undefined as any;
 			this._el = undefined as any;

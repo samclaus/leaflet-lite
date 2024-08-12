@@ -90,12 +90,6 @@ export class Node<El extends DomElement = DomElement> extends Elem<El> {
 	_size: Point;
 	_anchor: Point;
 
-	/**
-	 * @deprecated This is only here for the _draggableMoved() method of Map, which needs to
-	 * be investigated and refactored.
-	 */
-	dragging?: any;
-
 	constructor(
 		map: Map,
 		el: El,

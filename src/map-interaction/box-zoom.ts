@@ -22,11 +22,6 @@ export class BoxZoom extends BehaviorBase {
 	constructor(map: Map) {
 		super(map);
 
-		// TODO: remove Map.boxZoom property and then remove this line. Core code should not depend
-		// on the box zoom behavior instance to check the state of the map; box zoom should be
-		// a completely decoupled, higher-level feature that builds on top of core features
-		map.boxZoom = this;
-
 		this._container = map._container;
 		this._containerEvents = on(this._container, 'mousedown', this._onMouseDown, this);
 		this._pane = map.pane('overlay');
