@@ -921,8 +921,6 @@ export class Map extends Evented implements Disposable {
 		}
 	}
 
-	_mouseEvents = ['click', 'dblclick', 'mouseover', 'mouseout', 'contextmenu'];
-
 	// TODO: this code is pulled from the old _fireDOMEvent() method; the map was constantly
 	// listening for all sorts of DOM events and computing the information for every single one,
 	// rather than just providing a utility for computing relevant information ON DEMAND; this
