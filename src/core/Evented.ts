@@ -32,7 +32,6 @@ export interface HandlerMap {
 export class Evented {
 
 	_events: { [key: string]: [HandlerFn, any, boolean][] } = Object.create(null);
-	_parents: Evented[] | undefined; // lazy allocate map since uncommon
 
 	/**
 	 * Adds a listener function (`fn`) to a particular event type of the object. You can optionally
@@ -132,7 +131,7 @@ export class Evented {
 	// Fires an event of the specified type. You can optionally provide a data
 	// object — the first argument of the listener function will contain its
 	// properties. The event can optionally be propagated to event parents.
-	fire(type: string, data?: any, propagate?: boolean): this {
+	fire(type: string, data?: any): this {
 		const event = {
 			...data,
 			type,
@@ -161,17 +160,6 @@ export class Evented {
 			}
 		}
 
-		if (propagate && this._parents) {
-			// propagate the event to parents (set with addEventParent)
-			for (const parent of this._parents) {
-				parent.fire(event.type, {
-					layer: event.target,
-					propagatedFrom: event.target,
-					...event,
-				}, true);
-			}
-		}
-
 		return this;
 	}
 
@@ -180,30 +168,10 @@ export class Evented {
 	 * can optionally be propagated, and will return true if parents have the listener attached
 	 * to it.
 	 */
-	listens(type: string, propagate?: boolean): boolean;
-	listens(type: string, fn?: HandlerFn, context?: any, propagate?: boolean): boolean;
-	listens(type: string, fn?: HandlerFn | boolean, context?: any, propagate?: boolean): boolean {
-		if (typeof fn !== 'function') {
-			if (this._events[type]?.length) {
-				return true;
-			}
-
-			propagate = fn;
-			fn = undefined;
-		} else if (this._indexOfHandler(type, fn, context) >= 0) {
-			return true;
-		}
-
-		if (propagate && this._parents) {
-			// also check parents for listeners if event propagates
-			for (const parent of this._parents) {
-				if (parent.listens(type, fn, context, true)) {
-					return true;
-				}
-			}
-		}
-
-		return false;
+	listens(type: string, fn?: HandlerFn, context?: any): boolean {
+		return typeof fn === 'function'
+			? this._indexOfHandler(type, fn, context) >= 0
+			: !!(this._events[type]?.length);
 	}
 
 	// returns the index (number) or -1 if not found
@@ -226,20 +194,6 @@ export class Evented {
 		}
 
 		return -1;
-	}
-
-	// Adds an event parent - an `Evented` that will receive propagated events
-	addEventParent(parent: Evented): void {
-		(this._parents ||= []).push(parent);
-	}
-
-	// Removes an event parent, so it will stop receiving propagated events
-	removeEventParent(parent: Evented): void {
-		const index = this._parents?.indexOf(parent);
-
-		if (typeof index === "number") {
-			this._parents!.splice(index, 1);
-		}
 	}
 
 }
