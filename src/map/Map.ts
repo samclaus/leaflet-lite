@@ -409,12 +409,9 @@ export class Map extends Evented implements Disposable {
 
 	// Restricts the map view to the given bounds (see the [maxBounds](#map-maxbounds) option).
 	setMaxBounds(bounds: LatLngBounds): this {
-		if (this.listens('moveend', this._panInsideMaxBounds)) {
-			this.off('moveend', this._panInsideMaxBounds);
-		}
-
 		if (!bounds.isValid()) {
 			this.options.maxBounds = undefined;
+			this.off('moveend', this._panInsideMaxBounds);
 			return this;
 		}
 
