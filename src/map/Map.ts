@@ -86,7 +86,7 @@ import type { FitBoundsOptions, InvalidateSizeOptions, MapOptions, PanOptions, Z
  *         <div class="leaflet-pane leaflet-tile-pane"></div>
  *         <div class="leaflet-pane leaflet-overlay-pane"></div>
  *         <div class="leaflet-pane leaflet-marker-pane"></div>
- *         <div class="leaflet-proxy leaflet-zoom-animated"></div>
+ *         <div class="leaflet-zoom-animated"></div>
  *     </div>
  * </div>
  * ```
@@ -214,7 +214,7 @@ export class Map extends Evented implements Disposable {
 
 		// zoom transitions run with the same duration for all layers, so if one of transitionend events
 		// happens after starting zoom animation (propagating to the map pane), we know that it ended globally
-		const animProxy = DomUtil.create('div', 'leaflet-proxy leaflet-zoom-animated');
+		const animProxy = DomUtil.create('div', 'leaflet-zoom-animated');
 		this._rootPane.appendChild(animProxy);
 
 		this.on('zoomanim', (e: any): void => {
