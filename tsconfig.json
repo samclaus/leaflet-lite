@@ -31,7 +31,6 @@
         "src"
     ],
     "exclude": [
-        "src/control",
         "src/demo-app.*"
     ]
 }
