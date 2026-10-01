@@ -167,10 +167,9 @@ export const CRS_BASE = {
 	wrapLatLng(this: HasWrappingProperties, latlng: LatLng): LatLng {
 		const
 			lng = this.wrapLng ? Util.wrapNum(latlng.lng, this.wrapLng, true) : latlng.lng,
-		    lat = this.wrapLat ? Util.wrapNum(latlng.lat, this.wrapLat, true) : latlng.lat,
-		    alt = latlng.alt;
+		    lat = this.wrapLat ? Util.wrapNum(latlng.lat, this.wrapLat, true) : latlng.lat;
 
-		return new LatLng(lat, lng, alt);
+		return new LatLng(lat, lng);
 	},
 
 	wrapLatLngBounds(this: CanWrapLatLng, bounds: LatLngBounds): LatLngBounds {

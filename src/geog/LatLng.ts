@@ -1,15 +1,11 @@
 import { Util } from '../core';
 
-/**
- * Represents a geographical point with a certain latitude and longitude,
- * and, optionally, an altitude.
- */
+/** Represents a geographical point with a latitude and longitude. */
 export class LatLng {
 
 	constructor(
 		public lat: number,
 		public lng: number,
-		public alt: number | undefined = undefined,
 	) {}
 
 	// Returns `true` if the given `LatLng` point is at the same position (within a small margin of error). The margin of error can be overridden by setting `maxMargin` to a small number.
@@ -21,7 +17,7 @@ export class LatLng {
 	}
 
 	clone(): LatLng {
-		return new LatLng(this.lat, this.lng, this.alt);
+		return new LatLng(this.lat, this.lng);
 	}
 
 	// Returns a string representation of the point (for debugging purposes).

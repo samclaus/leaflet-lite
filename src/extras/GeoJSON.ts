@@ -455,10 +455,9 @@
 // }
 
 // // @function coordsToLatLng(coords: Array): LatLng
-// // Creates a `LatLng` object from an array of 2 numbers (longitude, latitude)
-// // or 3 numbers (longitude, latitude, altitude) used in GeoJSON for points.
+// // Creates a `LatLng` object from an array of 2 numbers (longitude, latitude).
 // export function coordsToLatLng(coords) {
-// 	return new LatLng(coords[1], coords[0], coords[2]);
+// 	return new LatLng(coords[1], coords[0]);
 // }
 
 // // @function coordsToLatLngs(coords: Array, levelsDeep?: Number, coordsToLatLng?: Function): Array
@@ -482,15 +481,10 @@
 // // Reverse of [`coordsToLatLng`](#geojson-coordstolatlng)
 // // Coordinates values are rounded with [`formatNum`](#util-formatnum) function.
 // export function latLngToCoords(latlng: LatLng, precision?: number | false): number[] {
-// 	return typeof latlng.alt === 'number' ?
-// 		[
-// 			Util.formatNum(latlng.lng, precision),
-// 			Util.formatNum(latlng.lat, precision),
-// 			Util.formatNum(latlng.alt, precision),
-// 		] : [
-// 			Util.formatNum(latlng.lng, precision),
-// 			Util.formatNum(latlng.lat, precision),
-// 		];
+// 	return [
+// 		Util.formatNum(latlng.lng, precision),
+// 		Util.formatNum(latlng.lat, precision),
+// 	];
 // }
 
 // // @function latLngsToCoords(latlngs: Array, levelsDeep?: Number, close?: Boolean, precision?: Number|false): Array
