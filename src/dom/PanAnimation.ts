@@ -1,36 +1,11 @@
-import { Evented } from '../core';
 import type { Point } from '../geom';
 import * as DomUtil from './DomUtil.js';
 
 /**
- * Used internally for panning animations, utilizing CSS Transitions for modern browsers and a timer fallback for IE6-9.
- *
- * ```js
- * var myPositionMarker = L.marker([48.864716, 2.294694]);
- * 
- * map.addLayer(myPositionMarker);
- *
- * myPositionMarker.on("click", function() {
- * 	var pos = map.latLngToLayerPoint(myPositionMarker.getLatLng());
- * 	pos.y -= 25;
- * 	var fx = new L.PosAnimation();
- *
- * 	fx.on('end',function() {
- * 		pos.y += 25;
- * 		fx.run(myPositionMarker._icon, pos, 0.8);
- * 	}, undefined, true);
- *
- * 	fx.run(myPositionMarker._icon, pos, 0.3);
- * });
- *
- * ```
- *
- * Fires a 'start' event when the animation begins.
- * Fires a 'step' event repeatedly throughout the animation.
- * Fires an 'end' event when the animation finishes OR is canceled via stop().
+ * Animates an element's position with `requestAnimationFrame`, keeping the
+ * position cached by `DomUtil` synchronized with its CSS transform.
  */
-
-export class PosAnimation extends Evented {
+export class PanAnimation {
 
 	_inProgress = false;
 	_el: HTMLElement | undefined;
@@ -40,6 +15,17 @@ export class PosAnimation extends Evented {
 	_offset: Point | undefined;
 	_startTime = 0;
 	_animFrame = 0;
+
+	constructor(
+		/**
+		 * Called repeatedly as the animation progresses.
+		 */
+		public _onStep: () => void,
+		/**
+		 * Called when the animation finishes OR is canceled via `stop()`.
+		 */
+		public _onEnd: () => void,
+	) {}
 
 	// Run an animation of a given element to a new position, optionally setting
 	// duration in seconds (`0.25` by default) and easing linearity factor (3rd
@@ -54,7 +40,6 @@ export class PosAnimation extends Evented {
 		this._startPos = DomUtil.getPosition(el);
 		this._offset = newPos.subtract(this._startPos);
 		this._startTime = Date.now();
-		this.fire('start');
 		this._animate();
 	}
 
@@ -62,7 +47,10 @@ export class PosAnimation extends Evented {
 	stop(): void {
 		if (this._inProgress) {
 			this._step(true);
-			this._complete();
+
+			if (this._inProgress) {
+				this._complete();
+			}
 		}
 	}
 
@@ -94,14 +82,14 @@ export class PosAnimation extends Evented {
 
 		DomUtil.setPosition(this._el!, pos);
 
-		this.fire('step');
+		this._onStep();
 	}
 
 	_complete(): void {
 		cancelAnimationFrame(this._animFrame);
 
 		this._inProgress = false;
-		this.fire('end');
+		this._onEnd();
 	}
 
 	_easeOut(t: number): number {

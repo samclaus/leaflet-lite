@@ -1,5 +1,6 @@
 import { Browser, Evented, type Disposable } from '../core';
-import { DomUtil, EventSink, PosAnimation, getMousePosition, on, type MouseEventLike } from '../dom';
+import { DomUtil, EventSink, getMousePosition, on, type MouseEventLike } from '../dom';
+import { PanAnimation } from '../dom/PanAnimation.js';
 import { LatLng, LatLngBounds } from '../geog';
 import { EPSG3857 } from '../geog/crs';
 import { Bounds, Point } from '../geom';
@@ -147,7 +148,10 @@ export class Map extends Evented implements Disposable {
 	 * @deprecated TODO: the map DOES need some sort of centralized animation state, but it needs to
 	 * be a generic utility useable by all external animation code so that things are tree shakeable.
 	 */
-	_panAnim: PosAnimation | undefined;
+	_panAnim = new PanAnimation(
+		() => this._onPanTransitionStep(),
+		() => this._onPanTransitionEnd(),
+	);
 
 	constructor(
 		container: HTMLElement,
@@ -385,16 +389,9 @@ export class Map extends Evented implements Disposable {
 			return this;
 		}
 
-		if (!this._panAnim) {
-			this._panAnim = new PosAnimation();
-			this._panAnim.on({
-				'step': this._onPanTransitionStep,
-				'end': this._onPanTransitionEnd,
-			}, this);
-		}
-
 		// animate pan unless animate: false specified
 		if (options.animate !== false) {
+			this._panAnim.stop();
 			this._rootPane.classList.add('leaflet-pan-anim');
 
 			const newPos = this._getMapPanePos().subtract(offset).round();
@@ -883,11 +880,7 @@ export class Map extends Evented implements Disposable {
 
 	_stop(): this {
 		cancelAnimationFrame(this._flyToFrame);
-
-		if (this._panAnim) {
-			this._panAnim.stop();
-		}
-
+		this._panAnim.stop();
 		return this;
 	}
 

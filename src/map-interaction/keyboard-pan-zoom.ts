@@ -156,7 +156,7 @@ export class Keyboard extends BehaviorBase {
 		let offset;
 
 		if (key in this._panKeys) {
-			if (!map._panAnim || !map._panAnim._inProgress) {
+			if (!map._panAnim._inProgress) {
 				offset = this._panKeys[key];
 
 				if (e.shiftKey) {
