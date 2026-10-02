@@ -115,46 +115,45 @@ export class EventSink implements Disposable {
 	 * Adds a listener function (`fn`) to a particular DOM event type of the
 	 * element `el`. You can optionally specify the context of the listener
 	 * (object the `this` keyword will point to). You can also pass several
-	 * space-separated types (e.g. `'click dblclick'`).
+	 * space-separated types (e.g. `'click dblclick'`). The listeners are added
+	 * to this sink, which is returned for chaining.
 	 */
 	onAll(
 		types: string,
 		handler: HandlerFn,
 		ctx?: unknown,
-	): EventSink;
+	): this;
 	/**
 	 * Adds a set of type/listener pairs, e.g. `{click: onClick, mousemove: onMouseMove}`.
 	 */
 	onAll(
 		handlers: HandlerMap,
 		ctx?: unknown,
-	): EventSink;
+	): this;
 	onAll(
 		typesOrHandlers: string | HandlerMap,
 		handlerOrCtx?: any,
 		ctx?: unknown,
-	): EventSink {
-		const sink = new EventSink(this._t);
-
+	): this {
 		if (typeof typesOrHandlers === 'string') {
 			if (ctx) {
 				handlerOrCtx = handlerOrCtx.bind(ctx);
 			}
 
 			for (const type of Util.splitWords(typesOrHandlers)) {
-				sink.on(type, handlerOrCtx);
+				this.on(type, handlerOrCtx);
 			}
 		} else if (handlerOrCtx) {
 			for (const type in typesOrHandlers) {
-				sink.on(type, typesOrHandlers[type].bind(handlerOrCtx));
+				this.on(type, typesOrHandlers[type].bind(handlerOrCtx));
 			}
 		} else {
 			for (const type in typesOrHandlers) {
-				sink.on(type, typesOrHandlers[type]);
+				this.on(type, typesOrHandlers[type]);
 			}
 		}
 
-		return sink;
+		return this;
 	}
 
 }

@@ -19,6 +19,7 @@ export abstract class BehaviorBase implements Disposable {
 
 	dispose(): void {
 		if (!this._disposed) {
+			this._map.off('dispose', this.dispose, this);
 			this._removeHooks();
 			this._disposed = true;
 		}
